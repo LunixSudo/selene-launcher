@@ -286,7 +286,7 @@ fn collect_files(dir: &Path, root: &Path, out: &mut Vec<PathBuf>) -> Result<()> 
     Ok(())
 }
 
-fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
+pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
     let mut archive = open(pack)?;
     for index in 0..archive.len() {
         let mut entry = archive
@@ -315,7 +315,7 @@ fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-fn open(pack: &Path) -> Result<ZipArchive<File>> {
+pub(crate) fn open(pack: &Path) -> Result<ZipArchive<File>> {
     let file = File::open(pack).map_err(|err| Error::io(pack, err))?;
     ZipArchive::new(file).map_err(|_| Error::InvalidPack("not a zip archive".into()))
 }

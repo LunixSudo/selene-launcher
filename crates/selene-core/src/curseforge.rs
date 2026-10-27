@@ -240,6 +240,22 @@ impl CurseForge {
         Ok(response.data)
     }
 
+    /// Files by id, in no particular order. Unknown ids are left out.
+    pub async fn files(&self, file_ids: &[u32]) -> Result<Vec<File>> {
+        if file_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let response: Response<Vec<File>> = self
+            .request(Method::POST, "/mods/files")
+            .json(&serde_json::json!({ "fileIds": file_ids }))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        Ok(response.data)
+    }
+
     /// Looks files up by [`fingerprint`]; unknown fingerprints are left out.
     pub async fn files_by_fingerprint(
         &self,
