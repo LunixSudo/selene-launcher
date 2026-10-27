@@ -172,6 +172,6 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let instances = Instances::new(dir.path().join("none"));
 
-        assert!(instances.list().await.unwrap().is_empty());
+        assert_eq!(instances.list().await.unwrap(), Vec::new());
     }
 }
