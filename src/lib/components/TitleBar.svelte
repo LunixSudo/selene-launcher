@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import AccountMenu from "$lib/components/AccountMenu.svelte";
   import { locale, setLocale, t } from "$lib/i18n/index.svelte";
 
   const appWindow = getCurrentWindow();
@@ -9,6 +10,7 @@
   <span class="title" data-tauri-drag-region>Selene Launcher</span>
 
   <div class="controls">
+    <AccountMenu />
     <button
       type="button"
       class="language"
@@ -56,10 +58,11 @@
 
   .controls {
     display: flex;
+    align-items: center;
     height: 100%;
   }
 
-  .controls button {
+  .controls > button {
     display: grid;
     place-items: center;
     width: 46px;
@@ -69,7 +72,7 @@
     transition: background 120ms var(--ease);
   }
 
-  .controls button:hover {
+  .controls > button:hover {
     background: var(--surface-hover);
   }
 

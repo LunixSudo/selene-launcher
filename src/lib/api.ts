@@ -17,8 +17,26 @@ export interface Instance {
   maxMemoryMb: number | null;
 }
 
+export interface Account {
+  id: string;
+  name: string;
+}
+
+export interface AccountList {
+  accounts: Account[];
+  active: string | null;
+}
+
 export type ErrorKind =
   | "notSignedIn"
+  | "signInCancelled"
+  | "noXboxAccount"
+  | "regionBlocked"
+  | "childAccount"
+  | "gameNotOwned"
+  | "authService"
+  | "keyring"
+  | "io"
   | "unknownVersion"
   | "unknownInstance"
   | "alreadyRunning"
@@ -48,6 +66,11 @@ export function isCommandError(value: unknown): value is CommandError {
 }
 
 export const api = {
+  accounts: () => invoke<AccountList>("accounts"),
+  signIn: () => invoke<Account>("sign_in"),
+  cancelSignIn: () => invoke<void>("cancel_sign_in"),
+  signOut: (id: string) => invoke<void>("sign_out", { id }),
+  setActiveAccount: (id: string) => invoke<void>("set_active_account", { id }),
   versions: () => invoke<VersionSummary[]>("versions"),
   instances: () => invoke<Instance[]>("instances"),
   createInstance: (name: string, version: string) =>

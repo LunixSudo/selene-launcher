@@ -7,6 +7,13 @@ export const en: Messages = {
     close: "Close",
     language: "Language",
   },
+  account: {
+    signIn: "Sign in",
+    add: "Add account",
+    signOut: "Sign out",
+    waiting: "Finish signing in in your browser",
+    cancel: "Cancel",
+  },
   instances: {
     title: "Instances",
     create: "New instance",
@@ -36,6 +43,14 @@ export const en: Messages = {
   },
   errors: {
     notSignedIn: "Sign in with a Microsoft account to play.",
+    signInCancelled: "Sign-in was cancelled.",
+    noXboxAccount: "This account has no Xbox profile yet. Create one at xbox.com and try again.",
+    regionBlocked: "Xbox Live is not available in this account's country.",
+    childAccount: "A child account must be added to a Microsoft family first.",
+    gameNotOwned: "This account does not own Minecraft: Java Edition.",
+    authService: "The sign-in service returned an error. Try again later.",
+    keyring: "Could not save the sign-in to the system credential store.",
+    io: "Could not read or write files.",
     unknownVersion: "This version does not exist.",
     unknownInstance: "Instance not found.",
     alreadyRunning: "This instance is already running.",

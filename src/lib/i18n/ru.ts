@@ -5,6 +5,13 @@ export const ru = {
     close: "Закрыть",
     language: "Язык",
   },
+  account: {
+    signIn: "Войти",
+    add: "Добавить аккаунт",
+    signOut: "Выйти",
+    waiting: "Завершите вход в браузере",
+    cancel: "Отмена",
+  },
   instances: {
     title: "Сборки",
     create: "Новая сборка",
@@ -34,6 +41,14 @@ export const ru = {
   },
   errors: {
     notSignedIn: "Войдите в аккаунт Microsoft, чтобы играть.",
+    signInCancelled: "Вход отменён.",
+    noXboxAccount: "У аккаунта ещё нет профиля Xbox. Создайте его на xbox.com и попробуйте снова.",
+    regionBlocked: "Xbox Live недоступен в стране этого аккаунта.",
+    childAccount: "Детский аккаунт сначала нужно добавить в семью Microsoft.",
+    gameNotOwned: "На этом аккаунте не куплен Minecraft: Java Edition.",
+    authService: "Сервер входа вернул ошибку. Попробуйте позже.",
+    keyring: "Не удалось сохранить вход в системном хранилище.",
+    io: "Не удалось прочитать или записать файлы.",
     unknownVersion: "Такой версии нет.",
     unknownInstance: "Сборка не найдена.",
     alreadyRunning: "Сборка уже запущена.",
