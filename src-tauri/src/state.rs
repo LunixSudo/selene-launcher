@@ -3,6 +3,7 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use reqwest::Client;
+use selene_core::curseforge::CurseForge;
 use selene_core::game::GameDirs;
 use selene_core::instance::Instances;
 use selene_core::manifest::VersionManifest;
@@ -13,6 +14,7 @@ use crate::error::CommandResult;
 
 pub struct Launcher {
     pub client: Client,
+    pub curseforge: Option<CurseForge>,
     pub accounts: Accounts,
     pub dirs: GameDirs,
     pub instances: Instances,
@@ -23,8 +25,10 @@ pub struct Launcher {
 
 impl Launcher {
     pub fn new(data_dir: &Path) -> selene_core::Result<Self> {
+        let client = selene_core::http::client()?;
         Ok(Self {
-            client: selene_core::http::client()?,
+            curseforge: curseforge(&client),
+            client,
             accounts: Accounts::load(data_dir.join("accounts.json")),
             dirs: GameDirs::new(data_dir.join("game")),
             instances: Instances::new(data_dir.join("instances")),
@@ -67,4 +71,11 @@ fn total_memory_mb() -> u64 {
     let mut system = sysinfo::System::new();
     system.refresh_memory();
     system.total_memory() / 1024 / 1024
+}
+
+/// Release builds get the CurseForge key from CI. Debug builds without a key still try,
+/// for development behind a proxy that adds the key itself.
+fn curseforge(client: &Client) -> Option<CurseForge> {
+    let api_key = option_env!("CURSEFORGE_API_KEY").map(str::to_owned);
+    (api_key.is_some() || cfg!(debug_assertions)).then(|| CurseForge::new(client.clone(), api_key))
 }
