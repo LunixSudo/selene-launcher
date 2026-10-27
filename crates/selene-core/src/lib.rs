@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod download;
 pub mod error;
+pub mod game;
 pub mod http;
 pub mod java;
 pub mod launch;
