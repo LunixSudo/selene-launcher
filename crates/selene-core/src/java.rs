@@ -221,45 +221,34 @@ where
     }
 
     download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, on_progress).await?;
-    set_executable(&executables).await?;
-    create_links(&links).await
+    #[cfg(unix)]
+    {
+        set_executable(&executables)?;
+        create_links(&links)?;
+    }
+    Ok(())
 }
 
+/// Windows runtimes need neither: files are executable by extension and the manifest has no links.
 #[cfg(unix)]
-async fn set_executable(paths: &[PathBuf]) -> Result<()> {
+fn set_executable(paths: &[PathBuf]) -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
 
     for path in paths {
-        fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))
-            .await
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))
             .map_err(|err| Error::io(path, err))?;
     }
     Ok(())
 }
 
-#[cfg(not(unix))]
-async fn set_executable(_paths: &[PathBuf]) -> Result<()> {
-    Ok(())
-}
-
-/// Links only appear in the macOS and Linux runtimes.
 #[cfg(unix)]
-async fn create_links(links: &[(PathBuf, String)]) -> Result<()> {
+fn create_links(links: &[(PathBuf, String)]) -> Result<()> {
     for (path, target) in links {
-        if fs::symlink_metadata(path).await.is_ok() {
-            fs::remove_file(path)
-                .await
-                .map_err(|err| Error::io(path, err))?;
+        if std::fs::symlink_metadata(path).is_ok() {
+            std::fs::remove_file(path).map_err(|err| Error::io(path, err))?;
         }
-        fs::symlink(target, path)
-            .await
-            .map_err(|err| Error::io(path, err))?;
+        std::os::unix::fs::symlink(target, path).map_err(|err| Error::io(path, err))?;
     }
-    Ok(())
-}
-
-#[cfg(not(unix))]
-async fn create_links(_links: &[(PathBuf, String)]) -> Result<()> {
     Ok(())
 }
 
