@@ -1,6 +1,13 @@
 <script lang="ts">
-  import { api, isCommandError, type VersionSummary } from "$lib/api";
+  import {
+    api,
+    isCommandError,
+    type Loader,
+    type LoaderRelease,
+    type VersionSummary,
+  } from "$lib/api";
   import { t } from "$lib/i18n/index.svelte";
+  import { LOADER_NAMES, LOADERS } from "$lib/loaders";
   import { createInstance } from "$lib/state/instances.svelte";
 
   let { open = $bindable() }: { open: boolean } = $props();
@@ -10,6 +17,9 @@
   let name = $state("");
   let version = $state("");
   let showSnapshots = $state(false);
+  let loader = $state<Loader | null>(null);
+  let loaderReleases = $state<LoaderRelease[] | null>(null);
+  let loaderVersion = $state("");
   let error = $state<string | null>(null);
   let submitting = $state(false);
 
@@ -18,6 +28,33 @@
       (entry) => entry.kind === "release" || (showSnapshots && entry.kind === "snapshot"),
     ),
   );
+
+  $effect(() => {
+    const selected = loader;
+    const gameVersion = version;
+    loaderReleases = null;
+    loaderVersion = "";
+    if (!selected || !gameVersion) {
+      return;
+    }
+
+    let stale = false;
+    api
+      .loaderVersions(selected, gameVersion)
+      .then((releases) => {
+        if (stale) {
+          return;
+        }
+        loaderReleases = releases;
+        loaderVersion = (releases.find((release) => release.stable) ?? releases[0])?.version ?? "";
+      })
+      .catch((err) => {
+        error = t(`errors.${isCommandError(err) ? err.kind : "core"}`);
+      });
+    return () => {
+      stale = true;
+    };
+  });
 
   $effect(() => {
     if (open) {
@@ -45,7 +82,9 @@
     submitting = true;
     error = null;
     try {
-      await createInstance(name.trim() || version, version);
+      const pinned = loader && loaderVersion ? { loader, version: loaderVersion } : null;
+      const fallbackName = loader ? `${LOADER_NAMES[loader]} ${version}` : version;
+      await createInstance(name.trim() || fallbackName, version, pinned);
       name = "";
       open = false;
     } catch (err) {
@@ -83,6 +122,37 @@
       <span>{t("create.snapshots")}</span>
     </label>
 
+    <fieldset class="field">
+      <legend>{t("create.loader")}</legend>
+      <div class="segmented">
+        {#each [null, ...LOADERS] as option (option)}
+          <label>
+            <input type="radio" name="loader" value={option} bind:group={loader}>
+            <span>{option ? LOADER_NAMES[option] : t("create.vanilla")}</span>
+          </label>
+        {/each}
+      </div>
+    </fieldset>
+
+    {#if loader}
+      <div class="field">
+        <label for="loader-version">{t("create.loaderVersion")}</label>
+        {#if !loaderReleases}
+          <div class="placeholder">{t("create.loadingLoader")}</div>
+        {:else if loaderReleases.length === 0}
+          <p class="hint">{t("create.loaderUnsupported", { loader: LOADER_NAMES[loader] })}</p>
+        {:else}
+          <select id="loader-version" bind:value={loaderVersion}>
+            {#each loaderReleases as release (release.version)}
+              <option value={release.version}>
+                {release.stable ? release.version : `${release.version} (${t("create.unstable")})`}
+              </option>
+            {/each}
+          </select>
+        {/if}
+      </div>
+    {/if}
+
     {#if error}
       <p class="error" role="alert">{error}</p>
     {/if}
@@ -91,7 +161,11 @@
       <button type="button" class="secondary" onclick={() => (open = false)}>
         {t("create.cancel")}
       </button>
-      <button type="submit" class="primary" disabled={!version || submitting}>
+      <button
+        type="submit"
+        class="primary"
+        disabled={!version || (loader !== null && !loaderVersion) || submitting}
+      >
         {t("create.submit")}
       </button>
     </div>
@@ -156,6 +230,61 @@
     display: flex;
     align-items: center;
     color: var(--text-muted);
+  }
+
+  .segmented {
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--field);
+  }
+
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  legend {
+    margin-bottom: 6px;
+    padding: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .segmented label {
+    display: grid;
+    place-items: center;
+    height: 30px;
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    transition: background 150ms var(--ease);
+  }
+
+  .segmented input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .segmented label:has(input:checked) {
+    background: var(--surface-solid);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+    font-weight: 600;
+  }
+
+  .segmented label:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
   }
 
   .toggle {

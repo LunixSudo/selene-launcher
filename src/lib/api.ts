@@ -8,10 +8,23 @@ export interface VersionSummary {
   releaseTime: string;
 }
 
+export type Loader = "fabric" | "quilt";
+
+export interface LoaderVersion {
+  loader: Loader;
+  version: string;
+}
+
+export interface LoaderRelease {
+  version: string;
+  stable: boolean;
+}
+
 export interface Instance {
   id: string;
   name: string;
   version: string;
+  loader: LoaderVersion | null;
   createdAt: string;
   lastPlayed: string | null;
   maxMemoryMb: number | null;
@@ -73,8 +86,10 @@ export const api = {
   setActiveAccount: (id: string) => invoke<void>("set_active_account", { id }),
   versions: () => invoke<VersionSummary[]>("versions"),
   instances: () => invoke<Instance[]>("instances"),
-  createInstance: (name: string, version: string) =>
-    invoke<Instance>("create_instance", { name, version }),
+  loaderVersions: (loader: Loader, gameVersion: string) =>
+    invoke<LoaderRelease[]>("loader_versions", { loader, gameVersion }),
+  createInstance: (name: string, version: string, loader: LoaderVersion | null) =>
+    invoke<Instance>("create_instance", { name, version, loader }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
   launchInstance: (id: string) => invoke<void>("launch_instance", { id }),
 };

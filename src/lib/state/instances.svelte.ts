@@ -6,6 +6,7 @@ import {
   type Instance,
   isCommandError,
   type LaunchProgress,
+  type LoaderVersion,
 } from "$lib/api";
 
 export type LaunchState =
@@ -26,8 +27,8 @@ export async function loadInstances() {
   library.loaded = true;
 }
 
-export async function createInstance(name: string, version: string) {
-  const instance = await api.createInstance(name, version);
+export async function createInstance(name: string, version: string, loader: LoaderVersion | null) {
+  const instance = await api.createInstance(name, version, loader);
   library.instances = [instance, ...library.instances];
 }
 

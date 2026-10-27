@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Instance } from "$lib/api";
   import { locale, t } from "$lib/i18n/index.svelte";
+  import { LOADER_NAMES } from "$lib/loaders";
   import { deleteInstance, type LaunchState, play } from "$lib/state/instances.svelte";
 
   let { instance, launch }: { instance: Instance; launch: LaunchState | undefined } = $props();
@@ -56,7 +57,11 @@
 
 <article class="card" style:--hue={hue}>
   <div class="cover">
-    <span class="version">{instance.version}</span>
+    <span class="version">
+      {instance.loader
+        ? `${LOADER_NAMES[instance.loader.loader]} ${instance.version}`
+        : instance.version}
+    </span>
     <button
       type="button"
       class="delete"
