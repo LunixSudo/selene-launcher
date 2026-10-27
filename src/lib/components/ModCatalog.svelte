@@ -1,17 +1,21 @@
 <script lang="ts">
-  import { api, type SearchHit } from "$lib/api";
+  import { openUrl } from "@tauri-apps/plugin-opener";
+  import { api, type CatalogHit, type ManualDownload } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
 
   let { instanceId, oninstall }: { instanceId: string; oninstall: () => void } = $props();
 
   const SEARCH_DELAY_MS = 300;
+  const SOURCE_NAMES = { modrinth: "Modrinth", curseforge: "CurseForge" };
 
   let query = $state("");
-  let hits = $state<SearchHit[]>([]);
-  let total = $state(0);
+  let hits = $state<CatalogHit[]>([]);
+  let page = $state(0);
+  let hasMore = $state(false);
   let loading = $state(false);
   let error = $state<string | null>(null);
+  let manual = $state<ManualDownload[]>([]);
   let installing = $state<Record<string, "busy" | "done">>({});
 
   $effect(() => {
@@ -20,13 +24,18 @@
     return () => clearTimeout(timer);
   });
 
-  async function search(text: string, offset: number) {
+  function key(hit: CatalogHit): string {
+    return `${hit.source}:${hit.id}`;
+  }
+
+  async function search(text: string, next: number) {
     loading = true;
     error = null;
     try {
-      const results = await api.searchMods(instanceId, text, offset);
-      hits = offset === 0 ? results.hits : [...hits, ...results.hits];
-      total = results.total_hits;
+      const results = await api.searchMods(instanceId, text, next);
+      hits = next === 0 ? results.hits : [...hits, ...results.hits];
+      hasMore = results.hasMore;
+      page = next;
     } catch (err) {
       error = describeError(err);
     } finally {
@@ -34,18 +43,16 @@
     }
   }
 
-  async function install(hit: SearchHit) {
-    installing[hit.project_id] = "busy";
+  async function install(hit: CatalogHit) {
+    installing[key(hit)] = "busy";
     error = null;
     try {
-      const added = await api.installMod(instanceId, hit.project_id);
-      for (const id of added) {
-        installing[id] = "done";
-      }
-      installing[hit.project_id] = "done";
+      const result = await api.installMod(instanceId, hit.source, hit.id);
+      manual = result.manual;
+      installing[key(hit)] = "done";
       oninstall();
     } catch (err) {
-      delete installing[hit.project_id];
+      delete installing[key(hit)];
       error = describeError(err);
     }
   }
@@ -61,33 +68,50 @@
   <p class="error" role="alert">{error}</p>
 {/if}
 
+{#if manual.length > 0}
+  <div class="manual" role="alert">
+    <p>{t("instance.manualDownload")}</p>
+    {#each manual as download (download.url)}
+      <button type="button" class="link" onclick={() => openUrl(download.url)}>
+        {download.title}
+      </button>
+    {/each}
+  </div>
+{/if}
+
 {#if !loading && hits.length === 0 && !error}
   <p class="muted center">{t("instance.nothingFound")}</p>
 {/if}
 
 <ul>
-  {#each hits as hit (hit.project_id)}
+  {#each hits as hit (key(hit))}
     <li>
-      {#if hit.icon_url}
-        <img src={hit.icon_url} alt="" loading="lazy">
+      {#if hit.iconUrl}
+        <img src={hit.iconUrl} alt="" loading="lazy">
       {:else}
         <span class="icon-placeholder" aria-hidden="true"></span>
       {/if}
       <div class="info">
         <span class="title">{hit.title} <span class="muted">· {hit.author}</span></span>
         <span class="description">{hit.description}</span>
-        <span class="muted">{t("instance.downloads", { count: compact(hit.downloads) })}</span>
+        <span class="muted">
+          {t("instance.downloads", { count: compact(hit.downloads) })}
+          ·
+          <button type="button" class="link source" onclick={() => openUrl(hit.pageUrl)}>
+            {SOURCE_NAMES[hit.source]}
+          </button>
+        </span>
       </div>
       <button
         type="button"
         class="add"
-        class:done={installing[hit.project_id] === "done"}
-        disabled={installing[hit.project_id] !== undefined}
+        class:done={installing[key(hit)] === "done"}
+        disabled={installing[key(hit)] !== undefined}
         onclick={() => install(hit)}
       >
-        {#if installing[hit.project_id] === "busy"}
+        {#if installing[key(hit)] === "busy"}
           {t("instance.adding")}
-        {:else if installing[hit.project_id] === "done"}
+        {:else if installing[key(hit)] === "done"}
           {t("instance.added")}
         {:else}
           {t("instance.add")}
@@ -97,8 +121,8 @@
   {/each}
 </ul>
 
-{#if hits.length < total}
-  <button type="button" class="more" disabled={loading} onclick={() => search(query, hits.length)}>
+{#if hasMore}
+  <button type="button" class="more" disabled={loading} onclick={() => search(query, page + 1)}>
     {t("instance.more")}
   </button>
 {/if}
@@ -160,6 +184,7 @@
     font-size: 13px;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .muted {
@@ -207,5 +232,34 @@
 
   .error {
     color: var(--danger);
+  }
+
+  .manual {
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    background: var(--field);
+    font-size: 13px;
+  }
+
+  .manual p {
+    margin: 0 0 4px;
+  }
+
+  .link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .link:hover {
+    text-decoration: underline;
+  }
+
+  .source {
+    font-size: 12px;
   }
 </style>

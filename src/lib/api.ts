@@ -40,20 +40,32 @@ export interface AccountList {
   active: string | null;
 }
 
-export interface SearchHit {
-  project_id: string;
-  slug: string;
+export type Source = "modrinth" | "curseforge";
+
+export interface CatalogHit {
+  source: Source;
+  id: string;
   title: string;
   description: string;
   author: string;
-  icon_url: string | null;
+  iconUrl: string | null;
   downloads: number;
-  display_categories: string[];
+  pageUrl: string;
 }
 
-export interface SearchResults {
-  hits: SearchHit[];
-  total_hits: number;
+export interface CatalogPage {
+  hits: CatalogHit[];
+  hasMore: boolean;
+}
+
+export interface ManualDownload {
+  title: string;
+  url: string;
+}
+
+export interface InstallResult {
+  installed: number;
+  manual: ManualDownload[];
 }
 
 export interface Project {
@@ -143,11 +155,11 @@ export const api = {
   setInstanceMemory: (instanceId: string, maxMemoryMb: number | null) =>
     invoke<Instance>("set_instance_memory", { instanceId, maxMemoryMb }),
   launchInstance: (id: string) => invoke<void>("launch_instance", { id }),
-  searchMods: (instanceId: string, query: string, offset: number) =>
-    invoke<SearchResults>("search_mods", { instanceId, query, offset }),
+  searchMods: (instanceId: string, query: string, page: number) =>
+    invoke<CatalogPage>("search_mods", { instanceId, query, page }),
   installedMods: (instanceId: string) => invoke<InstalledMod[]>("installed_mods", { instanceId }),
-  installMod: (instanceId: string, projectId: string) =>
-    invoke<string[]>("install_mod", { instanceId, projectId }),
+  installMod: (instanceId: string, source: Source, id: string) =>
+    invoke<InstallResult>("install_mod", { instanceId, source, id }),
   setModEnabled: (instanceId: string, fileName: string, enabled: boolean) =>
     invoke<void>("set_mod_enabled", { instanceId, fileName, enabled }),
   removeMod: (instanceId: string, fileName: string) =>

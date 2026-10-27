@@ -47,7 +47,9 @@ export const en: Messages = {
     upToDate: "All mods are up to date",
     updateAll: "Update all ({count})",
     updating: "Updating…",
-    search: "Search mods on Modrinth",
+    search: "Search mods on Modrinth and CurseForge",
+    manualDownload:
+      "The author only allows downloads from the CurseForge website. Download it and put it in the mods folder:",
     add: "Add",
     adding: "Installing…",
     added: "Installed",

@@ -44,7 +44,9 @@ export const ru = {
     upToDate: "Все моды последних версий",
     updateAll: "Обновить всё ({count})",
     updating: "Обновление…",
-    search: "Поиск модов на Modrinth",
+    search: "Поиск модов на Modrinth и CurseForge",
+    manualDownload:
+      "Автор разрешает скачивать только с сайта CurseForge. Скачайте вручную и положите в папку mods:",
     add: "Добавить",
     adding: "Установка…",
     added: "Установлен",
