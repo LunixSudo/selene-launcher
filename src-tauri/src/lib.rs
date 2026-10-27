@@ -22,6 +22,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::accounts,
+            commands::sign_in,
+            commands::cancel_sign_in,
+            commands::sign_out,
+            commands::set_active_account,
             commands::versions,
             commands::instances,
             commands::create_instance,

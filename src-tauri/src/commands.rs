@@ -1,3 +1,8 @@
+#![allow(
+    clippy::needless_pass_by_value,
+    reason = "Tauri hands command arguments over by value"
+)]
+
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -9,8 +14,9 @@ use selene_core::launch::{self, LaunchAccount, LaunchOptions};
 use selene_core::manifest::VersionKind;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_opener::OpenerExt;
 
-use crate::account;
+use crate::account::{Account, AccountList};
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
@@ -38,6 +44,39 @@ struct LaunchProgress<'a> {
 struct GameExited {
     instance_id: String,
     code: Option<i32>,
+}
+
+#[tauri::command]
+pub fn accounts(launcher: State<'_, Launcher>) -> AccountList {
+    launcher.accounts.list()
+}
+
+/// Opens the Microsoft sign-in page in the browser and waits for the user to finish there.
+#[tauri::command]
+pub async fn sign_in(app: AppHandle, launcher: State<'_, Launcher>) -> CommandResult<Account> {
+    launcher
+        .accounts
+        .sign_in(&launcher.client, |url| {
+            app.opener()
+                .open_url(url, None::<&str>)
+                .map_err(|err| CommandError::Io(std::io::Error::other(err)))
+        })
+        .await
+}
+
+#[tauri::command]
+pub fn cancel_sign_in(launcher: State<'_, Launcher>) {
+    launcher.accounts.cancel_sign_in();
+}
+
+#[tauri::command]
+pub async fn sign_out(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
+    launcher.accounts.sign_out(&id).await
+}
+
+#[tauri::command]
+pub fn set_active_account(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
+    launcher.accounts.set_active(&id)
 }
 
 #[tauri::command]
@@ -93,7 +132,7 @@ pub async fn launch_instance(
         .get(&id)
         .await
         .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
-    let account = account::launch_account()?;
+    let account = launcher.accounts.launch_account(&launcher.client).await?;
     if !launcher.start_running(&id) {
         return Err(CommandError::AlreadyRunning(id));
     }
@@ -166,7 +205,8 @@ async fn start_game(
     .stdin(Stdio::null())
     .stdout(Stdio::null())
     .stderr(Stdio::null())
-    .spawn()?;
+    .spawn()
+    .map_err(CommandError::Spawn)?;
 
     instance.last_played = Some(Utc::now());
     launcher.instances.save(&instance).await?;

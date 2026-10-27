@@ -8,10 +8,12 @@ use selene_core::instance::Instances;
 use selene_core::manifest::VersionManifest;
 use tokio::sync::OnceCell;
 
+use crate::account::Accounts;
 use crate::error::CommandResult;
 
 pub struct Launcher {
     pub client: Client,
+    pub accounts: Accounts,
     pub dirs: GameDirs,
     pub instances: Instances,
     manifest: OnceCell<VersionManifest>,
@@ -22,6 +24,7 @@ impl Launcher {
     pub fn new(data_dir: &Path) -> selene_core::Result<Self> {
         Ok(Self {
             client: selene_core::http::client()?,
+            accounts: Accounts::load(data_dir.join("accounts.json")),
             dirs: GameDirs::new(data_dir.join("game")),
             instances: Instances::new(data_dir.join("instances")),
             manifest: OnceCell::new(),

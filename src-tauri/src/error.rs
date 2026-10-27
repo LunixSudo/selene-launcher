@@ -1,3 +1,4 @@
+use selene_core::auth::AuthError;
 use serde::{Serialize, Serializer};
 
 /// Errors sent to the UI. `kind` picks the translated message, `message` has the details.
@@ -5,6 +6,12 @@ use serde::{Serialize, Serializer};
 pub enum CommandError {
     #[error("not signed in")]
     NotSignedIn,
+
+    #[error("sign-in was cancelled")]
+    SignInCancelled,
+
+    #[error("credential store: {0}")]
+    Keyring(#[from] keyring::Error),
 
     #[error("unknown version {0}")]
     UnknownVersion(String),
@@ -16,7 +23,10 @@ pub enum CommandError {
     AlreadyRunning(String),
 
     #[error("could not start the game: {0}")]
-    Spawn(#[from] std::io::Error),
+    Spawn(#[source] std::io::Error),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
 
     #[error(transparent)]
     Core(#[from] selene_core::Error),
@@ -28,11 +38,22 @@ impl CommandError {
     fn kind(&self) -> &'static str {
         match self {
             Self::NotSignedIn => "notSignedIn",
+            Self::SignInCancelled => "signInCancelled",
+            Self::Keyring(_) => "keyring",
             Self::UnknownVersion(_) => "unknownVersion",
             Self::UnknownInstance(_) => "unknownInstance",
             Self::AlreadyRunning(_) => "alreadyRunning",
             Self::Spawn(_) => "spawn",
+            Self::Io(_) => "io",
             Self::Core(selene_core::Error::Http(_)) => "network",
+            Self::Core(selene_core::Error::Auth(error)) => match error {
+                AuthError::Denied(_) | AuthError::InvalidCallback => "signInCancelled",
+                AuthError::NoXboxAccount => "noXboxAccount",
+                AuthError::RegionBlocked => "regionBlocked",
+                AuthError::ChildAccount => "childAccount",
+                AuthError::GameNotOwned => "gameNotOwned",
+                AuthError::Service { .. } => "authService",
+            },
             Self::Core(_) => "core",
         }
     }
