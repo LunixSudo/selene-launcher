@@ -1,6 +1,7 @@
 <script lang="ts">
   import "$lib/styles/global.css";
   import type { Snippet } from "svelte";
+  import DropOverlay from "$lib/components/DropOverlay.svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
   import { locale } from "$lib/i18n/index.svelte";
   import { listenToGames } from "$lib/state/instances.svelte";
@@ -25,6 +26,7 @@
     {@render children()}
   </main>
 </div>
+<DropOverlay />
 
 <style>
   .app {

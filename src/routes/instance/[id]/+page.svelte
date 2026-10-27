@@ -3,6 +3,7 @@
   import InstanceSettings from "$lib/components/InstanceSettings.svelte";
   import ModCatalog from "$lib/components/ModCatalog.svelte";
   import ModList from "$lib/components/ModList.svelte";
+  import ShareDialog from "$lib/components/ShareDialog.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { library, loadInstances, play } from "$lib/state/instances.svelte";
@@ -11,6 +12,7 @@
 
   let chosenTab = $state<Tab | null>(null);
   let refresh = $state(0);
+  let sharing = $state(false);
 
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
   const launch = $derived(instance ? library.launches[instance.id] : undefined);
@@ -40,9 +42,14 @@
             : instance.version}
         </span>
       </div>
-      <button type="button" class="play" disabled={busy} onclick={() => play(instance.id)}>
-        {launch?.status === "running" ? t("instances.running") : t("instances.play")}
-      </button>
+      <div class="actions">
+        <button type="button" class="share" onclick={() => (sharing = true)}>
+          {t("instance.share")}
+        </button>
+        <button type="button" class="play" disabled={busy} onclick={() => play(instance.id)}>
+          {launch?.status === "running" ? t("instances.running") : t("instances.play")}
+        </button>
+      </div>
     </header>
 
     <div class="tabs" role="tablist">
@@ -71,6 +78,8 @@
       {/if}
     </div>
   </section>
+
+  <ShareDialog {instance} bind:open={sharing} />
 {/if}
 
 <style>
@@ -136,6 +145,24 @@
     color: var(--text-muted);
     font-size: 12px;
     font-weight: 600;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .share {
+    height: 38px;
+    padding: 0 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    font-weight: 600;
+  }
+
+  .share:hover {
+    background: var(--surface-hover);
   }
 
   .play {

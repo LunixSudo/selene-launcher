@@ -1,24 +1,44 @@
 <script lang="ts">
+  import { open } from "@tauri-apps/plugin-dialog";
   import CreateInstanceDialog from "$lib/components/CreateInstanceDialog.svelte";
   import InstanceCard from "$lib/components/InstanceCard.svelte";
   import { t } from "$lib/i18n/index.svelte";
-  import { library, loadInstances } from "$lib/state/instances.svelte";
+  import { importPack, library, loadInstances } from "$lib/state/instances.svelte";
 
   let creating = $state(false);
 
   $effect(() => {
     void loadInstances();
   });
+
+  async function chooseImport() {
+    const path = await open({ filters: [{ name: "Modrinth", extensions: ["mrpack"] }] });
+    if (path) {
+      await importPack(path);
+    }
+  }
 </script>
 
 <section class="page">
   <header>
     <h1>{t("instances.title")}</h1>
-    <button type="button" class="create" onclick={() => (creating = true)}>
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
-      {t("instances.create")}
-    </button>
+    <div class="actions">
+      <button type="button" class="create" onclick={chooseImport}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v7M5 7l3 3 3-3M3 13h10" /></svg>
+        {t("instances.import")}
+      </button>
+      <button type="button" class="create" onclick={() => (creating = true)}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+        {t("instances.create")}
+      </button>
+    </div>
   </header>
+
+  {#if library.importing > 0}
+    <p class="status">{t("instances.importing")}</p>
+  {:else if library.importError}
+    <p class="status error" role="alert">{t(`errors.${library.importError.kind}`)}</p>
+  {/if}
 
   {#if library.loaded && library.instances.length === 0}
     <div class="empty">
@@ -57,6 +77,20 @@
     font-size: 28px;
     font-weight: 600;
     letter-spacing: -0.02em;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .status {
+    margin: -8px 0 0;
+    color: var(--text-muted);
+  }
+
+  .status.error {
+    color: var(--danger);
   }
 
   .create {

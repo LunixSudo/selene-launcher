@@ -19,6 +19,8 @@ const UNKNOWN_ERROR: CommandError = { kind: "core", message: "unknown error" };
 export const library = $state({
   instances: [] as Instance[],
   loaded: false,
+  importing: 0,
+  importError: null as CommandError | null,
   launches: {} as Record<string, LaunchState>,
 });
 
@@ -30,6 +32,19 @@ export async function loadInstances() {
 export async function createInstance(name: string, version: string, loader: LoaderVersion | null) {
   const instance = await api.createInstance(name, version, loader);
   library.instances = [instance, ...library.instances];
+}
+
+export async function importPack(path: string) {
+  library.importing++;
+  library.importError = null;
+  try {
+    const instance = await api.importPack(path);
+    library.instances = [instance, ...library.instances];
+  } catch (error) {
+    library.importError = isCommandError(error) ? error : UNKNOWN_ERROR;
+  } finally {
+    library.importing--;
+  }
 }
 
 export async function deleteInstance(id: string) {

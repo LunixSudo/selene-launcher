@@ -110,6 +110,8 @@ export type ErrorKind =
   | "io"
   | "unknownVersion"
   | "unknownInstance"
+  | "invalidPack"
+  | "unsupportedLoader"
   | "noLoader"
   | "noCompatibleVersion"
   | "alreadyRunning"
@@ -166,4 +168,7 @@ export const api = {
     invoke<void>("remove_mod", { instanceId, fileName }),
   checkModUpdates: (instanceId: string) => invoke<ModUpdate[]>("check_mod_updates", { instanceId }),
   updateMods: (instanceId: string) => invoke<number>("update_mods", { instanceId }),
+  importPack: (path: string) => invoke<Instance>("import_pack", { path }),
+  exportPack: (instanceId: string, path: string, folders: string[]) =>
+    invoke<void>("export_pack", { instanceId, path, folders }),
 };
