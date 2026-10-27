@@ -1,6 +1,6 @@
 <script lang="ts">
   import { api, type Instance } from "$lib/api";
-  import { COVERS, coverOf, ICONS, iconOf } from "$lib/appearance";
+  import { COVERS, coverOf, DEFAULT_ICON, ICONS, iconOf } from "$lib/appearance";
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
   import { replaceInstance } from "$lib/state/instances.svelte";
@@ -17,7 +17,7 @@
   $effect(() => {
     if (open) {
       name = instance.name;
-      icon = instance.icon;
+      icon = instance.icon ?? DEFAULT_ICON;
       cover = instance.cover;
       error = null;
     }
