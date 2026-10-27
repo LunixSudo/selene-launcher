@@ -40,6 +40,46 @@ export interface AccountList {
   active: string | null;
 }
 
+export interface SearchHit {
+  project_id: string;
+  slug: string;
+  title: string;
+  description: string;
+  author: string;
+  icon_url: string | null;
+  downloads: number;
+  display_categories: string[];
+}
+
+export interface SearchResults {
+  hits: SearchHit[];
+  total_hits: number;
+}
+
+export interface Project {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  icon_url: string | null;
+}
+
+export interface InstalledMod {
+  fileName: string;
+  enabled: boolean;
+  sha1: string;
+  size: number;
+  project: Project | null;
+  versionNumber: string | null;
+}
+
+export interface ModUpdate {
+  fileName: string;
+  title: string;
+  from: string | null;
+  to: string;
+}
+
 export type ErrorKind =
   | "notSignedIn"
   | "signInCancelled"
@@ -52,6 +92,8 @@ export type ErrorKind =
   | "io"
   | "unknownVersion"
   | "unknownInstance"
+  | "noLoader"
+  | "noCompatibleVersion"
   | "alreadyRunning"
   | "spawn"
   | "network"
@@ -92,4 +134,15 @@ export const api = {
     invoke<Instance>("create_instance", { name, version, loader }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
   launchInstance: (id: string) => invoke<void>("launch_instance", { id }),
+  searchMods: (instanceId: string, query: string, offset: number) =>
+    invoke<SearchResults>("search_mods", { instanceId, query, offset }),
+  installedMods: (instanceId: string) => invoke<InstalledMod[]>("installed_mods", { instanceId }),
+  installMod: (instanceId: string, projectId: string) =>
+    invoke<string[]>("install_mod", { instanceId, projectId }),
+  setModEnabled: (instanceId: string, fileName: string, enabled: boolean) =>
+    invoke<void>("set_mod_enabled", { instanceId, fileName, enabled }),
+  removeMod: (instanceId: string, fileName: string) =>
+    invoke<void>("remove_mod", { instanceId, fileName }),
+  checkModUpdates: (instanceId: string) => invoke<ModUpdate[]>("check_mod_updates", { instanceId }),
+  updateMods: (instanceId: string) => invoke<number>("update_mods", { instanceId }),
 };

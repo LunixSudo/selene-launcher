@@ -82,7 +82,7 @@
   </div>
 
   <div class="body">
-    <h2>{instance.name}</h2>
+    <h2><a href="/instance/{instance.id}">{instance.name}</a></h2>
     <p>{lastPlayed()}</p>
     {#if launch?.status === "failed"}
       <p class="error" role="alert">{t(`errors.${launch.error.kind}`)}</p>
@@ -103,6 +103,7 @@
 
 <style>
   .card {
+    position: relative;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -143,6 +144,7 @@
 
   .delete {
     position: absolute;
+    z-index: 1;
     top: 8px;
     right: 8px;
     display: grid;
@@ -202,6 +204,18 @@
     white-space: nowrap;
   }
 
+  h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  h2 a::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    content: "";
+  }
+
   p {
     margin: 4px 0 0;
     color: var(--text-muted);
@@ -214,6 +228,7 @@
 
   .play {
     position: relative;
+    z-index: 1;
     margin: 12px 14px 14px;
     height: 36px;
     overflow: hidden;
