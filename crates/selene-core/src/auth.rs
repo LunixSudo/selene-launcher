@@ -20,6 +20,8 @@ pub const CLIENT_ID: &str = "e193bac3-0149-4777-bd09-91afa62cd0f3";
 
 const AUTHORIZE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
 const TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
+const DEVICE_CODE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode";
+const DEVICE_CODE_GRANT: &str = "urn:ietf:params:oauth:grant-type:device_code";
 const XBOX_AUTH_URL: &str = "https://user.auth.xboxlive.com/user/authenticate";
 const XSTS_AUTH_URL: &str = "https://xsts.auth.xboxlive.com/xsts/authorize";
 const MINECRAFT_LOGIN_URL: &str =
@@ -214,6 +216,68 @@ impl LoginRequest {
     }
 }
 
+/// Sign-in on another device: the user opens `verification_uri` and types `user_code`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DeviceLogin {
+    pub user_code: String,
+    pub verification_uri: String,
+    device_code: String,
+    expires_in: u64,
+    interval: u64,
+}
+
+#[derive(Deserialize)]
+struct OAuthError {
+    error: String,
+    error_description: Option<String>,
+}
+
+impl DeviceLogin {
+    pub async fn request(client: &Client) -> Result<Self> {
+        let response = client
+            .post(DEVICE_CODE_URL)
+            .form(&[("client_id", CLIENT_ID), ("scope", SCOPE)])
+            .send()
+            .await?;
+        parse_response(response, "Microsoft").await
+    }
+
+    /// Polls until the user finishes, gives up, or the code expires.
+    pub async fn finish(self, client: &Client) -> Result<MicrosoftTokens> {
+        let deadline = SystemTime::now() + Duration::from_secs(self.expires_in);
+        let mut interval = Duration::from_secs(self.interval.max(1));
+
+        while SystemTime::now() < deadline {
+            tokio::time::sleep(interval).await;
+            let response = client
+                .post(TOKEN_URL)
+                .form(&[
+                    ("client_id", CLIENT_ID),
+                    ("grant_type", DEVICE_CODE_GRANT),
+                    ("device_code", &self.device_code),
+                ])
+                .send()
+                .await?;
+            if response.status().is_success() {
+                let tokens: TokenResponse = response.json().await?;
+                return Ok(tokens.into());
+            }
+
+            let error: OAuthError = response.json().await?;
+            match error.error.as_str() {
+                "authorization_pending" => {}
+                "slow_down" => interval += Duration::from_secs(5),
+                _ => {
+                    return Err(
+                        AuthError::Denied(error.error_description.unwrap_or(error.error)).into(),
+                    );
+                }
+            }
+        }
+        Err(AuthError::Denied("the code expired".into()).into())
+    }
+}
+
 pub async fn refresh(client: &Client, refresh_token: &str) -> Result<MicrosoftTokens> {
     request_tokens(
         client,
@@ -318,11 +382,17 @@ fn xsts_error(code: u64) -> AuthError {
 async fn request_tokens(client: &Client, form: &[(&str, &str)]) -> Result<MicrosoftTokens> {
     let response = client.post(TOKEN_URL).form(form).send().await?;
     let tokens: TokenResponse = parse_response(response, "Microsoft").await?;
-    Ok(MicrosoftTokens {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: expires_at(tokens.expires_in),
-    })
+    Ok(tokens.into())
+}
+
+impl From<TokenResponse> for MicrosoftTokens {
+    fn from(tokens: TokenResponse) -> Self {
+        Self {
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+            expires_at: expires_at(tokens.expires_in),
+        }
+    }
 }
 
 async fn post_json<T: DeserializeOwned>(
