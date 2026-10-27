@@ -15,6 +15,7 @@ use crate::state::Launcher;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
@@ -42,6 +43,8 @@ pub fn run() {
             commands::mods::remove_mod,
             commands::mods::check_mod_updates,
             commands::mods::update_mods,
+            commands::packs::import_pack,
+            commands::packs::export_pack,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri application");

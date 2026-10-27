@@ -4,6 +4,7 @@
 )]
 
 pub mod mods;
+pub mod packs;
 
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
