@@ -12,7 +12,7 @@
       } else if (payload.type === "drop") {
         dragging = false;
         for (const path of payload.paths) {
-          if (path.toLowerCase().endsWith(".mrpack")) {
+          if (/\.(mrpack|zip)$/i.test(path)) {
             void importPack(path);
           }
         }

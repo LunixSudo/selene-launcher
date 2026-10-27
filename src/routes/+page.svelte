@@ -1,5 +1,6 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
+  import { openUrl } from "@tauri-apps/plugin-opener";
   import { goto } from "$app/navigation";
   import { api, type Instance } from "$lib/api";
   import ContextMenu, { type MenuItem } from "$lib/components/ContextMenu.svelte";
@@ -65,7 +66,9 @@
   });
 
   async function chooseImport() {
-    const path = await open({ filters: [{ name: "Modrinth", extensions: ["mrpack"] }] });
+    const path = await open({
+      filters: [{ name: t("instances.packFiles"), extensions: ["mrpack", "zip"] }],
+    });
     if (path) {
       await importPack(path);
     }
@@ -91,6 +94,17 @@
     <p class="status">{t("instances.importing")}</p>
   {:else if library.importError}
     <p class="status error" role="alert">{t(`errors.${library.importError.kind}`)}</p>
+  {/if}
+
+  {#if library.importManual.length > 0}
+    <div class="notice" role="alert">
+      <p>{t("instance.manualDownload")}</p>
+      {#each library.importManual as download (download.url)}
+        <button type="button" class="link" onclick={() => openUrl(download.url)}>
+          {download.title}
+        </button>
+      {/each}
+    </div>
   {/if}
 
   {#if library.loaded && library.instances.length === 0}
@@ -154,6 +168,30 @@
 
   .status.error {
     color: var(--danger);
+  }
+
+  .notice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: -8px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    font-size: 13px;
+  }
+
+  .notice p {
+    flex-basis: 100%;
+    margin: 0;
+  }
+
+  .link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    cursor: pointer;
   }
 
   .create {

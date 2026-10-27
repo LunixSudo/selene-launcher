@@ -7,6 +7,7 @@ import {
   isCommandError,
   type LaunchProgress,
   type LoaderVersion,
+  type ManualDownload,
 } from "$lib/api";
 
 export type LaunchState =
@@ -21,6 +22,7 @@ export const library = $state({
   loaded: false,
   importing: 0,
   importError: null as CommandError | null,
+  importManual: [] as ManualDownload[],
   launches: {} as Record<string, LaunchState>,
 });
 
@@ -37,9 +39,11 @@ export async function createInstance(name: string, version: string, loader: Load
 export async function importPack(path: string) {
   library.importing++;
   library.importError = null;
+  library.importManual = [];
   try {
-    const instance = await api.importPack(path);
-    library.instances = [instance, ...library.instances];
+    const result = await api.importPack(path);
+    library.instances = [result.instance, ...library.instances];
+    library.importManual = result.manual;
   } catch (error) {
     library.importError = isCommandError(error) ? error : UNKNOWN_ERROR;
   } finally {

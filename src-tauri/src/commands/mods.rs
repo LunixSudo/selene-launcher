@@ -304,7 +304,10 @@ async fn modrinth_plan(
         .collect())
 }
 
-async fn manual_downloads(curseforge: &CurseForge, mod_ids: &[u32]) -> Vec<ManualDownload> {
+pub(crate) async fn manual_downloads(
+    curseforge: &CurseForge,
+    mod_ids: &[u32],
+) -> Vec<ManualDownload> {
     let mut downloads = Vec::new();
     for &mod_id in mod_ids {
         if let Ok(info) = curseforge.mod_info(mod_id).await {

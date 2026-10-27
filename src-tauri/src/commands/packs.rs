@@ -2,10 +2,12 @@ use std::path::PathBuf;
 
 use selene_core::cfpack;
 use selene_core::instance::Instance;
+use selene_core::loader::LoaderVersion;
 use selene_core::mrpack::{self, ExportOptions};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use super::mods::{ManualDownload, manual_downloads};
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
@@ -16,29 +18,98 @@ pub enum PackFormat {
     Curseforge,
 }
 
-/// Creates an instance from a `.mrpack` file. A failed import leaves nothing behind.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportResult {
+    instance: Instance,
+    /// Mods from a CurseForge pack that have to be downloaded from the website.
+    manual: Vec<ManualDownload>,
+}
+
+/// Creates an instance from a `.mrpack` or a CurseForge `.zip`. A failed import leaves nothing
+/// behind.
 #[tauri::command]
-pub async fn import_pack(launcher: State<'_, Launcher>, path: PathBuf) -> CommandResult<Instance> {
+pub async fn import_pack(
+    launcher: State<'_, Launcher>,
+    path: PathBuf,
+) -> CommandResult<ImportResult> {
+    let is_zip = path
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"));
+    if is_zip {
+        import_curseforge(&launcher, path).await
+    } else {
+        import_mrpack(&launcher, path).await
+    }
+}
+
+async fn import_mrpack(launcher: &Launcher, path: PathBuf) -> CommandResult<ImportResult> {
     let pack = path.clone();
     let index = tokio::task::spawn_blocking(move || mrpack::read_index(&pack))
         .await
         .map_err(|err| CommandError::Io(std::io::Error::other(err)))??;
-    let game_version = index.game_version()?.to_owned();
-    let loader = index.loader()?;
-    if launcher.manifest().await?.get(&game_version).is_none() {
-        return Err(CommandError::UnknownVersion(game_version));
-    }
-
-    let instance = launcher
-        .instances
-        .create(&index.name, &game_version, loader)
-        .await?;
+    let instance = create(
+        launcher,
+        &index.name,
+        index.game_version()?,
+        index.loader()?,
+    )
+    .await?;
     let game_dir = launcher.instances.game_dir(&instance.id);
     if let Err(err) = mrpack::install(&launcher.client, &path, &index, &game_dir).await {
         let _ = launcher.instances.delete(&instance.id).await;
         return Err(err.into());
     }
-    Ok(instance)
+    Ok(ImportResult {
+        instance,
+        manual: Vec::new(),
+    })
+}
+
+async fn import_curseforge(launcher: &Launcher, path: PathBuf) -> CommandResult<ImportResult> {
+    let curseforge = launcher
+        .curseforge
+        .as_ref()
+        .ok_or(CommandError::NoCompatibleVersion)?;
+    let pack = path.clone();
+    let manifest = tokio::task::spawn_blocking(move || cfpack::read_manifest(&pack))
+        .await
+        .map_err(|err| CommandError::Io(std::io::Error::other(err)))??;
+    let instance = create(
+        launcher,
+        &manifest.name,
+        manifest.game_version(),
+        manifest.loader()?,
+    )
+    .await?;
+    let game_dir = launcher.instances.game_dir(&instance.id);
+    let installed =
+        cfpack::install(&launcher.client, curseforge, &path, &manifest, &game_dir).await;
+    match installed {
+        Ok(manual) => Ok(ImportResult {
+            instance,
+            manual: manual_downloads(curseforge, &manual).await,
+        }),
+        Err(err) => {
+            let _ = launcher.instances.delete(&instance.id).await;
+            Err(err.into())
+        }
+    }
+}
+
+async fn create(
+    launcher: &Launcher,
+    name: &str,
+    game_version: &str,
+    loader: Option<LoaderVersion>,
+) -> CommandResult<Instance> {
+    if launcher.manifest().await?.get(game_version).is_none() {
+        return Err(CommandError::UnknownVersion(game_version.to_owned()));
+    }
+    Ok(launcher
+        .instances
+        .create(name, game_version, loader)
+        .await?)
 }
 
 /// Writes the instance as a `.mrpack` (Selene, Prism, Modrinth App) or a CurseForge `.zip`

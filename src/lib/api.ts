@@ -66,6 +66,11 @@ export interface ManualDownload {
   url: string;
 }
 
+export interface ImportResult {
+  instance: Instance;
+  manual: ManualDownload[];
+}
+
 export interface InstallResult {
   installed: number;
   manual: ManualDownload[];
@@ -176,7 +181,7 @@ export const api = {
     invoke<void>("remove_mod", { instanceId, fileName }),
   checkModUpdates: (instanceId: string) => invoke<ModUpdate[]>("check_mod_updates", { instanceId }),
   updateMods: (instanceId: string) => invoke<number>("update_mods", { instanceId }),
-  importPack: (path: string) => invoke<Instance>("import_pack", { path }),
+  importPack: (path: string) => invoke<ImportResult>("import_pack", { path }),
   exportPack: (instanceId: string, path: string, folders: string[], format: PackFormat) =>
     invoke<void>("export_pack", { instanceId, path, folders, format }),
 };
