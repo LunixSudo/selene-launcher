@@ -5,7 +5,6 @@ use serde::Serialize;
 use tokio::fs;
 
 use crate::download::{self, Download};
-use crate::modrinth::Version;
 use crate::{Error, Result};
 
 const MODS_DIR: &str = "mods";
@@ -19,6 +18,15 @@ const DOWNLOAD_CONCURRENCY: usize = 8;
 pub struct ModFile {
     pub file_name: String,
     pub enabled: bool,
+    pub sha1: String,
+    pub size: u64,
+}
+
+/// A mod file to download from Modrinth or CurseForge.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteFile {
+    pub url: String,
+    pub file_name: String,
     pub sha1: String,
     pub size: u64,
 }
@@ -63,19 +71,19 @@ pub async fn list(game_dir: &Path) -> Result<Vec<ModFile>> {
     Ok(mods)
 }
 
-/// Downloads the primary file of each version into the `mods` folder.
-pub async fn install(client: &Client, game_dir: &Path, versions: &[Version]) -> Result<()> {
+pub async fn install(client: &Client, game_dir: &Path, files: &[RemoteFile]) -> Result<()> {
     let dir = mods_dir(game_dir);
-    let downloads = versions
+    let downloads = files
         .iter()
-        .filter_map(Version::primary_file)
-        .map(|file| Download {
-            url: file.url.clone(),
-            path: dir.join(&file.filename),
-            sha1: file.hashes.sha1.clone(),
-            size: file.size,
+        .map(|file| {
+            Ok(Download {
+                url: file.url.clone(),
+                path: dir.join(safe_file_name(&file.file_name)?),
+                sha1: file.sha1.clone(),
+                size: file.size,
+            })
         })
-        .collect();
+        .collect::<Result<_>>()?;
     download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, |_| {}).await
 }
 
@@ -84,17 +92,14 @@ pub async fn replace(
     client: &Client,
     game_dir: &Path,
     old: &ModFile,
-    update: &Version,
+    update: &RemoteFile,
 ) -> Result<()> {
     install(client, game_dir, std::slice::from_ref(update)).await?;
-    let Some(file) = update.primary_file() else {
-        return Ok(());
-    };
-    if file.filename != old.file_name.trim_end_matches(DISABLED_SUFFIX) {
+    if update.file_name != old.file_name.trim_end_matches(DISABLED_SUFFIX) {
         remove(game_dir, &old.file_name).await?;
     }
     if !old.enabled {
-        set_enabled(game_dir, &file.filename, false).await?;
+        set_enabled(game_dir, &update.file_name, false).await?;
     }
     Ok(())
 }

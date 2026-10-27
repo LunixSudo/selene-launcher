@@ -6,6 +6,7 @@ use serde_json::json;
 
 use crate::Result;
 use crate::loader::Loader;
+use crate::mods::RemoteFile;
 
 const API_URL: &str = "https://api.modrinth.com/v2";
 
@@ -118,6 +119,15 @@ impl Version {
             .iter()
             .find(|file| file.primary)
             .or_else(|| self.files.first())
+    }
+
+    pub fn remote_file(&self) -> Option<RemoteFile> {
+        self.primary_file().map(|file| RemoteFile {
+            url: file.url.clone(),
+            file_name: file.filename.clone(),
+            sha1: file.hashes.sha1.clone(),
+            size: file.size,
+        })
     }
 }
 

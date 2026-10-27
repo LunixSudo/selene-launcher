@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod curseforge;
 pub mod download;
 pub mod error;
 pub mod game;
