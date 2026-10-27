@@ -3,6 +3,7 @@ pub mod download;
 pub mod error;
 pub mod game;
 pub mod http;
+pub mod instance;
 pub mod java;
 pub mod launch;
 pub mod manifest;
