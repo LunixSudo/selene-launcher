@@ -7,6 +7,8 @@
   --text-muted: #5f5f6b;
   --surface: rgb(255 255 255 / 0.62);
   --surface-hover: rgb(255 255 255 / 0.8);
+  --surface-solid: #f7f7fa;
+  --field: rgb(0 0 0 / 0.04);
   --border: rgb(0 0 0 / 0.08);
   --accent: #6b5bff;
   --accent-text: #ffffff;
@@ -27,8 +29,10 @@
     --text-muted: #a1a1ad;
     --surface: rgb(40 40 48 / 0.55);
     --surface-hover: rgb(60 60 70 / 0.7);
+    --surface-solid: #26262d;
+    --field: rgb(255 255 255 / 0.06);
     --border: rgb(255 255 255 / 0.08);
-    --accent: #8f83ff;
+    --accent: #7a6cff;
   }
 }
 

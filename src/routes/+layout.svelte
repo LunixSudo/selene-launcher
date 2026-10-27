@@ -2,8 +2,21 @@
   import "$lib/styles/global.css";
   import type { Snippet } from "svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
+  import { locale } from "$lib/i18n/index.svelte";
+  import { listenToGames } from "$lib/state/instances.svelte";
 
   let { children }: { children: Snippet } = $props();
+
+  $effect(() => {
+    document.documentElement.lang = locale();
+  });
+
+  $effect(() => {
+    const unlisten = listenToGames();
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
+  });
 </script>
 
 <div class="app">
