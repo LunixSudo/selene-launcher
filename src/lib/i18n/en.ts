@@ -40,6 +40,8 @@ export const en: Messages = {
     share: "Share",
     shareTitle: "Share instance",
     shareHint: "You get a .mrpack file that friends can open in Selene, Prism or the Modrinth App.",
+    shareFormat: "Format",
+    shareZipHint: "Creates a CurseForge .zip that CurseForge App, Prism and ATLauncher can open.",
     shareConfig: "Mod settings (config)",
     shareResourcepacks: "Resource packs",
     shareShaderpacks: "Shaders",

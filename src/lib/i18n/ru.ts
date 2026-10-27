@@ -38,6 +38,9 @@ export const ru = {
     share: "Поделиться",
     shareTitle: "Поделиться сборкой",
     shareHint: "Получится файл .mrpack: друзья откроют его в Selene, Prism или Modrinth App.",
+    shareFormat: "Формат",
+    shareZipHint:
+      "Получится .zip в формате CurseForge: его откроют CurseForge App, Prism и ATLauncher.",
     shareConfig: "Настройки модов (config)",
     shareResourcepacks: "Ресурспаки",
     shareShaderpacks: "Шейдеры",

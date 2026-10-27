@@ -181,12 +181,12 @@ pub async fn installed_projects(
             }
         }
         curseforge
-            .mods_by_fingerprint(&fingerprints)
+            .files_by_fingerprint(&fingerprints)
             .await
             .map(|found| {
                 found
                     .into_values()
-                    .map(|mod_id| format!("curseforge:{mod_id}"))
+                    .map(|file| format!("curseforge:{}", file.mod_id))
                     .collect()
             })
             .unwrap_or_default()

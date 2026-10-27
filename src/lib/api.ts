@@ -43,6 +43,7 @@ export interface AccountList {
 }
 
 export type Source = "modrinth" | "curseforge";
+export type PackFormat = "mrpack" | "curseforge";
 
 export interface CatalogHit {
   source: Source;
@@ -176,6 +177,6 @@ export const api = {
   checkModUpdates: (instanceId: string) => invoke<ModUpdate[]>("check_mod_updates", { instanceId }),
   updateMods: (instanceId: string) => invoke<number>("update_mods", { instanceId }),
   importPack: (path: string) => invoke<Instance>("import_pack", { path }),
-  exportPack: (instanceId: string, path: string, folders: string[]) =>
-    invoke<void>("export_pack", { instanceId, path, folders }),
+  exportPack: (instanceId: string, path: string, folders: string[], format: PackFormat) =>
+    invoke<void>("export_pack", { instanceId, path, folders, format }),
 };

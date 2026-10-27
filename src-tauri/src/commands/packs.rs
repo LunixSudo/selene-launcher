@@ -1,11 +1,20 @@
 use std::path::PathBuf;
 
+use selene_core::cfpack;
 use selene_core::instance::Instance;
 use selene_core::mrpack::{self, ExportOptions};
+use serde::Deserialize;
 use tauri::State;
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PackFormat {
+    Mrpack,
+    Curseforge,
+}
 
 /// Creates an instance from a `.mrpack` file. A failed import leaves nothing behind.
 #[tauri::command]
@@ -32,13 +41,15 @@ pub async fn import_pack(launcher: State<'_, Launcher>, path: PathBuf) -> Comman
     Ok(instance)
 }
 
-/// Writes the instance as a `.mrpack` that Selene, Prism and the Modrinth app can open.
+/// Writes the instance as a `.mrpack` (Selene, Prism, Modrinth App) or a CurseForge `.zip`
+/// (CurseForge App, Prism, `ATLauncher`).
 #[tauri::command]
 pub async fn export_pack(
     launcher: State<'_, Launcher>,
     instance_id: String,
     path: PathBuf,
     folders: Vec<String>,
+    format: PackFormat,
 ) -> CommandResult<()> {
     let instance = launcher
         .instances
@@ -52,5 +63,15 @@ pub async fn export_pack(
         folders,
     };
     let game_dir = launcher.instances.game_dir(&instance_id);
-    Ok(mrpack::export(&launcher.client, &game_dir, &options, &path).await?)
+    match format {
+        PackFormat::Mrpack => mrpack::export(&launcher.client, &game_dir, &options, &path).await?,
+        PackFormat::Curseforge => {
+            let curseforge = launcher
+                .curseforge
+                .as_ref()
+                .ok_or(CommandError::NoCompatibleVersion)?;
+            cfpack::export(curseforge, &game_dir, &options, &path).await?;
+        }
+    }
+    Ok(())
 }

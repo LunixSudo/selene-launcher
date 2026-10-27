@@ -1,8 +1,9 @@
 <script lang="ts">
   import { save } from "@tauri-apps/plugin-dialog";
-  import { api, type Instance } from "$lib/api";
+  import { api, type Instance, type PackFormat } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { type MessageKey, t } from "$lib/i18n/index.svelte";
+  import Segmented from "./Segmented.svelte";
 
   let { instance, open = $bindable() }: { instance: Instance; open: boolean } = $props();
 
@@ -12,7 +13,13 @@
     { name: "shaderpacks", label: "instance.shareShaderpacks" },
   ];
 
+  const FORMATS: Record<PackFormat, { name: string; extension: string }> = {
+    mrpack: { name: "Modrinth", extension: "mrpack" },
+    curseforge: { name: "CurseForge", extension: "zip" },
+  };
+
   let dialog: HTMLDialogElement;
+  let format = $state<PackFormat>("mrpack");
   let selected = $state(["config"]);
   let status = $state<"idle" | "saving" | "done">("idle");
   let error = $state<string | null>(null);
@@ -29,9 +36,10 @@
 
   async function share(event: SubmitEvent) {
     event.preventDefault();
+    const { name, extension } = FORMATS[format];
     const path = await save({
-      defaultPath: `${instance.name}.mrpack`,
-      filters: [{ name: "Modrinth", extensions: ["mrpack"] }],
+      defaultPath: `${instance.name}.${extension}`,
+      filters: [{ name, extensions: [extension] }],
     });
     if (!path) {
       return;
@@ -39,7 +47,7 @@
     status = "saving";
     error = null;
     try {
-      await api.exportPack(instance.id, path, selected);
+      await api.exportPack(instance.id, path, selected, format);
       status = "done";
     } catch (err) {
       status = "idle";
@@ -51,7 +59,18 @@
 <dialog bind:this={dialog} onclose={() => (open = false)}>
   <form onsubmit={share}>
     <h2>{t("instance.shareTitle")}</h2>
-    <p class="hint">{t("instance.shareHint")}</p>
+    <Segmented
+      bind:value={format}
+      options={[
+        { value: "mrpack", label: ".mrpack" },
+        { value: "curseforge", label: ".zip" },
+      ]}
+      name="share-format"
+      label={t("instance.shareFormat")}
+    />
+    <p class="hint">
+      {format === "mrpack" ? t("instance.shareHint") : t("instance.shareZipHint")}
+    </p>
 
     {#each FOLDERS as folder (folder.name)}
       <label class="check">
