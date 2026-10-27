@@ -4,6 +4,7 @@ use reqwest::Client;
 
 use crate::download::{self, Progress};
 use crate::java::{self, JavaRuntime};
+use crate::loader::{self, LoaderVersion};
 use crate::manifest::VersionEntry;
 use crate::rules::{Environment, Features};
 use crate::version::{AssetIndex, VersionInfo};
@@ -57,17 +58,23 @@ impl GameDirs {
     }
 }
 
-/// Downloads everything a version needs to start: client, libraries, assets and Java.
+/// Downloads everything a version needs to start: client, libraries, assets, Java and the
+/// mod loader if there is one.
 pub async fn install<F>(
     client: &Client,
     dirs: &GameDirs,
     entry: &VersionEntry,
+    loader: Option<&LoaderVersion>,
     on_progress: F,
 ) -> Result<Installed>
 where
     F: Fn(Stage, Progress) + Sync,
 {
-    let version = VersionInfo::fetch(client, entry).await?;
+    let mut version = VersionInfo::fetch(client, entry).await?;
+    if let Some(loader) = loader {
+        let patch = loader::fetch_patch(client, loader, &entry.id).await?;
+        version = version.with_patch(patch.resolve(client).await?);
+    }
     let env = Environment::current(Features::default());
 
     let index = fetch_asset_index(client, &version, &dirs.assets()).await?;

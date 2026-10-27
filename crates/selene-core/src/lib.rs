@@ -6,6 +6,7 @@ pub mod http;
 pub mod instance;
 pub mod java;
 pub mod launch;
+pub mod loader;
 pub mod manifest;
 pub mod rules;
 pub mod version;

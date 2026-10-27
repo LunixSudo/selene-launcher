@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
+use crate::loader::LoaderVersion;
 use crate::{Error, Result};
 
 const CONFIG_FILE: &str = "instance.json";
@@ -16,6 +17,8 @@ pub struct Instance {
     pub id: String,
     pub name: String,
     pub version: String,
+    #[serde(default)]
+    pub loader: Option<LoaderVersion>,
     pub created_at: DateTime<Utc>,
     #[serde(default)]
     pub last_played: Option<DateTime<Utc>>,
@@ -68,12 +71,18 @@ impl Instances {
         read_config(&self.root.join(id)).await
     }
 
-    pub async fn create(&self, name: &str, version: &str) -> Result<Instance> {
+    pub async fn create(
+        &self,
+        name: &str,
+        version: &str,
+        loader: Option<LoaderVersion>,
+    ) -> Result<Instance> {
         let id = self.free_id(name).await;
         let instance = Instance {
             id,
             name: name.trim().to_owned(),
             version: version.to_owned(),
+            loader,
             created_at: Utc::now(),
             last_played: None,
             max_memory_mb: None,
@@ -151,8 +160,8 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let instances = Instances::new(dir.path());
 
-        let first = instances.create("Survival", "1.21.10").await.unwrap();
-        let second = instances.create("Survival", "1.8.9").await.unwrap();
+        let first = instances.create("Survival", "1.21.10", None).await.unwrap();
+        let second = instances.create("Survival", "1.8.9", None).await.unwrap();
         assert_eq!(first.id, "survival");
         assert_eq!(second.id, "survival-2");
         assert!(instances.game_dir(&first.id).is_dir());
