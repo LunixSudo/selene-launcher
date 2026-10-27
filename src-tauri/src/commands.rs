@@ -15,6 +15,7 @@ use selene_core::instance::Instance;
 use selene_core::launch::{self, LaunchAccount, LaunchOptions};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
+use selene_core::memory;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
@@ -23,14 +24,20 @@ use crate::account::{Account, AccountList};
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
-const DEFAULT_MEMORY_MB: u32 = 4096;
-
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionSummary {
     id: String,
     kind: VersionKind,
     release_time: DateTime<Utc>,
+}
+
+/// Amounts in megabytes.
+#[derive(Debug, Clone, Serialize)]
+pub struct MemoryInfo {
+    total: u64,
+    max: u32,
+    recommended: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -124,6 +131,41 @@ pub async fn create_instance(
 }
 
 #[tauri::command]
+pub async fn memory_info(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+) -> CommandResult<MemoryInfo> {
+    Ok(MemoryInfo {
+        total: launcher.total_memory_mb,
+        max: memory::max_mb(launcher.total_memory_mb),
+        recommended: recommended_memory(&launcher, &instance_id).await?,
+    })
+}
+
+/// `None` goes back to the automatic amount.
+#[tauri::command]
+pub async fn set_instance_memory(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+    max_memory_mb: Option<u32>,
+) -> CommandResult<Instance> {
+    let mut instance = launcher
+        .instances
+        .get(&instance_id)
+        .await
+        .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
+    instance.max_memory_mb = max_memory_mb;
+    launcher.instances.save(&instance).await?;
+    Ok(instance)
+}
+
+async fn recommended_memory(launcher: &Launcher, instance_id: &str) -> CommandResult<u32> {
+    let mods = selene_core::mods::list(&launcher.instances.game_dir(instance_id)).await?;
+    let enabled = mods.iter().filter(|file| file.enabled).count();
+    Ok(memory::recommended_mb(launcher.total_memory_mb, enabled))
+}
+
+#[tauri::command]
 pub async fn delete_instance(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
     if launcher.is_running(&id) {
         return Err(CommandError::AlreadyRunning(id));
@@ -206,7 +248,10 @@ async fn start_game(
         versions_dir: dirs.versions(),
         natives_dir: dirs.natives(&installed.version.id),
         account,
-        max_memory_mb: instance.max_memory_mb.unwrap_or(DEFAULT_MEMORY_MB),
+        max_memory_mb: match instance.max_memory_mb {
+            Some(amount) => amount,
+            None => recommended_memory(launcher, &instance.id).await?,
+        },
         resolution: None,
         quick_play: None,
         extra_jvm_args: Vec::new(),

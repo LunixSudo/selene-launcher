@@ -16,6 +16,7 @@ pub struct Launcher {
     pub accounts: Accounts,
     pub dirs: GameDirs,
     pub instances: Instances,
+    pub total_memory_mb: u64,
     manifest: OnceCell<VersionManifest>,
     running: Mutex<HashSet<String>>,
 }
@@ -27,6 +28,7 @@ impl Launcher {
             accounts: Accounts::load(data_dir.join("accounts.json")),
             dirs: GameDirs::new(data_dir.join("game")),
             instances: Instances::new(data_dir.join("instances")),
+            total_memory_mb: total_memory_mb(),
             manifest: OnceCell::new(),
             running: Mutex::new(HashSet::new()),
         })
@@ -59,4 +61,10 @@ impl Launcher {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
+}
+
+fn total_memory_mb() -> u64 {
+    let mut system = sysinfo::System::new();
+    system.refresh_memory();
+    system.total_memory() / 1024 / 1024
 }

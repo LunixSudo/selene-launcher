@@ -32,6 +32,8 @@ pub fn run() {
             commands::instances,
             commands::create_instance,
             commands::delete_instance,
+            commands::memory_info,
+            commands::set_instance_memory,
             commands::launch_instance,
             commands::mods::search_mods,
             commands::mods::installed_mods,
