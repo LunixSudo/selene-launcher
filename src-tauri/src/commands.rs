@@ -3,6 +3,8 @@
     reason = "Tauri hands command arguments over by value"
 )]
 
+pub mod mods;
+
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
 

@@ -19,6 +19,12 @@ pub enum CommandError {
     #[error("unknown instance {0}")]
     UnknownInstance(String),
 
+    #[error("this instance has no mod loader")]
+    NoLoader,
+
+    #[error("no version of this mod runs on this instance")]
+    NoCompatibleVersion,
+
     #[error("instance {0} is already running")]
     AlreadyRunning(String),
 
@@ -42,6 +48,8 @@ impl CommandError {
             Self::Keyring(_) => "keyring",
             Self::UnknownVersion(_) => "unknownVersion",
             Self::UnknownInstance(_) => "unknownInstance",
+            Self::NoLoader => "noLoader",
+            Self::NoCompatibleVersion => "noCompatibleVersion",
             Self::AlreadyRunning(_) => "alreadyRunning",
             Self::Spawn(_) => "spawn",
             Self::Io(_) => "io",

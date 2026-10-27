@@ -33,6 +33,13 @@ pub fn run() {
             commands::create_instance,
             commands::delete_instance,
             commands::launch_instance,
+            commands::mods::search_mods,
+            commands::mods::installed_mods,
+            commands::mods::install_mod,
+            commands::mods::set_mod_enabled,
+            commands::mods::remove_mod,
+            commands::mods::check_mod_updates,
+            commands::mods::update_mods,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri application");
