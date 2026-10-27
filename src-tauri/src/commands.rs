@@ -11,6 +11,7 @@ use selene_core::download::Progress;
 use selene_core::game::{self, Stage};
 use selene_core::instance::Instance;
 use selene_core::launch::{self, LaunchAccount, LaunchOptions};
+use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -94,6 +95,15 @@ pub async fn versions(launcher: State<'_, Launcher>) -> CommandResult<Vec<Versio
 }
 
 #[tauri::command]
+pub async fn loader_versions(
+    launcher: State<'_, Launcher>,
+    loader: Loader,
+    game_version: String,
+) -> CommandResult<Vec<LoaderRelease>> {
+    Ok(loader::releases(&launcher.client, loader, &game_version).await?)
+}
+
+#[tauri::command]
 pub async fn instances(launcher: State<'_, Launcher>) -> CommandResult<Vec<Instance>> {
     Ok(launcher.instances.list().await?)
 }
@@ -103,11 +113,12 @@ pub async fn create_instance(
     launcher: State<'_, Launcher>,
     name: String,
     version: String,
+    loader: Option<LoaderVersion>,
 ) -> CommandResult<Instance> {
     if launcher.manifest().await?.get(&version).is_none() {
         return Err(CommandError::UnknownVersion(version));
     }
-    Ok(launcher.instances.create(&name, &version).await?)
+    Ok(launcher.instances.create(&name, &version, loader).await?)
 }
 
 #[tauri::command]
@@ -161,6 +172,7 @@ async fn start_game(
         &launcher.client,
         &launcher.dirs,
         entry,
+        instance.loader.as_ref(),
         |stage, progress| {
             // One event per percent is plenty for a progress bar; thousands of small files would
             // otherwise flood the UI.

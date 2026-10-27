@@ -28,6 +28,7 @@ pub fn run() {
             commands::sign_out,
             commands::set_active_account,
             commands::versions,
+            commands::loader_versions,
             commands::instances,
             commands::create_instance,
             commands::delete_instance,
