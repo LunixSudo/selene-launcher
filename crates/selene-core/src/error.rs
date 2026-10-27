@@ -28,6 +28,12 @@ pub enum Error {
     #[error("java runtime `{component}` is not available for {platform}")]
     JavaUnavailable { component: String, platform: String },
 
+    #[error("not a valid modpack: {0}")]
+    InvalidPack(String),
+
+    #[error("the {0} mod loader is not supported yet")]
+    UnsupportedLoader(String),
+
     #[error("this platform is not supported")]
     UnsupportedPlatform,
 

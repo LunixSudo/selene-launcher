@@ -12,6 +12,7 @@ pub mod manifest;
 pub mod memory;
 pub mod modrinth;
 pub mod mods;
+pub mod mrpack;
 pub mod rules;
 pub mod version;
 

@@ -82,6 +82,7 @@ pub struct VersionFile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileHashes {
     pub sha1: String,
+    pub sha512: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
