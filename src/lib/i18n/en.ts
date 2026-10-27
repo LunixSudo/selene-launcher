@@ -30,6 +30,13 @@ export const en: Messages = {
     back: "Instances",
     mods: "Mods",
     catalog: "Catalog",
+    settings: "Settings",
+    memory: "Game memory",
+    memoryAuto: "Choose automatically",
+    memoryAutoHint: "Now {amount}, based on your RAM ({total}) and the number of mods.",
+    memoryManualHint:
+      "More is not always better: extra memory makes garbage collection pauses longer.",
+    gigabytes: "{count} GB",
     noMods: "No mods yet",
     noModsHint: "Find some in the Catalog tab.",
     noLoader: "This instance has no mod loader. Create one with Fabric or Quilt to add mods.",

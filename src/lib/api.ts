@@ -80,6 +80,12 @@ export interface ModUpdate {
   to: string;
 }
 
+export interface MemoryInfo {
+  total: number;
+  max: number;
+  recommended: number;
+}
+
 export type ErrorKind =
   | "notSignedIn"
   | "signInCancelled"
@@ -133,6 +139,9 @@ export const api = {
   createInstance: (name: string, version: string, loader: LoaderVersion | null) =>
     invoke<Instance>("create_instance", { name, version, loader }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
+  memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),
+  setInstanceMemory: (instanceId: string, maxMemoryMb: number | null) =>
+    invoke<Instance>("set_instance_memory", { instanceId, maxMemoryMb }),
   launchInstance: (id: string) => invoke<void>("launch_instance", { id }),
   searchMods: (instanceId: string, query: string, offset: number) =>
     invoke<SearchResults>("search_mods", { instanceId, query, offset }),

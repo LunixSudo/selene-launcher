@@ -1,19 +1,22 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import InstanceSettings from "$lib/components/InstanceSettings.svelte";
   import ModCatalog from "$lib/components/ModCatalog.svelte";
   import ModList from "$lib/components/ModList.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { library, loadInstances, play } from "$lib/state/instances.svelte";
 
-  type Tab = "mods" | "catalog";
+  type Tab = "mods" | "catalog" | "settings";
 
-  let tab = $state<Tab>("mods");
+  let chosenTab = $state<Tab | null>(null);
   let refresh = $state(0);
 
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
   const launch = $derived(instance ? library.launches[instance.id] : undefined);
   const busy = $derived(launch?.status === "preparing" || launch?.status === "running");
+  const tabs = $derived<Tab[]>(instance?.loader ? ["mods", "catalog", "settings"] : ["settings"]);
+  const tab = $derived(chosenTab ?? tabs[0]);
 
   $effect(() => {
     if (!library.loaded) {
@@ -42,30 +45,31 @@
       </button>
     </header>
 
-    {#if instance.loader}
-      <div class="tabs" role="tablist">
-        {#each ["mods", "catalog"] as const as name (name)}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === name}
-            onclick={() => (tab = name)}
-          >
-            {t(`instance.${name}`)}
-          </button>
-        {/each}
-      </div>
+    <div class="tabs" role="tablist">
+      {#each tabs as name (name)}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === name}
+          onclick={() => (chosenTab = name)}
+        >
+          {t(`instance.${name}`)}
+        </button>
+      {/each}
+    </div>
 
-      <div class="content" role="tabpanel">
-        {#if tab === "mods"}
-          <ModList instanceId={instance.id} {refresh} />
-        {:else}
-          <ModCatalog instanceId={instance.id} oninstall={() => refresh++} />
+    <div class="content" role="tabpanel">
+      {#if tab === "mods"}
+        <ModList instanceId={instance.id} {refresh} />
+      {:else if tab === "catalog"}
+        <ModCatalog instanceId={instance.id} oninstall={() => refresh++} />
+      {:else}
+        {#if !instance.loader}
+          <p class="muted">{t("instance.noLoader")}</p>
         {/if}
-      </div>
-    {:else}
-      <p class="muted">{t("instance.noLoader")}</p>
-    {/if}
+        <InstanceSettings {instance} />
+      {/if}
+    </div>
   </section>
 {/if}
 
