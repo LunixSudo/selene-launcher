@@ -1,6 +1,6 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use reqwest::{Client, RequestBuilder};
+use reqwest::{Client, Method, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
 use crate::Result;
@@ -92,6 +92,24 @@ pub struct FileDependency {
     pub relation_type: u32,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FingerprintMatches {
+    exact_matches: Vec<FingerprintMatch>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FingerprintMatch {
+    id: u32,
+    file: FingerprintFile,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FingerprintFile {
+    file_fingerprint: u32,
+}
+
 #[derive(Debug, Clone)]
 pub struct SearchResults {
     pub mods: Vec<Mod>,
@@ -137,7 +155,11 @@ impl CurseForge {
     }
 
     fn get(&self, path: &str) -> RequestBuilder {
-        let request = self.client.get(format!("{API_URL}{path}"));
+        self.request(Method::GET, path)
+    }
+
+    fn request(&self, method: Method, path: &str) -> RequestBuilder {
+        let request = self.client.request(method, format!("{API_URL}{path}"));
         match &self.api_key {
             Some(key) => request.header("x-api-key", key),
             None => request,
@@ -210,6 +232,27 @@ impl CurseForge {
         Ok(response.data)
     }
 
+    /// Maps each recognised [`fingerprint`] to the id of the mod it belongs to.
+    pub async fn mods_by_fingerprint(&self, fingerprints: &[u32]) -> Result<HashMap<u32, u32>> {
+        if fingerprints.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let response: Response<FingerprintMatches> = self
+            .request(Method::POST, &format!("/fingerprints/{MINECRAFT_GAME_ID}"))
+            .json(&serde_json::json!({ "fingerprints": fingerprints }))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        Ok(response
+            .data
+            .exact_matches
+            .into_iter()
+            .map(|found| (found.file.file_fingerprint, found.id))
+            .collect())
+    }
+
     /// The mod plus its required dependencies, newest compatible file of each.
     pub async fn resolve_install(
         &self,
@@ -244,6 +287,43 @@ impl CurseForge {
     }
 }
 
+/// CurseForge's file fingerprint: 32-bit `MurmurHash2` with seed 1 over the file with all
+/// whitespace bytes removed.
+pub fn fingerprint(bytes: &[u8]) -> u32 {
+    const M: u32 = 0x5bd1_e995;
+
+    let data: Vec<u8> = bytes
+        .iter()
+        .copied()
+        .filter(|byte| !matches!(byte, b'\t' | b'\n' | b'\r' | b' '))
+        .collect();
+    let mut hash = 1 ^ u32::try_from(data.len()).unwrap_or(u32::MAX);
+
+    let (chunks, rest) = data.as_chunks::<4>();
+    for chunk in chunks {
+        let mut k = u32::from_le_bytes(*chunk);
+        k = k.wrapping_mul(M);
+        k ^= k >> 24;
+        k = k.wrapping_mul(M);
+        hash = hash.wrapping_mul(M) ^ k;
+    }
+
+    if rest.len() >= 3 {
+        hash ^= u32::from(rest[2]) << 16;
+    }
+    if rest.len() >= 2 {
+        hash ^= u32::from(rest[1]) << 8;
+    }
+    if let Some(&first) = rest.first() {
+        hash ^= u32::from(first);
+        hash = hash.wrapping_mul(M);
+    }
+
+    hash ^= hash >> 13;
+    hash = hash.wrapping_mul(M);
+    hash ^ (hash >> 15)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -261,5 +341,11 @@ mod tests {
 
         assert_eq!(file.sha1(), Some("abc"));
         assert!(file.remote_file().is_none());
+    }
+
+    #[test]
+    fn fingerprint_ignores_whitespace() {
+        assert_eq!(fingerprint(b"hello world\r\n"), fingerprint(b"helloworld"));
+        assert_ne!(fingerprint(b"helloworld"), fingerprint(b"helloworle"));
     }
 }

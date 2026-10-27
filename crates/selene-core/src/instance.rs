@@ -24,6 +24,12 @@ pub struct Instance {
     pub last_played: Option<DateTime<Utc>>,
     #[serde(default)]
     pub max_memory_mb: Option<u32>,
+    /// Name of one of the launcher's built-in icons; `None` shows the default.
+    #[serde(default)]
+    pub icon: Option<String>,
+    /// Name of one of the launcher's built-in cover gradients; `None` picks one from the id.
+    #[serde(default)]
+    pub cover: Option<String>,
 }
 
 /// Instances live in `root/<id>/`, each with its config and a `minecraft` game folder.
@@ -86,6 +92,8 @@ impl Instances {
             created_at: Utc::now(),
             last_played: None,
             max_memory_mb: None,
+            icon: None,
+            cover: None,
         };
         let game_dir = self.game_dir(&instance.id);
         fs::create_dir_all(&game_dir)
