@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod cfpack;
 pub mod curseforge;
 pub mod download;
 pub mod error;

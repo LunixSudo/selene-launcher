@@ -100,14 +100,22 @@ struct FingerprintMatches {
 
 #[derive(Debug, Clone, Deserialize)]
 struct FingerprintMatch {
-    id: u32,
     file: FingerprintFile,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct FingerprintFile {
+    id: u32,
+    mod_id: u32,
     file_fingerprint: u32,
+}
+
+/// A CurseForge file recognised by its fingerprint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct KnownFile {
+    pub mod_id: u32,
+    pub file_id: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -232,8 +240,11 @@ impl CurseForge {
         Ok(response.data)
     }
 
-    /// Maps each recognised [`fingerprint`] to the id of the mod it belongs to.
-    pub async fn mods_by_fingerprint(&self, fingerprints: &[u32]) -> Result<HashMap<u32, u32>> {
+    /// Looks files up by [`fingerprint`]; unknown fingerprints are left out.
+    pub async fn files_by_fingerprint(
+        &self,
+        fingerprints: &[u32],
+    ) -> Result<HashMap<u32, KnownFile>> {
         if fingerprints.is_empty() {
             return Ok(HashMap::new());
         }
@@ -249,7 +260,14 @@ impl CurseForge {
             .data
             .exact_matches
             .into_iter()
-            .map(|found| (found.file.file_fingerprint, found.id))
+            .map(|found| {
+                let file = found.file;
+                let known = KnownFile {
+                    mod_id: file.mod_id,
+                    file_id: file.id,
+                };
+                (file.file_fingerprint, known)
+            })
             .collect())
     }
 

@@ -210,19 +210,36 @@ pub async fn export(
         dependencies,
     };
 
-    let game_dir = game_dir.to_owned();
-    let folders = options.folders.clone();
-    let out = out.to_owned();
-    tokio::task::spawn_blocking(move || write_pack(&out, &index, &game_dir, &copied, &folders))
-        .await
-        .map_err(|err| Error::io(OVERRIDES, std::io::Error::other(err)))?
+    let index = serde_json::to_vec_pretty(&index)?;
+    write_pack(out, INDEX_FILE, index, game_dir, copied, &options.folders).await
 }
 
-fn write_pack(
+/// Writes a pack archive: the index file, then `copied` files and whole `folders` from the
+/// game folder under `overrides/`.
+pub(crate) async fn write_pack(
     out: &Path,
-    index: &PackIndex,
+    index_name: &'static str,
+    index: Vec<u8>,
     game_dir: &Path,
-    copied: &[PathBuf],
+    copied: Vec<PathBuf>,
+    folders: &[String],
+) -> Result<()> {
+    let out = out.to_owned();
+    let game_dir = game_dir.to_owned();
+    let folders = folders.to_vec();
+    tokio::task::spawn_blocking(move || {
+        write_archive(&out, index_name, &index, &game_dir, copied, &folders)
+    })
+    .await
+    .map_err(|err| Error::io(OVERRIDES, std::io::Error::other(err)))?
+}
+
+fn write_archive(
+    out: &Path,
+    index_name: &str,
+    index: &[u8],
+    game_dir: &Path,
+    copied: Vec<PathBuf>,
     folders: &[String],
 ) -> Result<()> {
     let file = File::create(out).map_err(|err| Error::io(out, err))?;
@@ -230,11 +247,10 @@ fn write_pack(
     let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     let zip_err = |err: zip::result::ZipError| Error::io(out, err.into());
 
-    zip.start_file(INDEX_FILE, options).map_err(zip_err)?;
-    zip.write_all(&serde_json::to_vec_pretty(index)?)
-        .map_err(|err| Error::io(out, err))?;
+    zip.start_file(index_name, options).map_err(zip_err)?;
+    zip.write_all(index).map_err(|err| Error::io(out, err))?;
 
-    let mut entries: Vec<PathBuf> = copied.to_vec();
+    let mut entries = copied;
     for folder in folders {
         collect_files(
             &game_dir.join(safe_relative_path(folder)?),
@@ -402,7 +418,17 @@ mod tests {
             dependencies: HashMap::from([("minecraft".into(), "1.21.10".into())]),
         };
         let pack = dir.path().join("pack.mrpack");
-        write_pack(&pack, &index, &game, &[], &["config".into()]).unwrap();
+        let bytes = serde_json::to_vec(&index).unwrap();
+        write_pack(
+            &pack,
+            INDEX_FILE,
+            bytes,
+            &game,
+            Vec::new(),
+            &["config".into()],
+        )
+        .await
+        .unwrap();
 
         let read = read_index(&pack).unwrap();
         assert_eq!(read.name, "Pack");
