@@ -11,8 +11,7 @@ use tauri::State;
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
-/// Results per source, so a merged page holds up to twice as many.
-const PAGE_SIZE: u32 = 10;
+const PAGE_SIZE: u32 = 20;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -74,12 +73,12 @@ pub struct ModUpdate {
     to: String,
 }
 
-/// One search over Modrinth and CurseForge, already filtered to the instance's version and
-/// loader. Results alternate between the two; a mod listed on both shows up once.
+/// Searches one source, already filtered to the instance's version and loader.
 #[tauri::command]
 pub async fn search_mods(
     launcher: State<'_, Launcher>,
     instance_id: String,
+    source: Source,
     query: String,
     page: u32,
 ) -> CommandResult<CatalogPage> {
@@ -87,94 +86,116 @@ pub async fn search_mods(
     let loader = loader_of(&instance)?;
     let offset = page * PAGE_SIZE;
 
-    let modrinth_query = SearchQuery {
-        text: &query,
-        project_type: ProjectType::Mod,
-        game_version: &instance.version,
-        loader: Some(loader),
-        offset,
-        limit: PAGE_SIZE,
-    };
-    let modrinth_search = modrinth::search(&launcher.client, &modrinth_query);
-    let curseforge_search = async {
-        match &launcher.curseforge {
-            Some(curseforge) => curseforge
-                .search(&query, &instance.version, loader, offset, PAGE_SIZE)
-                .await
-                .ok(),
-            None => None,
+    match source {
+        Source::Modrinth => {
+            let results = modrinth::search(
+                &launcher.client,
+                &SearchQuery {
+                    text: &query,
+                    project_type: ProjectType::Mod,
+                    game_version: &instance.version,
+                    loader: Some(loader),
+                    offset,
+                    limit: PAGE_SIZE,
+                },
+            )
+            .await?;
+            Ok(CatalogPage {
+                has_more: offset + PAGE_SIZE < results.total_hits,
+                hits: results
+                    .hits
+                    .into_iter()
+                    .map(|hit| CatalogHit {
+                        source,
+                        page_url: format!("https://modrinth.com/mod/{}", hit.slug),
+                        id: hit.project_id,
+                        title: hit.title,
+                        description: hit.description,
+                        author: hit.author,
+                        icon_url: hit.icon_url,
+                        downloads: hit.downloads,
+                    })
+                    .collect(),
+            })
         }
-    };
-    let (modrinth_results, curseforge_results) = tokio::join!(modrinth_search, curseforge_search);
-    let modrinth_results = modrinth_results?;
-
-    let has_more = offset + PAGE_SIZE < modrinth_results.total_hits
-        || curseforge_results
-            .as_ref()
-            .is_some_and(|results| offset + PAGE_SIZE < results.total);
-    let from_modrinth = modrinth_results.hits.into_iter().map(|hit| CatalogHit {
-        source: Source::Modrinth,
-        page_url: format!("https://modrinth.com/mod/{}", hit.slug),
-        id: hit.project_id,
-        title: hit.title,
-        description: hit.description,
-        author: hit.author,
-        icon_url: hit.icon_url,
-        downloads: hit.downloads,
-    });
-    let from_curseforge = curseforge_results
-        .map(|results| results.mods)
-        .unwrap_or_default()
-        .into_iter()
-        .map(|found| CatalogHit {
-            source: Source::Curseforge,
-            id: found.id.to_string(),
-            author: found
-                .authors
-                .first()
-                .map(|author| author.name.clone())
-                .unwrap_or_default(),
-            icon_url: found.logo.map(|logo| logo.thumbnail_url),
-            downloads: found.download_count,
-            page_url: found.links.website_url,
-            title: found.name,
-            description: found.summary,
-        });
-
-    Ok(CatalogPage {
-        hits: merge(from_modrinth, from_curseforge),
-        has_more,
-    })
-}
-
-fn merge(
-    first: impl Iterator<Item = CatalogHit>,
-    second: impl Iterator<Item = CatalogHit>,
-) -> Vec<CatalogHit> {
-    let mut seen = std::collections::HashSet::new();
-    let mut first = first.peekable();
-    let mut second = second.peekable();
-    let mut merged = Vec::new();
-    while first.peek().is_some() || second.peek().is_some() {
-        for hit in [first.next(), second.next()].into_iter().flatten() {
-            if seen.insert(title_key(&hit.title)) {
-                merged.push(hit);
-            }
+        Source::Curseforge => {
+            let results = curseforge(&launcher)?
+                .search(&query, &instance.version, loader, offset, PAGE_SIZE)
+                .await?;
+            Ok(CatalogPage {
+                has_more: offset + PAGE_SIZE < results.total,
+                hits: results
+                    .mods
+                    .into_iter()
+                    .map(|found| CatalogHit {
+                        source,
+                        id: found.id.to_string(),
+                        author: found
+                            .authors
+                            .first()
+                            .map(|author| author.name.clone())
+                            .unwrap_or_default(),
+                        icon_url: found.logo.map(|logo| logo.thumbnail_url),
+                        downloads: found.download_count,
+                        page_url: found.links.website_url,
+                        title: found.name,
+                        description: found.summary,
+                    })
+                    .collect(),
+            })
         }
     }
-    merged
 }
 
-/// "Just Enough Items (JEI)" and "just-enough-items" compare equal.
-fn title_key(title: &str) -> String {
-    title
-        .split('(')
-        .next()
-        .unwrap_or(title)
-        .chars()
-        .filter(char::is_ascii_alphanumeric)
-        .map(|ch| ch.to_ascii_lowercase())
-        .collect()
+/// Catalog entries already in the instance, as `source:id`. A jar uploaded to both sites
+/// counts for both.
+#[tauri::command]
+pub async fn installed_projects(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+) -> CommandResult<Vec<String>> {
+    let game_dir = launcher.instances.game_dir(&instance_id);
+    let files = mods::list(&game_dir).await?;
+    let hashes: Vec<String> = files.iter().map(|file| file.sha1.clone()).collect();
+
+    let from_modrinth = async {
+        modrinth::versions_by_hash(&launcher.client, &hashes)
+            .await
+            .map(|versions| {
+                versions
+                    .into_values()
+                    .map(|version| format!("modrinth:{}", version.project_id))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default()
+    };
+    let from_curseforge = async {
+        let Some(curseforge) = &launcher.curseforge else {
+            return Vec::new();
+        };
+        let mut fingerprints = Vec::with_capacity(files.len());
+        for file in &files {
+            let path = mods::mods_dir(&game_dir).join(&file.file_name);
+            if let Ok(bytes) = tokio::fs::read(&path).await {
+                fingerprints.push(selene_core::curseforge::fingerprint(&bytes));
+            }
+        }
+        curseforge
+            .mods_by_fingerprint(&fingerprints)
+            .await
+            .map(|found| {
+                found
+                    .into_values()
+                    .map(|mod_id| format!("curseforge:{mod_id}"))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let (mut installed, from_curseforge) = tokio::join!(from_modrinth, from_curseforge);
+    installed.extend(from_curseforge);
+    installed.sort();
+    installed.dedup();
+    Ok(installed)
 }
 
 /// Mods in the instance, with names and icons for the ones Modrinth recognises by hash.
@@ -237,10 +258,7 @@ pub async fn install_mod(
             Vec::new(),
         ),
         Source::Curseforge => {
-            let curseforge = launcher
-                .curseforge
-                .as_ref()
-                .ok_or(CommandError::NoCompatibleVersion)?;
+            let curseforge = curseforge(&launcher)?;
             let mod_id = id.parse().map_err(|_| CommandError::NoCompatibleVersion)?;
             let plan = curseforge
                 .resolve_install(mod_id, &instance.version, loader)
@@ -386,6 +404,13 @@ async fn instance(launcher: &Launcher, id: &str) -> CommandResult<Instance> {
         .ok_or_else(|| CommandError::UnknownInstance(id.to_owned()))
 }
 
+fn curseforge(launcher: &Launcher) -> CommandResult<&CurseForge> {
+    launcher
+        .curseforge
+        .as_ref()
+        .ok_or(CommandError::NoCompatibleVersion)
+}
+
 fn loader_of(instance: &Instance) -> CommandResult<Loader> {
     instance
         .loader
@@ -401,43 +426,4 @@ fn display_name(installed: &InstalledMod) -> &str {
         .map_or(installed.file.file_name.as_str(), |project| {
             project.title.as_str()
         })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn hit(source: Source, title: &str) -> CatalogHit {
-        CatalogHit {
-            source,
-            id: title.into(),
-            title: title.into(),
-            description: String::new(),
-            author: String::new(),
-            icon_url: None,
-            downloads: 0,
-            page_url: String::new(),
-        }
-    }
-
-    #[test]
-    fn merges_sources_without_duplicates() {
-        let modrinth = vec![
-            hit(Source::Modrinth, "Sodium"),
-            hit(Source::Modrinth, "Lithium"),
-        ];
-        let curseforge = vec![
-            hit(Source::Curseforge, "Just Enough Items (JEI)"),
-            hit(Source::Curseforge, "sodium"),
-            hit(Source::Curseforge, "Jade"),
-        ];
-
-        let merged = merge(modrinth.into_iter(), curseforge.into_iter());
-        let titles: Vec<_> = merged.iter().map(|hit| hit.title.as_str()).collect();
-
-        assert_eq!(
-            titles,
-            ["Sodium", "Just Enough Items (JEI)", "Lithium", "Jade"]
-        );
-    }
 }

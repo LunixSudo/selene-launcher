@@ -160,10 +160,47 @@ pub async fn set_instance_memory(
     Ok(instance)
 }
 
+/// Renames the instance and changes how its card looks.
+#[tauri::command]
+pub async fn update_instance(
+    launcher: State<'_, Launcher>,
+    id: String,
+    name: String,
+    icon: Option<String>,
+    cover: Option<String>,
+) -> CommandResult<Instance> {
+    let mut instance = launcher
+        .instances
+        .get(&id)
+        .await
+        .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
+    let name = name.trim();
+    if !name.is_empty() {
+        name.clone_into(&mut instance.name);
+    }
+    instance.icon = icon;
+    instance.cover = cover;
+    launcher.instances.save(&instance).await?;
+    Ok(instance)
+}
+
 async fn recommended_memory(launcher: &Launcher, instance_id: &str) -> CommandResult<u32> {
     let mods = selene_core::mods::list(&launcher.instances.game_dir(instance_id)).await?;
     let enabled = mods.iter().filter(|file| file.enabled).count();
     Ok(memory::recommended_mb(launcher.total_memory_mb, enabled))
+}
+
+#[tauri::command]
+pub async fn open_instance_folder(
+    app: AppHandle,
+    launcher: State<'_, Launcher>,
+    id: String,
+) -> CommandResult<()> {
+    let dir = launcher.instances.game_dir(&id);
+    tokio::fs::create_dir_all(&dir).await?;
+    app.opener()
+        .open_path(dir.to_string_lossy(), None::<&str>)
+        .map_err(|err| CommandError::Io(std::io::Error::other(err)))
 }
 
 #[tauri::command]
