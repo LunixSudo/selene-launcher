@@ -30,6 +30,9 @@ pub enum Error {
 
     #[error("this platform is not supported")]
     UnsupportedPlatform,
+
+    #[error(transparent)]
+    Auth(#[from] crate::auth::AuthError),
 }
 
 impl Error {
