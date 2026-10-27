@@ -42,6 +42,17 @@ pub enum VersionKind {
     OldAlpha,
 }
 
+impl VersionKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Release => "release",
+            Self::Snapshot => "snapshot",
+            Self::OldBeta => "old_beta",
+            Self::OldAlpha => "old_alpha",
+        }
+    }
+}
+
 impl VersionManifest {
     pub async fn fetch(client: &Client) -> Result<Self> {
         http::get_json(client, VERSION_MANIFEST_URL).await

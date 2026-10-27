@@ -5,7 +5,7 @@ use reqwest::Client;
 use serde::Deserialize;
 
 use crate::download::Download;
-use crate::manifest::VersionEntry;
+use crate::manifest::{VersionEntry, VersionKind};
 use crate::rules::{self, Environment, Rule};
 use crate::{Error, Result, download};
 
@@ -16,6 +16,8 @@ const ASSETS_BASE_URL: &str = "https://resources.download.minecraft.net";
 #[serde(rename_all = "camelCase")]
 pub struct VersionInfo {
     pub id: String,
+    #[serde(rename = "type")]
+    pub kind: VersionKind,
     pub main_class: String,
     pub asset_index: AssetIndexRef,
     pub downloads: VersionDownloads,
@@ -228,6 +230,7 @@ mod tests {
 
     const VERSION: &str = r#"{
         "id": "1.21.10",
+        "type": "release",
         "mainClass": "net.minecraft.client.main.Main",
         "assetIndex": {
             "id": "27", "sha1": "a1", "size": 10, "totalSize": 1000,
