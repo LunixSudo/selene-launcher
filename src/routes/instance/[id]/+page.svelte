@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { api } from "$lib/api";
   import InstanceSettings from "$lib/components/InstanceSettings.svelte";
   import ModCatalog from "$lib/components/ModCatalog.svelte";
   import ModList from "$lib/components/ModList.svelte";
@@ -43,6 +44,9 @@
         </span>
       </div>
       <div class="actions">
+        <button type="button" class="share" onclick={() => api.openInstanceFolder(instance.id)}>
+          {t("instances.openFolder")}
+        </button>
         <button type="button" class="share" onclick={() => (sharing = true)}>
           {t("instance.share")}
         </button>

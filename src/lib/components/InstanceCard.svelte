@@ -1,23 +1,22 @@
 <script lang="ts">
   import type { Instance } from "$lib/api";
+  import { coverOf, iconOf } from "$lib/appearance";
   import { locale, t } from "$lib/i18n/index.svelte";
+  import { UI_ICONS } from "$lib/icons";
   import { LOADER_NAMES } from "$lib/loaders";
-  import { deleteInstance, type LaunchState, play } from "$lib/state/instances.svelte";
+  import { type LaunchState, play } from "$lib/state/instances.svelte";
 
-  let { instance, launch }: { instance: Instance; launch: LaunchState | undefined } = $props();
-
-  let confirmingDelete = $state(false);
+  let {
+    instance,
+    launch,
+    onmenu,
+  }: {
+    instance: Instance;
+    launch: LaunchState | undefined;
+    onmenu: (x: number, y: number) => void;
+  } = $props();
 
   const busy = $derived(launch?.status === "preparing" || launch?.status === "running");
-  const hue = $derived(hash(instance.id) % 360);
-
-  function hash(text: string): number {
-    let value = 0;
-    for (const char of text) {
-      value = (value * 31 + char.charCodeAt(0)) >>> 0;
-    }
-    return value;
-  }
 
   function lastPlayed(): string {
     if (!instance.lastPlayed) {
@@ -46,43 +45,40 @@
     return t("instances.play");
   }
 
-  async function remove() {
-    if (!confirmingDelete) {
-      confirmingDelete = true;
-      return;
-    }
-    await deleteInstance(instance.id);
+  function openMenu(event: MouseEvent) {
+    event.preventDefault();
+    onmenu(event.clientX, event.clientY);
+  }
+
+  function openMenuFromButton(event: MouseEvent) {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    onmenu(rect.left, rect.bottom + 6);
   }
 </script>
 
-<article class="card" style:--hue={hue}>
-  <div class="cover">
-    <span class="version">
-      {instance.loader
-        ? `${LOADER_NAMES[instance.loader.loader]} ${instance.version}`
-        : instance.version}
+<article class="card" oncontextmenu={openMenu}>
+  <div class="cover" style:background={coverOf(instance.id, instance.cover)}>
+    <span class="tile">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d={iconOf(instance.icon)} /></svg>
     </span>
     <button
       type="button"
-      class="delete"
-      class:confirming={confirmingDelete}
-      disabled={busy}
-      aria-label={t("instances.delete")}
-      onclick={remove}
-      onblur={() => (confirmingDelete = false)}
+      class="more"
+      aria-label={t("instances.actions")}
+      onclick={openMenuFromButton}
     >
-      {#if confirmingDelete}
-        {t("instances.confirmDelete")}
-      {:else}
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" />
-        </svg>
-      {/if}
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d={UI_ICONS.more} /></svg>
     </button>
   </div>
 
   <div class="body">
     <h2><a href="/instance/{instance.id}">{instance.name}</a></h2>
+    <p class="meta">
+      <span class="chip">
+        {instance.loader ? LOADER_NAMES[instance.loader.loader] : t("create.vanilla")}
+      </span>
+      {instance.version}
+    </p>
     <p>{lastPlayed()}</p>
     {#if launch?.status === "failed"}
       <p class="error" role="alert">{t(`errors.${launch.error.kind}`)}</p>
@@ -97,11 +93,23 @@
     style:--progress={launch?.status === "preparing" ? `${launch.percent}%` : "0%"}
     onclick={() => play(instance.id)}
   >
+    {#if !busy}
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d={UI_ICONS.play} /></svg>
+    {/if}
     <span>{playLabel()}</span>
   </button>
 </article>
 
 <style>
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
   .card {
     position: relative;
     display: flex;
@@ -118,88 +126,82 @@
 
   .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+    box-shadow: 0 14px 36px rgb(0 0 0 / 0.16);
   }
 
   .cover {
     position: relative;
-    height: 96px;
-    background:
-      radial-gradient(circle at 20% 20%, hsl(var(--hue) 90% 72% / 0.9), transparent 60%),
-      linear-gradient(135deg, hsl(var(--hue) 70% 55%), hsl(calc(var(--hue) + 50) 70% 45%));
+    display: flex;
+    align-items: flex-end;
+    height: 92px;
+    padding: 12px;
   }
 
-  .version {
+  .cover::after {
     position: absolute;
-    bottom: 10px;
-    left: 12px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: rgb(0 0 0 / 0.28);
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
-    backdrop-filter: blur(8px);
+    inset: 0;
+    background: radial-gradient(circle at 85% 0%, rgb(255 255 255 / 0.35), transparent 55%);
+    content: "";
+    pointer-events: none;
   }
 
-  .delete {
+  .tile {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: -30px;
+    border: 1px solid rgb(255 255 255 / 0.4);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.22);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+    backdrop-filter: blur(12px);
+  }
+
+  .tile svg {
+    width: 24px;
+    height: 24px;
+    stroke: #ffffff;
+  }
+
+  .more {
     position: absolute;
     z-index: 1;
     top: 8px;
     right: 8px;
     display: grid;
     place-items: center;
-    min-width: 28px;
+    width: 28px;
     height: 28px;
-    padding: 0 6px;
+    padding: 0;
     border: none;
     border-radius: 999px;
-    background: rgb(0 0 0 / 0.28);
+    background: rgb(0 0 0 / 0.25);
     color: #ffffff;
-    font-size: 12px;
     opacity: 0;
-    transition:
-      opacity 150ms var(--ease),
-      background 150ms var(--ease);
+    transition: opacity 150ms var(--ease);
     backdrop-filter: blur(8px);
   }
 
-  .card:hover .delete,
-  .delete:focus-visible,
-  .delete.confirming {
+  .card:hover .more,
+  .more:focus-visible {
     opacity: 1;
   }
 
-  .delete.confirming {
-    padding: 0 10px;
-    background: var(--danger);
-  }
-
-  .delete:disabled {
-    display: none;
-  }
-
-  .delete svg {
-    width: 14px;
-    height: 14px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .more svg {
+    stroke-width: 3;
   }
 
   .body {
     flex: 1;
-    padding: 12px 14px 0;
+    padding: 24px 14px 0;
   }
 
   h2 {
     margin: 0;
     overflow: hidden;
-    font-family: var(--font-display);
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -222,6 +224,23 @@
     font-size: 12px;
   }
 
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .chip {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
   .error {
     color: var(--danger);
   }
@@ -229,14 +248,19 @@
   .play {
     position: relative;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     margin: 12px 14px 14px;
-    height: 36px;
+    height: 38px;
     overflow: hidden;
     border: none;
     border-radius: var(--radius-md);
     background: var(--accent);
     color: var(--accent-text);
     font-weight: 600;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
     transition:
       filter 150ms var(--ease),
       transform 100ms var(--ease);
@@ -251,8 +275,15 @@
     content: "";
   }
 
-  .play span {
+  .play span,
+  .play svg {
     position: relative;
+  }
+
+  .play svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
   }
 
   .play:hover:not(:disabled) {
@@ -270,5 +301,6 @@
   .play.running {
     background: var(--surface-hover);
     color: var(--text);
+    box-shadow: none;
   }
 </style>

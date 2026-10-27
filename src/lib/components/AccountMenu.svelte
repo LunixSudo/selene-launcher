@@ -92,8 +92,17 @@
     </div>
   {/if}
 
-  {#if session.error}
-    <p class="error" role="alert">{t(`errors.${session.error.kind}`)}</p>
+  {#if session.error && !open}
+    <div class="error" role="alert">
+      <p>{t(`errors.${session.error.kind}`)}</p>
+      <button
+        type="button"
+        aria-label={t("account.dismiss")}
+        onclick={() => (session.error = null)}
+      >
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+      </button>
+    </div>
   {/if}
 </div>
 
@@ -250,14 +259,60 @@
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
-    width: 260px;
-    margin: 0;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
+    z-index: 10;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 300px;
+    padding: 10px 8px 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--surface-solid);
-    color: var(--danger);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.18);
+    animation: drop 160ms var(--ease);
+  }
+
+  .error p {
+    flex: 1;
+    margin: 0;
     font-size: 12px;
-    box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+    line-height: 1.45;
+  }
+
+  .error p::before {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--danger);
+    content: "";
+  }
+
+  .error button {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+  }
+
+  .error button:hover {
+    background: var(--field);
+  }
+
+  .error svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
   }
 
   @keyframes spin {

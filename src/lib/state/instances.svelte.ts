@@ -47,6 +47,12 @@ export async function importPack(path: string) {
   }
 }
 
+export function replaceInstance(updated: Instance) {
+  library.instances = library.instances.map((instance) =>
+    instance.id === updated.id ? updated : instance,
+  );
+}
+
 export async function deleteInstance(id: string) {
   await api.deleteInstance(id);
   library.instances = library.instances.filter((instance) => instance.id !== id);

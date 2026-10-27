@@ -1,14 +1,20 @@
 <script lang="ts">
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import { api, type CatalogHit, type ManualDownload } from "$lib/api";
+  import { api, type CatalogHit, type ManualDownload, type Source } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
+  import Segmented from "./Segmented.svelte";
 
   let { instanceId, oninstall }: { instanceId: string; oninstall: () => void } = $props();
 
   const SEARCH_DELAY_MS = 300;
-  const SOURCE_NAMES = { modrinth: "Modrinth", curseforge: "CurseForge" };
+  const SOURCE_NAMES: Record<Source, string> = { modrinth: "Modrinth", curseforge: "CurseForge" };
+  const SOURCES = (Object.keys(SOURCE_NAMES) as Source[]).map((value) => ({
+    value,
+    label: SOURCE_NAMES[value],
+  }));
 
+  let source = $state<Source>(loadSource());
   let query = $state("");
   let hits = $state<CatalogHit[]>([]);
   let page = $state(0);
@@ -17,22 +23,63 @@
   let error = $state<string | null>(null);
   let manual = $state<ManualDownload[]>([]);
   let installing = $state<Record<string, "busy" | "done">>({});
+  let installed = $state(new Set<string>());
 
   $effect(() => {
     const text = query;
-    const timer = setTimeout(() => void search(text, 0), SEARCH_DELAY_MS);
+    const from = source;
+    const timer = setTimeout(() => void search(from, text, 0), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
   });
+
+  $effect(() => {
+    void loadInstalled(instanceId);
+  });
+
+  $effect(() => {
+    try {
+      localStorage.setItem("catalog-source", source);
+    } catch {
+      // Not remembering the choice is fine.
+    }
+  });
+
+  function loadSource(): Source {
+    try {
+      const saved = localStorage.getItem("catalog-source");
+      if (saved === "modrinth" || saved === "curseforge") {
+        return saved;
+      }
+    } catch {
+      // Fall back to Modrinth.
+    }
+    return "modrinth";
+  }
+
+  async function loadInstalled(id: string) {
+    try {
+      installed = new Set(await api.installedProjects(id));
+    } catch {
+      // Without it every entry just offers to install.
+    }
+  }
+
+  function status(hit: CatalogHit): "busy" | "done" | undefined {
+    return installing[key(hit)] ?? (installed.has(key(hit)) ? "done" : undefined);
+  }
 
   function key(hit: CatalogHit): string {
     return `${hit.source}:${hit.id}`;
   }
 
-  async function search(text: string, next: number) {
+  async function search(from: Source, text: string, next: number) {
     loading = true;
     error = null;
     try {
-      const results = await api.searchMods(instanceId, text, next);
+      const results = await api.searchMods(instanceId, from, text, next);
+      if (from !== source) {
+        return;
+      }
       hits = next === 0 ? results.hits : [...hits, ...results.hits];
       hasMore = results.hasMore;
       page = next;
@@ -51,6 +98,7 @@
       manual = result.manual;
       installing[key(hit)] = "done";
       oninstall();
+      void loadInstalled(instanceId);
     } catch (err) {
       delete installing[key(hit)];
       error = describeError(err);
@@ -62,7 +110,15 @@
   }
 </script>
 
-<input class="search" type="search" bind:value={query} placeholder={t("instance.search")}>
+<div class="toolbar">
+  <input class="search" type="search" bind:value={query} placeholder={t("instance.search")}>
+  <Segmented
+    bind:value={source}
+    options={SOURCES}
+    name="catalog-source"
+    label={t("instance.source")}
+  />
+</div>
 
 {#if error}
   <p class="error" role="alert">{error}</p>
@@ -98,20 +154,20 @@
           {t("instance.downloads", { count: compact(hit.downloads) })}
           ·
           <button type="button" class="link source" onclick={() => openUrl(hit.pageUrl)}>
-            {SOURCE_NAMES[hit.source]}
+            {t("instance.openPage")}
           </button>
         </span>
       </div>
       <button
         type="button"
         class="add"
-        class:done={installing[key(hit)] === "done"}
-        disabled={installing[key(hit)] !== undefined}
+        class:done={status(hit) === "done"}
+        disabled={status(hit) !== undefined}
         onclick={() => install(hit)}
       >
-        {#if installing[key(hit)] === "busy"}
+        {#if status(hit) === "busy"}
           {t("instance.adding")}
-        {:else if installing[key(hit)] === "done"}
+        {:else if status(hit) === "done"}
           {t("instance.added")}
         {:else}
           {t("instance.add")}
@@ -122,16 +178,27 @@
 </ul>
 
 {#if hasMore}
-  <button type="button" class="more" disabled={loading} onclick={() => search(query, page + 1)}>
+  <button
+    type="button"
+    class="more"
+    disabled={loading}
+    onclick={() => search(source, query, page + 1)}
+  >
     {t("instance.more")}
   </button>
 {/if}
 
 <style>
-  .search {
-    width: 100%;
-    height: 38px;
+  .toolbar {
+    display: flex;
+    gap: 8px;
     margin-bottom: 12px;
+  }
+
+  .search {
+    flex: 1;
+    min-width: 0;
+    height: 38px;
     padding: 0 14px;
     border: 1px solid var(--border);
     border-radius: 999px;

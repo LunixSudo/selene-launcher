@@ -28,6 +28,8 @@ export interface Instance {
   createdAt: string;
   lastPlayed: string | null;
   maxMemoryMb: number | null;
+  icon: string | null;
+  cover: string | null;
 }
 
 export interface Account {
@@ -106,6 +108,7 @@ export type ErrorKind =
   | "childAccount"
   | "gameNotOwned"
   | "authService"
+  | "appNotApproved"
   | "keyring"
   | "io"
   | "unknownVersion"
@@ -152,13 +155,17 @@ export const api = {
     invoke<LoaderRelease[]>("loader_versions", { loader, gameVersion }),
   createInstance: (name: string, version: string, loader: LoaderVersion | null) =>
     invoke<Instance>("create_instance", { name, version, loader }),
+  updateInstance: (id: string, name: string, icon: string | null, cover: string | null) =>
+    invoke<Instance>("update_instance", { id, name, icon, cover }),
+  openInstanceFolder: (id: string) => invoke<void>("open_instance_folder", { id }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
   memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),
   setInstanceMemory: (instanceId: string, maxMemoryMb: number | null) =>
     invoke<Instance>("set_instance_memory", { instanceId, maxMemoryMb }),
   launchInstance: (id: string) => invoke<void>("launch_instance", { id }),
-  searchMods: (instanceId: string, query: string, page: number) =>
-    invoke<CatalogPage>("search_mods", { instanceId, query, page }),
+  searchMods: (instanceId: string, source: Source, query: string, page: number) =>
+    invoke<CatalogPage>("search_mods", { instanceId, source, query, page }),
+  installedProjects: (instanceId: string) => invoke<string[]>("installed_projects", { instanceId }),
   installedMods: (instanceId: string) => invoke<InstalledMod[]>("installed_mods", { instanceId }),
   installMod: (instanceId: string, source: Source, id: string) =>
     invoke<InstallResult>("install_mod", { instanceId, source, id }),

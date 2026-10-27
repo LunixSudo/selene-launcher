@@ -1,24 +1,32 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import AccountMenu from "$lib/components/AccountMenu.svelte";
-  import { locale, setLocale, t } from "$lib/i18n/index.svelte";
+  import { t } from "$lib/i18n/index.svelte";
 
   const appWindow = getCurrentWindow();
 </script>
 
 <header class="titlebar" data-tauri-drag-region>
-  <span class="title" data-tauri-drag-region>Selene Launcher</span>
+  <a class="brand" href="/">
+    <span class="logo">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5z" />
+      </svg>
+    </span>
+    <span class="wordmark">Selene</span>
+  </a>
 
   <div class="controls">
     <AccountMenu />
-    <button
-      type="button"
-      class="language"
-      aria-label={t("window.language")}
-      onclick={() => setLocale(locale() === "ru" ? "en" : "ru")}
-    >
-      {locale().toUpperCase()}
-    </button>
+    <a class="settings" href="/settings" title={t("settings.title")}>
+      <span class="label">{t("settings.title")}</span>
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="2.2" />
+        <path
+          d="M8 1.5v1.8M8 12.7v1.8M14.5 8h-1.8M3.3 8H1.5M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3M12.6 12.6l-1.3-1.3M4.7 4.7L3.4 3.4"
+        />
+      </svg>
+    </a>
     <button type="button" aria-label={t("window.minimize")} onclick={() => appWindow.minimize()}>
       <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5h8" /></svg>
     </button>
@@ -48,12 +56,39 @@
     align-items: center;
     justify-content: space-between;
     height: var(--titlebar-height);
-    padding-left: 16px;
+    padding-left: 14px;
   }
 
-  .title {
-    font-size: 12px;
-    color: var(--text-muted);
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .logo {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #8fa2ff, var(--accent) 55%, #c45bff);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  .logo svg {
+    width: 14px;
+    height: 14px;
+    fill: #ffffff;
+    stroke: none;
+  }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
 
   .controls {
@@ -62,7 +97,8 @@
     height: 100%;
   }
 
-  .controls > button {
+  .controls > button,
+  .settings {
     display: grid;
     place-items: center;
     width: 46px;
@@ -72,14 +108,22 @@
     transition: background 120ms var(--ease);
   }
 
-  .controls > button:hover {
+  .controls > button:hover,
+  .settings:hover {
     background: var(--surface-hover);
   }
 
-  .controls .language {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
+  .settings {
+    color: inherit;
+  }
+
+  .settings .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .controls .close:hover {
@@ -87,11 +131,18 @@
     color: #ffffff;
   }
 
-  svg {
+  .controls svg {
     width: 10px;
     height: 10px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1;
+  }
+
+  .settings svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 1.3;
+    stroke-linecap: round;
   }
 </style>

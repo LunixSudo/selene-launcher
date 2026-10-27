@@ -1,11 +1,64 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
+  import { goto } from "$app/navigation";
+  import { api, type Instance } from "$lib/api";
+  import ContextMenu, { type MenuItem } from "$lib/components/ContextMenu.svelte";
   import CreateInstanceDialog from "$lib/components/CreateInstanceDialog.svelte";
+  import DeleteInstanceDialog from "$lib/components/DeleteInstanceDialog.svelte";
+  import EditInstanceDialog from "$lib/components/EditInstanceDialog.svelte";
   import InstanceCard from "$lib/components/InstanceCard.svelte";
+  import ShareDialog from "$lib/components/ShareDialog.svelte";
   import { t } from "$lib/i18n/index.svelte";
-  import { importPack, library, loadInstances } from "$lib/state/instances.svelte";
+  import { UI_ICONS } from "$lib/icons";
+  import { importPack, library, loadInstances, play } from "$lib/state/instances.svelte";
 
   let creating = $state(false);
+  let selected = $state<Instance | null>(null);
+  let menuAt = $state<{ x: number; y: number } | null>(null);
+  let editing = $state(false);
+  let sharing = $state(false);
+  let deleting = $state(false);
+
+  const menu = $derived.by((): MenuItem[] => {
+    const instance = selected;
+    if (!instance) {
+      return [];
+    }
+    const status = library.launches[instance.id]?.status;
+    const busy = status === "preparing" || status === "running";
+    return [
+      {
+        label: t("instances.play"),
+        icon: UI_ICONS.play,
+        disabled: busy,
+        action: () => play(instance.id),
+      },
+      {
+        label: t("instances.open"),
+        icon: UI_ICONS.open,
+        action: () => goto(`/instance/${instance.id}`),
+      },
+      {
+        label: t("instances.openFolder"),
+        icon: UI_ICONS.folder,
+        action: () => api.openInstanceFolder(instance.id),
+      },
+      { label: t("instances.edit"), icon: UI_ICONS.edit, action: () => (editing = true) },
+      { label: t("instance.share"), icon: UI_ICONS.share, action: () => (sharing = true) },
+      {
+        label: t("instances.delete"),
+        icon: UI_ICONS.delete,
+        danger: true,
+        disabled: busy,
+        action: () => (deleting = true),
+      },
+    ];
+  });
+
+  function showMenu(instance: Instance, x: number, y: number) {
+    selected = instance;
+    menuAt = { x, y };
+  }
 
   $effect(() => {
     void loadInstances();
@@ -48,13 +101,23 @@
   {:else}
     <div class="grid">
       {#each library.instances as instance (instance.id)}
-        <InstanceCard {instance} launch={library.launches[instance.id]} />
+        <InstanceCard
+          {instance}
+          launch={library.launches[instance.id]}
+          onmenu={(x, y) => showMenu(instance, x, y)}
+        />
       {/each}
     </div>
   {/if}
 </section>
 
 <CreateInstanceDialog bind:open={creating} />
+<ContextMenu items={menu} bind:position={menuAt} />
+{#if selected}
+  <EditInstanceDialog instance={selected} bind:open={editing} />
+  <ShareDialog instance={selected} bind:open={sharing} />
+  <DeleteInstanceDialog instance={selected} bind:open={deleting} />
+{/if}
 
 <style>
   .page {
