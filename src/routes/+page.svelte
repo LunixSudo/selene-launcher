@@ -51,7 +51,7 @@
           },
       {
         label: t("instances.continue"),
-        icon: UI_ICONS.open,
+        icon: UI_ICONS.resume,
         disabled: busy || !instance.lastPlayed,
         action: () => continueLastWorld(instance.id),
       },
