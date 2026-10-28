@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!src-tauri", "!**/*.md"]
+    "includes": ["**", "!src-tauri", "!**/*.md", "!pnpm-lock.yaml"]
   },
   "formatter": {
     "enabled": true,
