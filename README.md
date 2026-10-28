@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/logo.svg" width="160" alt=""></p>
+
 # Selene Launcher
 
 A fast, minimal Minecraft: Java Edition launcher for licensed accounts.
