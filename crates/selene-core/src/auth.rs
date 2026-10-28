@@ -17,6 +17,7 @@ use url::Url;
 use crate::{Error, Result};
 
 pub const CLIENT_ID: &str = "e193bac3-0149-4777-bd09-91afa62cd0f3";
+const CALLBACK_READ_TIMEOUT: Duration = Duration::from_secs(5);
 
 const AUTHORIZE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
 const TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
@@ -193,11 +194,17 @@ impl LoginRequest {
                 .accept()
                 .await
                 .map_err(|err| Error::io("127.0.0.1", err))?;
+            // Browsers open spare connections that never send anything; waiting on one of
+            // them would hold up the real redirect behind it.
             let mut request_line = String::new();
-            BufReader::new(&mut stream)
-                .read_line(&mut request_line)
-                .await
-                .map_err(|err| Error::io("127.0.0.1", err))?;
+            let mut reader = BufReader::new(&mut stream);
+            let read = reader.read_line(&mut request_line);
+            if !matches!(
+                tokio::time::timeout(CALLBACK_READ_TIMEOUT, read).await,
+                Ok(Ok(_))
+            ) {
+                continue;
+            }
 
             // Browsers also ask for /favicon.ico; only the request carrying our state counts.
             let Some(result) = parse_callback(&request_line, &self.state) else {
@@ -448,9 +455,10 @@ fn parse_callback(request_line: &str, expected_state: &str) -> Option<Result<Str
             .map(|(_, value)| value.into_owned())
     };
 
-    let state = param("state")?;
-    if state != expected_state {
-        return Some(Err(AuthError::InvalidCallback.into()));
+    // Anything else on the machine can reach this port, so a request without our state is
+    // ignored instead of ending the sign-in.
+    if param("state")? != expected_state {
+        return None;
     }
     if let Some(error) = param("error") {
         let description = param("error_description").unwrap_or(error);
@@ -500,10 +508,7 @@ mod tests {
     #[test]
     fn rejects_foreign_state_and_errors() {
         assert!(parse_callback("GET /favicon.ico HTTP/1.1", "s1").is_none());
-        assert!(matches!(
-            parse_callback("GET /?code=x&state=other HTTP/1.1", "s1"),
-            Some(Err(Error::Auth(AuthError::InvalidCallback)))
-        ));
+        assert!(parse_callback("GET /?code=x&state=other HTTP/1.1", "s1").is_none());
         assert!(matches!(
             parse_callback(
                 "GET /?error=access_denied&error_description=User%20cancelled&state=s1 HTTP/1.1",
