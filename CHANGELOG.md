@@ -31,4 +31,16 @@ All notable changes to this project are documented here. The format follows
 - Portable mode: a `portable.txt` next to the executable keeps all data beside it.
 - Russian and English interface; light, dark, Mica and glass styles.
 - Privacy policy in English and Russian, shown in the installer in the system language and
-  linked from the settings.
+  linked from the settings. After an update that changes it, the launcher asks to accept it
+  again.
+- Desktop shortcuts of instances use the instance's icon and cover and follow later changes.
+- Removing a project from its catalog entry, with a confirmation.
+- Rounded tooltips in place of the system ones.
+
+### Changed
+
+- The solid style is the default, so the launcher stays light on slower PCs.
+- An imported modpack shows up in the list right away, while its files download.
+- Fabric and Quilt say when they have no build for an old game version instead of reporting
+  a connection error.
+- The catalog no longer has a separate select mode.

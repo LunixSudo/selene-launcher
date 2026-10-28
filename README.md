@@ -12,11 +12,12 @@ There is no offline mode. You need a Minecraft: Java Edition license to play.
   Several accounts, with the player's head in the title bar.
 - **Game.** Versions, libraries and assets come straight from Mojang, and the right Java
   runtime is downloaded for each version. Fabric and Quilt are supported.
-- **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts, and
+- **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts drawn
+  with the instance's own icon and cover, and
   moving an instance to another game version with its mods swapped for matching builds.
 - **Add-ons.** Mods, resource packs, shaders and data packs from Modrinth and CurseForge in
-  one tab. Filter the catalog by several categories at once, install many projects together,
-  and get required dependencies added for you. Updates stay on the release channel you
+  one tab. Filter the catalog by several categories at once, remove a project right from its
+  catalog entry, and get required dependencies added for you. Updates stay on the release channel you
   installed, and the launcher warns before you turn on something made for another version.
   Data packs go into the world you pick.
 - **Modpacks.** Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the
@@ -41,7 +42,8 @@ Windows SmartScreen may warn about it.
 The launcher has no servers of its own and collects nothing. Your sign-in token is kept in
 the Windows credential store and is only sent to Microsoft and Mojang. See
 [PRIVACY.md](PRIVACY.md) ([на русском](PRIVACY.ru.md)) for every service the launcher talks
-to and why. The installer shows the policy in the system language before installing.
+to and why. The installer shows the policy in the system language before installing, and the launcher
+asks again after an update that changes it.
 
 ## Building
 

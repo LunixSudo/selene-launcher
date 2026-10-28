@@ -46,6 +46,10 @@ in `src-tauri/nsis/privacy/` and must say the same as `PRIVACY.md` and `PRIVACY.
 upgrading the Tauri CLI, take the new template from `crates/tauri-bundler` and apply the
 change again; do the same for `English.nsh` and `Russian.nsh`.
 
+When the privacy policy changes, bump `PRIVACY_VERSION` in
+`src-tauri/src/commands/privacy.rs` and in `src-tauri/nsis/hooks.nsh` (a test checks they
+match). Users then accept the new version once after updating.
+
 ## Docs
 
 Update `README.md` and the `Unreleased` section of `CHANGELOG.md` in the same commit as the
