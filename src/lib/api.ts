@@ -177,6 +177,12 @@ export interface ContentUpdate {
   to: string;
 }
 
+export interface VersionChange {
+  updated: ContentUpdate[];
+  incompatible: string[];
+  unknown: string[];
+}
+
 export interface ProjectVersion {
   id: string;
   name: string;
@@ -372,6 +378,10 @@ export const api = {
     versionId: string,
     fileName: string,
   ) => invoke<void>("install_version", { instanceId, kind, project, versionId, fileName }),
+  previewVersionChange: (instanceId: string, version: string, loader: LoaderVersion | null) =>
+    invoke<VersionChange>("preview_version_change", { instanceId, version, loader }),
+  changeVersion: (instanceId: string, version: string, loader: LoaderVersion | null) =>
+    invoke<Instance>("change_version", { instanceId, version, loader }),
   projectPage: (kind: ContentKind, project: ProjectRef) =>
     invoke<ProjectPage>("project_page", { kind, project }),
   importPack: (path: string) => invoke<ImportResult>("import_pack", { path }),

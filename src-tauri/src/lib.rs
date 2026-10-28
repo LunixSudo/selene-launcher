@@ -77,6 +77,8 @@ pub fn run() {
             commands::content::curseforge_changelog,
             commands::content::install_version,
             commands::content::project_page,
+            commands::content::preview_version_change,
+            commands::content::change_version,
             commands::packs::import_pack,
             commands::packs::export_pack,
             commands::update::check_update,

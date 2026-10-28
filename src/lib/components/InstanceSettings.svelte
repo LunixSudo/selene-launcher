@@ -3,7 +3,9 @@
   import { api, type Instance, type MemoryInfo } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
+  import { LOADER_NAMES } from "$lib/loaders";
   import { replaceInstance } from "$lib/state/instances.svelte";
+  import ChangeVersionDialog from "./ChangeVersionDialog.svelte";
 
   let { instance }: { instance: Instance } = $props();
 
@@ -33,6 +35,8 @@
   }
 
   const DEFAULT_WINDOW = { width: 1280, height: 720 };
+
+  let changingVersion = $state(false);
 
   let javaArgs = $derived(instance.javaArgs);
 
@@ -86,6 +90,23 @@
     }
   }
 </script>
+
+<section class="group">
+  <h2>{t("changeVersion.current")}</h2>
+  <div class="row">
+    <span>
+      {instance.version}
+      {#if instance.loader}
+        <span class="hint">· {LOADER_NAMES[instance.loader.loader]} {instance.loader.version}</span>
+      {/if}
+    </span>
+    <button type="button" class="pill-button" onclick={() => (changingVersion = true)}>
+      {t("changeVersion.change")}
+    </button>
+  </div>
+</section>
+
+<ChangeVersionDialog {instance} bind:open={changingVersion} />
 
 <section class="group">
   <h2>{t("launchOptions.javaTitle")}</h2>

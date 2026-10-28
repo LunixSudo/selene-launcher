@@ -286,6 +286,20 @@ export const en: Messages = {
       unknown: "Couldn't tell what went wrong. Check the logs for details.",
     },
   },
+  changeVersion: {
+    title: "Change game version",
+    check: "Check mods",
+    apply: "Change version",
+    working: "Checking…",
+    updated: "Will update for the new version ({count})",
+    incompatible: "No build for this version ({count})",
+    incompatibleHint:
+      "These mods get disabled but stay in the folder, so you can turn them back on once they update.",
+    unknown: "Couldn't check ({count})",
+    nothing: "Your mods are fine with it.",
+    current: "Game version",
+    change: "Change…",
+  },
   launchOptions: {
     javaTitle: "Java and memory",
     java: "Java",
