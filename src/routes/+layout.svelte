@@ -7,6 +7,7 @@
   import type { Snippet } from "svelte";
   import { api } from "$lib/api";
   import DropOverlay from "$lib/components/DropOverlay.svelte";
+  import PrivacyDialog from "$lib/components/PrivacyDialog.svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
   import { locale } from "$lib/i18n/index.svelte";
   import { discordPresence, listenToGames } from "$lib/state/instances.svelte";
@@ -88,6 +89,7 @@
   </main>
 </div>
 <DropOverlay />
+<PrivacyDialog />
 
 <style>
   .app {

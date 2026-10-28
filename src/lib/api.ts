@@ -337,6 +337,9 @@ export const api = {
   ) =>
     invoke<Instance>("set_launch_options", { instanceId, window, fullscreen, javaArgs, javaPath }),
   config: () => invoke<LauncherConfig>("config"),
+  privacyStatus: () =>
+    invoke<{ version: string; accepted: boolean; updated: boolean }>("privacy_status"),
+  acceptPrivacy: () => invoke<void>("accept_privacy"),
   createShortcut: (id: string, icon: number[]) => invoke<void>("create_shortcut", { id, icon }),
   updateShortcut: (id: string, icon: number[]) => invoke<void>("update_shortcut", { id, icon }),
   takeStartupLaunch: () => invoke<string | null>("take_startup_launch"),

@@ -5,6 +5,7 @@
 
 pub mod content;
 pub mod packs;
+pub mod privacy;
 pub mod saves;
 pub mod shortcut;
 pub mod skins;

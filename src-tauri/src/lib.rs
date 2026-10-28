@@ -71,6 +71,8 @@ pub fn run() {
             commands::take_startup_launch,
             commands::take_missed_crashes,
             commands::set_discord_presence,
+            commands::privacy::privacy_status,
+            commands::privacy::accept_privacy,
             commands::shortcut::create_shortcut,
             commands::shortcut::update_shortcut,
             commands::skins::skin_profile,

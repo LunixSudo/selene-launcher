@@ -121,6 +121,13 @@ export const en: Messages = {
     cancel: "Cancel",
     submit: "Create",
   },
+  privacy: {
+    title: "Privacy policy",
+    lead: "Read it and accept it to use the launcher.",
+    updated: "We updated the privacy policy. Read it and accept it to keep using the launcher.",
+    accept: "Accept",
+    decline: "Decline and quit",
+  },
   catalog: {
     search: "Search the catalog",
     remove: "Remove",
