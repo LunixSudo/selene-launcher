@@ -23,7 +23,9 @@
         "decorations": false,
         "transparent": true,
         "windowEffects": {
-          "effects": ["mica"]
+          "effects": [
+            "mica"
+          ]
         }
       }
     ],
@@ -43,7 +45,15 @@
     ],
     "windows": {
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "languages": [
+          "Russian",
+          "English"
+        ],
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "icons/installer-header.bmp",
+        "sidebarImage": "icons/installer-sidebar.bmp"
       }
     }
   }
