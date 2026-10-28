@@ -750,16 +750,14 @@ pub(crate) async fn manual_downloads(
     curseforge: &CurseForge,
     mod_ids: &[u32],
 ) -> Vec<ManualDownload> {
-    let mut downloads = Vec::new();
-    for &mod_id in mod_ids {
-        if let Ok(info) = curseforge.mod_info(mod_id).await {
-            downloads.push(ManualDownload {
-                title: info.name,
-                url: format!("{}/files", info.links.website_url),
-            });
-        }
-    }
-    downloads
+    let mut mods = curseforge.mods(mod_ids).await.unwrap_or_default();
+    mods.sort_by_key(|info| mod_ids.iter().position(|&id| id == info.id));
+    mods.into_iter()
+        .map(|info| ManualDownload {
+            title: info.name,
+            url: format!("{}/files", info.links.website_url),
+        })
+        .collect()
 }
 
 #[tauri::command]
