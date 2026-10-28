@@ -97,6 +97,21 @@ export const en: Messages = {
     cancel: "Cancel",
     submit: "Create",
   },
+  catalog: {
+    select: "Select",
+    done: "Done",
+    selected: "Selected: {count}",
+    clear: "Clear",
+    addSelected: "Add ({count})",
+  },
+  install: {
+    title: "Install mods",
+    requested: "You picked ({count})",
+    dependencies: "Dependencies ({count})",
+    dependenciesHint: "The picked mods need these to run, so they are installed too.",
+    manual: "Download manually",
+    confirm: "Install ({count})",
+  },
   edit: {
     title: "Customize instance",
     name: "Name",

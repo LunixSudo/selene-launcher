@@ -71,6 +71,21 @@ export interface ImportResult {
   manual: ManualDownload[];
 }
 
+export interface CatalogItem {
+  source: Source;
+  id: string;
+}
+
+export interface PlannedMod {
+  title: string;
+  requested: boolean;
+}
+
+export interface InstallPreview {
+  mods: PlannedMod[];
+  manual: ManualDownload[];
+}
+
 export interface InstallResult {
   installed: number;
   manual: ManualDownload[];
@@ -173,8 +188,10 @@ export const api = {
     invoke<CatalogPage>("search_mods", { instanceId, source, query, page }),
   installedProjects: (instanceId: string) => invoke<string[]>("installed_projects", { instanceId }),
   installedMods: (instanceId: string) => invoke<InstalledMod[]>("installed_mods", { instanceId }),
-  installMod: (instanceId: string, source: Source, id: string) =>
-    invoke<InstallResult>("install_mod", { instanceId, source, id }),
+  previewInstall: (instanceId: string, items: CatalogItem[]) =>
+    invoke<InstallPreview>("preview_install", { instanceId, items }),
+  installMods: (instanceId: string, items: CatalogItem[]) =>
+    invoke<InstallResult>("install_mods", { instanceId, items }),
   setModEnabled: (instanceId: string, fileName: string, enabled: boolean) =>
     invoke<void>("set_mod_enabled", { instanceId, fileName, enabled }),
   removeMod: (instanceId: string, fileName: string) =>

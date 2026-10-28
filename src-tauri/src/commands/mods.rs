@@ -173,23 +173,11 @@ pub async fn installed_projects(
         let Some(curseforge) = &launcher.curseforge else {
             return Vec::new();
         };
-        let mut fingerprints = Vec::with_capacity(files.len());
-        for file in &files {
-            let path = mods::mods_dir(&game_dir).join(&file.file_name);
-            if let Ok(bytes) = tokio::fs::read(&path).await {
-                fingerprints.push(selene_core::curseforge::fingerprint(&bytes));
-            }
-        }
-        curseforge
-            .files_by_fingerprint(&fingerprints)
+        installed_curseforge_mods(curseforge, &game_dir, &files)
             .await
-            .map(|found| {
-                found
-                    .into_values()
-                    .map(|file| format!("curseforge:{}", file.mod_id))
-                    .collect()
-            })
-            .unwrap_or_default()
+            .into_iter()
+            .map(|mod_id| format!("curseforge:{mod_id}"))
+            .collect()
     };
     let (mut installed, from_curseforge) = tokio::join!(from_modrinth, from_curseforge);
     installed.extend(from_curseforge);
@@ -240,68 +228,173 @@ pub async fn installed_mods(
     Ok(installed)
 }
 
-/// Installs a mod and its required dependencies.
-#[tauri::command]
-pub async fn install_mod(
-    launcher: State<'_, Launcher>,
-    instance_id: String,
+/// A catalog entry the user picked.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CatalogItem {
     source: Source,
     id: String,
-) -> CommandResult<InstallResult> {
-    let instance = instance(&launcher, &instance_id).await?;
-    let loader = loader_of(&instance)?;
-    let game_dir = launcher.instances.game_dir(&instance_id);
+}
 
-    let (files, manual) = match source {
-        Source::Modrinth => (
-            modrinth_plan(&launcher, &instance, loader, &id).await?,
-            Vec::new(),
-        ),
-        Source::Curseforge => {
-            let curseforge = curseforge(&launcher)?;
-            let mod_id = id.parse().map_err(|_| CommandError::NoCompatibleVersion)?;
-            let plan = curseforge
-                .resolve_install(mod_id, &instance.version, loader)
-                .await?;
-            (plan.files, manual_downloads(curseforge, &plan.manual).await)
-        }
-    };
-    if files.is_empty() && manual.is_empty() {
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlannedMod {
+    title: String,
+    /// `false` for dependencies that come along with the picked mods.
+    requested: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallPreview {
+    mods: Vec<PlannedMod>,
+    manual: Vec<ManualDownload>,
+}
+
+struct Plan {
+    files: Vec<RemoteFile>,
+    preview: InstallPreview,
+}
+
+/// What installing the picked mods would download, dependencies included.
+#[tauri::command]
+pub async fn preview_install(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+    items: Vec<CatalogItem>,
+) -> CommandResult<InstallPreview> {
+    Ok(plan(&launcher, &instance_id, &items).await?.preview)
+}
+
+/// Installs the picked mods and their required dependencies.
+#[tauri::command]
+pub async fn install_mods(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+    items: Vec<CatalogItem>,
+) -> CommandResult<InstallResult> {
+    let plan = plan(&launcher, &instance_id, &items).await?;
+    if plan.files.is_empty() && plan.preview.manual.is_empty() {
         return Err(CommandError::NoCompatibleVersion);
     }
-
-    mods::install(&launcher.client, &game_dir, &files).await?;
+    let game_dir = launcher.instances.game_dir(&instance_id);
+    mods::install(&launcher.client, &game_dir, &plan.files).await?;
     Ok(InstallResult {
-        installed: files.len(),
-        manual,
+        installed: plan.files.len(),
+        manual: plan.preview.manual,
     })
 }
 
-async fn modrinth_plan(
+async fn plan(
     launcher: &Launcher,
-    instance: &Instance,
-    loader: Loader,
-    project_id: &str,
-) -> CommandResult<Vec<RemoteFile>> {
-    let game_dir = launcher.instances.game_dir(&instance.id);
-    let hashes: Vec<String> = mods::list(&game_dir)
-        .await?
-        .into_iter()
-        .map(|file| file.sha1)
-        .collect();
-    let installed = modrinth::versions_by_hash(&launcher.client, &hashes).await?;
-    let plan = modrinth::resolve_install(
-        &launcher.client,
-        project_id,
-        &instance.version,
-        Some(loader),
-        installed.into_values().map(|version| version.project_id),
-    )
-    .await?;
-    Ok(plan
+    instance_id: &str,
+    items: &[CatalogItem],
+) -> CommandResult<Plan> {
+    let instance = instance(launcher, instance_id).await?;
+    let loader = loader_of(&instance)?;
+    let game_dir = launcher.instances.game_dir(instance_id);
+    let present = mods::list(&game_dir).await?;
+
+    let ids_from = |source: Source| -> Vec<String> {
+        items
+            .iter()
+            .filter(|item| item.source == source)
+            .map(|item| item.id.clone())
+            .collect()
+    };
+    let mut plan = Plan {
+        files: Vec::new(),
+        preview: InstallPreview {
+            mods: Vec::new(),
+            manual: Vec::new(),
+        },
+    };
+
+    let modrinth_ids = ids_from(Source::Modrinth);
+    if !modrinth_ids.is_empty() {
+        let hashes: Vec<String> = present.iter().map(|file| file.sha1.clone()).collect();
+        let installed = modrinth::versions_by_hash(&launcher.client, &hashes).await?;
+        let versions = modrinth::resolve_install(
+            &launcher.client,
+            &modrinth_ids,
+            &instance.version,
+            Some(loader),
+            installed.into_values().map(|version| version.project_id),
+        )
+        .await?;
+        let project_ids: Vec<String> = versions.iter().map(|v| v.project_id.clone()).collect();
+        let titles: HashMap<String, String> = modrinth::projects(&launcher.client, &project_ids)
+            .await?
+            .into_iter()
+            .map(|project| (project.id, project.title))
+            .collect();
+        for version in &versions {
+            let Some(file) = version.remote_file() else {
+                continue;
+            };
+            plan.preview.mods.push(PlannedMod {
+                title: titles
+                    .get(&version.project_id)
+                    .cloned()
+                    .unwrap_or_else(|| file.file_name.clone()),
+                requested: modrinth_ids.contains(&version.project_id),
+            });
+            plan.files.push(file);
+        }
+    }
+
+    let curseforge_ids: Vec<u32> = ids_from(Source::Curseforge)
         .iter()
-        .filter_map(modrinth::Version::remote_file)
-        .collect())
+        .filter_map(|id| id.parse().ok())
+        .collect();
+    if !curseforge_ids.is_empty() {
+        let curseforge = curseforge(launcher)?;
+        let installed = installed_curseforge_mods(curseforge, &game_dir, &present).await;
+        let resolved = curseforge
+            .resolve_install(&curseforge_ids, &instance.version, loader, installed)
+            .await?;
+        let mod_ids: Vec<u32> = resolved.files.iter().map(|(id, _)| *id).collect();
+        let titles: HashMap<u32, String> = curseforge
+            .mods(&mod_ids)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|found| (found.id, found.name))
+            .collect();
+        for (mod_id, file) in resolved.files {
+            plan.preview.mods.push(PlannedMod {
+                title: titles
+                    .get(&mod_id)
+                    .cloned()
+                    .unwrap_or_else(|| file.file_name.clone()),
+                requested: curseforge_ids.contains(&mod_id),
+            });
+            plan.files.push(file);
+        }
+        plan.preview.manual = manual_downloads(curseforge, &resolved.manual).await;
+    }
+
+    // Requested mods first, then the dependencies they pull in.
+    plan.preview.mods.sort_by_key(|planned| !planned.requested);
+    Ok(plan)
+}
+
+async fn installed_curseforge_mods(
+    curseforge: &CurseForge,
+    game_dir: &std::path::Path,
+    present: &[ModFile],
+) -> Vec<u32> {
+    let mut fingerprints = Vec::with_capacity(present.len());
+    for file in present {
+        let path = mods::mods_dir(game_dir).join(&file.file_name);
+        if let Ok(bytes) = tokio::fs::read(&path).await {
+            fingerprints.push(selene_core::curseforge::fingerprint(&bytes));
+        }
+    }
+    curseforge
+        .files_by_fingerprint(&fingerprints)
+        .await
+        .map(|found| found.into_values().map(|file| file.mod_id).collect())
+        .unwrap_or_default()
 }
 
 pub(crate) async fn manual_downloads(

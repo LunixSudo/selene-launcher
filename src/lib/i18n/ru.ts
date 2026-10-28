@@ -95,6 +95,22 @@ export const ru = {
     cancel: "Отмена",
     submit: "Создать",
   },
+  catalog: {
+    select: "Выбрать",
+    done: "Готово",
+    selected: "Выбрано: {count}",
+    clear: "Сбросить",
+    addSelected: "Добавить ({count})",
+  },
+  install: {
+    title: "Установка модов",
+    requested: "Вы выбрали ({count})",
+    dependencies: "Зависимости ({count})",
+    dependenciesHint:
+      "Без них выбранные моды не запустятся, поэтому они установятся вместе с ними.",
+    manual: "Скачать вручную",
+    confirm: "Установить ({count})",
+  },
   edit: {
     title: "Оформление сборки",
     name: "Название",
