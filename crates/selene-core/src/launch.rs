@@ -176,6 +176,11 @@ fn extract_jar(jar: &Path, target: &Path) -> Result<()> {
             continue;
         }
         let out_path = target.join(name);
+        // Another game of the same version may be running with these libraries loaded, and
+        // Windows does not let a loaded DLL be overwritten.
+        if std::fs::metadata(&out_path).is_ok_and(|meta| meta.len() == entry.size()) {
+            continue;
+        }
         if let Some(parent) = out_path.parent() {
             std::fs::create_dir_all(parent).map_err(|err| Error::io(parent, err))?;
         }
