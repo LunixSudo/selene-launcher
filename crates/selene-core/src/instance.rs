@@ -30,6 +30,23 @@ pub struct Instance {
     /// Name of one of the launcher's built-in cover gradients; `None` picks one from the id.
     #[serde(default)]
     pub cover: Option<String>,
+    /// Total time spent in the game.
+    #[serde(default)]
+    pub play_seconds: u64,
+    /// Game window size; `None` keeps the game's default.
+    #[serde(default)]
+    pub window: Option<WindowSize>,
+    #[serde(default)]
+    pub fullscreen: bool,
+    /// Extra JVM arguments, separated by spaces.
+    #[serde(default)]
+    pub java_args: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WindowSize {
+    pub width: u32,
+    pub height: u32,
 }
 
 /// Instances live in `root/<id>/`, each with its config and a `minecraft` game folder.
@@ -94,6 +111,10 @@ impl Instances {
             max_memory_mb: None,
             icon: None,
             cover: None,
+            play_seconds: 0,
+            window: None,
+            fullscreen: false,
+            java_args: String::new(),
         };
         let game_dir = self.game_dir(&instance.id);
         fs::create_dir_all(&game_dir)

@@ -27,6 +27,7 @@ pub struct LaunchOptions {
     pub account: LaunchAccount,
     pub max_memory_mb: u32,
     pub resolution: Option<(u32, u32)>,
+    pub fullscreen: bool,
     pub quick_play: Option<QuickPlay>,
     pub extra_jvm_args: Vec<String>,
 }
@@ -115,6 +116,9 @@ fn build_command_for(
                 height.to_string(),
             ]);
         }
+    }
+    if options.fullscreen {
+        args.push("--fullscreen".into());
     }
 
     LaunchCommand {
@@ -329,6 +333,7 @@ mod tests {
             },
             max_memory_mb: 4096,
             resolution: None,
+            fullscreen: false,
             quick_play: None,
             extra_jvm_args: Vec::new(),
         }
@@ -378,6 +383,14 @@ mod tests {
             args[main + 1..],
             ["--username", "Steve", "--version", "1.21.10"]
         );
+    }
+
+    #[test]
+    fn asks_for_fullscreen() {
+        let mut options = options();
+        options.fullscreen = true;
+
+        assert_eq!(command(MODERN, &options).last().unwrap(), "--fullscreen");
     }
 
     #[test]
