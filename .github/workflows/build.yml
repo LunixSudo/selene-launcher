@@ -32,7 +32,7 @@ jobs:
           Copy-Item target/release/selene-launcher.exe portable/
           New-Item -ItemType File portable/portable.txt | Out-Null
           Compress-Archive -Path portable/* -DestinationPath dist/selene-launcher-portable.zip
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: selene-launcher-windows
           path: dist/
