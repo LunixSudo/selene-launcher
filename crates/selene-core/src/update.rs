@@ -12,7 +12,7 @@ use crate::{Error, Result, download};
 
 const LATEST_RELEASE_URL: &str =
     "https://api.github.com/repos/LunixSudo/selene-launcher/releases/latest";
-const INSTALLER_SUFFIX: &str = "-setup.exe";
+const INSTALLER_PREFIX: &str = "SeleneLauncher-Windows-Setup-";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -56,9 +56,7 @@ pub async fn check(client: &Client, current: &str) -> Result<Option<Update>> {
     }
     let installer = release.assets.into_iter().find_map(|asset| {
         let sha256 = asset.digest?.strip_prefix("sha256:")?.to_owned();
-        asset
-            .name
-            .ends_with(INSTALLER_SUFFIX)
+        (asset.name.starts_with(INSTALLER_PREFIX) && asset.name.ends_with(".exe"))
             .then_some((asset.browser_download_url, sha256))
     });
     Ok(installer.map(|(url, sha256)| Update {
@@ -74,10 +72,7 @@ pub async fn download(client: &Client, update: &Update, dir: &Path) -> Result<Pa
     tokio::fs::create_dir_all(dir)
         .await
         .map_err(|err| Error::io(dir, err))?;
-    let path = dir.join(format!(
-        "selene-launcher-{}{INSTALLER_SUFFIX}",
-        update.version
-    ));
+    let path = dir.join(format!("{INSTALLER_PREFIX}{}.exe", update.version));
     let mut file = tokio::fs::File::create(&path)
         .await
         .map_err(|err| Error::io(&path, err))?;

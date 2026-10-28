@@ -85,6 +85,8 @@ All notable changes to this project are documented here. The format follows
 - Launcher data lives in `%APPDATA%\SeleneLauncher` instead of a folder named after the app
   identifier.
 - A data pack can only be added once the instance has a world, and the message says so.
+- Downloads are named like `SeleneLauncher-Windows-Setup-0.1.0.exe` and
+  `SeleneLauncher-Windows-Portable-0.1.0.zip`; the portable zip also carries the license.
 
 ### Fixed
 

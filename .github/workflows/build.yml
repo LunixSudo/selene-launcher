@@ -27,11 +27,12 @@ jobs:
       - name: Collect the installer and the portable version
         shell: pwsh
         run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
           New-Item -ItemType Directory dist, portable | Out-Null
-          Copy-Item target/release/bundle/nsis/*-setup.exe dist/
-          Copy-Item target/release/selene-launcher.exe portable/
+          Copy-Item target/release/bundle/nsis/*-setup.exe "dist/SeleneLauncher-Windows-Setup-$version.exe"
+          Copy-Item target/release/selene-launcher.exe, LICENSE portable/
           New-Item -ItemType File portable/portable.txt | Out-Null
-          Compress-Archive -Path portable/* -DestinationPath dist/selene-launcher-portable.zip
+          Compress-Archive -Path portable/* -DestinationPath "dist/SeleneLauncher-Windows-Portable-$version.zip"
       - uses: actions/upload-artifact@v7
         with:
           name: selene-launcher-windows
@@ -43,5 +44,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $installer = Get-ChildItem dist/*-setup.exe | Select-Object -First 1
-          gh release create $env:GITHUB_REF_NAME $installer.FullName dist/selene-launcher-portable.zip --generate-notes
+          gh release create $env:GITHUB_REF_NAME (Get-ChildItem dist/*).FullName --generate-notes
