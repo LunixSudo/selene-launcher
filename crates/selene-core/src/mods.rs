@@ -17,6 +17,8 @@ pub enum ContentKind {
     Mod,
     ResourcePack,
     ShaderPack,
+    /// Lives inside one world's folder, so its `game_dir` is that world.
+    DataPack,
 }
 
 impl ContentKind {
@@ -25,6 +27,7 @@ impl ContentKind {
             Self::Mod => "mods",
             Self::ResourcePack => "resourcepacks",
             Self::ShaderPack => "shaderpacks",
+            Self::DataPack => "datapacks",
         }
     }
 
@@ -40,7 +43,7 @@ impl ContentKind {
         };
         let extension = match self {
             Self::Mod => "jar",
-            Self::ResourcePack | Self::ShaderPack => "zip",
+            Self::ResourcePack | Self::ShaderPack | Self::DataPack => "zip",
         };
         if has_extension(path, extension) {
             Some(true)

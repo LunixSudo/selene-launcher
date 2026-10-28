@@ -15,8 +15,12 @@
   import ContextMenu, { type MenuItem } from "./ContextMenu.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
 
-  let { instanceId, kind, refresh }: { instanceId: string; kind: ContentKind; refresh: number } =
-    $props();
+  let {
+    instanceId,
+    kind,
+    world = null,
+    refresh,
+  }: { instanceId: string; kind: ContentKind; world?: string | null; refresh: number } = $props();
 
   let files = $state<InstalledFile[] | null>(null);
   let updates = $state<ContentUpdate[] | null>(null);
@@ -38,13 +42,20 @@
   $effect(() => {
     void refresh;
     void kind;
+    void world;
     updates = null;
     void load();
   });
 
   async function load() {
+    const request = { kind, world };
+    error = null;
     try {
-      files = await api.installedContent(instanceId, kind);
+      const loaded = await api.installedContent(instanceId, request.kind, request.world);
+      // Switching tabs quickly must not show the previous kind's files.
+      if (request.kind === kind && request.world === world) {
+        files = loaded;
+      }
     } catch (err) {
       error = describeError(err);
     }
@@ -61,12 +72,12 @@
   }
 
   async function setEnabled(file: InstalledFile, enabled: boolean) {
-    await api.setContentEnabled(instanceId, kind, file.fileName, enabled);
+    await api.setContentEnabled(instanceId, kind, world, file.fileName, enabled);
     await load();
   }
 
   async function remove(file: InstalledFile) {
-    await api.removeContent(instanceId, kind, file.fileName);
+    await api.removeContent(instanceId, kind, world, file.fileName);
     updates = null;
     await load();
   }
@@ -75,7 +86,7 @@
     checking = true;
     error = null;
     try {
-      updates = await api.checkUpdates(instanceId, kind);
+      updates = await api.checkUpdates(instanceId, kind, world);
     } catch (err) {
       error = describeError(err);
     } finally {
@@ -87,7 +98,7 @@
     updating = true;
     error = null;
     try {
-      const count = await api.updateContent(instanceId, kind);
+      const count = await api.updateContent(instanceId, kind, world);
       updates = [];
       if (count > 0) {
         const name = library.instances.find((instance) => instance.id === instanceId)?.name ?? "";
@@ -248,6 +259,7 @@
     bind:open={showing}
     {instanceId}
     {kind}
+    {world}
     project={shown.project}
     installedFile={shown.file.fileName}
     installedVersion={shown.file.versionNumber}

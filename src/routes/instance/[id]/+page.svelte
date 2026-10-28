@@ -7,27 +7,22 @@
   import GameConsole from "$lib/components/GameConsole.svelte";
   import InstanceSettings from "$lib/components/InstanceSettings.svelte";
   import ScreenshotGallery from "$lib/components/ScreenshotGallery.svelte";
+  import Segmented from "$lib/components/Segmented.svelte";
   import ServerList from "$lib/components/ServerList.svelte";
   import ShareDialog from "$lib/components/ShareDialog.svelte";
   import WorldList from "$lib/components/WorldList.svelte";
+  import WorldPicker from "$lib/components/WorldPicker.svelte";
   import { playTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { library, loadInstances, play } from "$lib/state/instances.svelte";
 
-  type Tab =
-    | "mods"
-    | "resourcePacks"
-    | "shaderPacks"
-    | "catalog"
-    | "worlds"
-    | "servers"
-    | "screenshots"
-    | "settings"
-    | "logs";
+  type Tab = "content" | "catalog" | "worlds" | "servers" | "screenshots" | "settings" | "logs";
 
   let chosenTab = $state<Tab | null>(null);
   let refresh = $state(0);
+  let chosenKind = $state<ContentKind>("mod");
+  let world = $state<string | null>(null);
   let sharing = $state(false);
 
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
@@ -35,13 +30,15 @@
   const running = $derived(launch?.status === "running");
   const COMMON_TABS: Tab[] = ["worlds", "servers", "screenshots", "settings", "logs"];
 
-  const tabs = $derived<Tab[]>(
-    instance?.loader
-      ? ["mods", "resourcePacks", "shaderPacks", "catalog", ...COMMON_TABS]
-      : ["resourcePacks", "catalog", ...COMMON_TABS],
-  );
+  const tabs: Tab[] = ["content", "catalog", ...COMMON_TABS];
   const kinds = $derived<ContentKind[]>(
-    instance?.loader ? ["mod", "resourcePack", "shaderPack"] : ["resourcePack"],
+    instance?.loader
+      ? ["mod", "resourcePack", "shaderPack", "dataPack"]
+      : ["resourcePack", "dataPack"],
+  );
+  const kind = $derived(kinds.includes(chosenKind) ? chosenKind : kinds[0]);
+  const kindOptions = $derived(
+    kinds.map((value) => ({ value, label: t(`content.kinds.${value}`) })),
   );
   const crash = $derived(instance ? library.crashes[instance.id] : undefined);
   const tab = $derived(chosenTab ?? tabs[0]);
@@ -114,14 +111,31 @@
     </div>
 
     <div class="content" role="tabpanel">
-      {#if tab === "mods"}
-        <ContentList instanceId={instance.id} kind="mod" {refresh} />
-      {:else if tab === "resourcePacks"}
-        <ContentList instanceId={instance.id} kind="resourcePack" {refresh} />
-      {:else if tab === "shaderPacks"}
-        <ContentList instanceId={instance.id} kind="shaderPack" {refresh} />
+      {#if tab === "content"}
+        <div class="kinds">
+          <Segmented
+            bind:value={() => kind, (value) => (chosenKind = value)}
+            options={kindOptions}
+            name="content-kind"
+            label={t("instance.content")}
+          />
+        </div>
+        {#if kind === "dataPack"}
+          <WorldPicker instanceId={instance.id} bind:value={world} />
+          {#if world}
+            <ContentList instanceId={instance.id} {kind} {world} {refresh} />
+          {/if}
+        {:else}
+          <ContentList instanceId={instance.id} {kind} {refresh} />
+        {/if}
       {:else if tab === "catalog"}
-        <ContentCatalog instanceId={instance.id} {kinds} oninstall={() => refresh++} />
+        <ContentCatalog
+          instanceId={instance.id}
+          {kinds}
+          bind:kind={chosenKind}
+          bind:world
+          oninstall={() => refresh++}
+        />
       {:else if tab === "worlds"}
         <WorldList instanceId={instance.id} />
       {:else if tab === "servers"}
@@ -250,6 +264,11 @@
     min-height: 0;
     overflow-y: auto;
     padding-bottom: 8px;
+  }
+
+  .kinds {
+    display: flex;
+    margin-bottom: 10px;
   }
 
   .muted {

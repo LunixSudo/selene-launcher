@@ -18,6 +18,7 @@
     open = $bindable(),
     instanceId,
     kind,
+    world = null,
     project,
     installedFile = null,
     installedVersion = null,
@@ -27,6 +28,7 @@
     open: boolean;
     instanceId: string;
     kind: ContentKind;
+    world?: string | null;
     project: ProjectRef;
     /** File to replace when a version is picked; without it the dialog only shows info. */
     installedFile?: string | null;
@@ -97,7 +99,7 @@
     busy = version.id;
     error = null;
     try {
-      await api.installVersion(instanceId, kind, project, version.id, installedFile);
+      await api.installVersion(instanceId, kind, world, project, version.id, installedFile);
       onchange?.();
       open = false;
     } catch (err) {

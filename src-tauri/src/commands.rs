@@ -377,7 +377,7 @@ async fn start_game(
             },
         );
         // Being offline should not stop the game from starting with the mods it has.
-        let _ = content::update_all(launcher, &instance.id, ContentKind::Mod).await;
+        let _ = content::update_all(launcher, &instance.id, ContentKind::Mod, None).await;
     }
 
     let last_percent = AtomicU32::new(u32::MAX);

@@ -1,13 +1,14 @@
 //! Mods, resource packs and shader packs: the catalog and what is installed.
 
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use selene_core::curseforge::{self, CurseForge};
 use selene_core::instance::Instance;
 use selene_core::loader::{Loader, LoaderVersion};
 use selene_core::modrinth::{self, DependencyType, Project, SearchQuery, Target, Version};
 use selene_core::mods::{self, CatalogSort, ContentKind, ModFile, RemoteFile};
+use selene_core::saves;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
@@ -304,8 +305,9 @@ pub async fn installed_projects(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
 ) -> CommandResult<Vec<String>> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
     let files = mods::list(&game_dir, kind).await?;
     let hashes: Vec<String> = files.iter().map(|file| file.sha1.clone()).collect();
 
@@ -343,17 +345,19 @@ pub async fn installed_content(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
 ) -> CommandResult<Vec<InstalledFile>> {
-    list_installed(&launcher, &instance_id, kind).await
+    list_installed(&launcher, &instance_id, kind, world.as_deref()).await
 }
 
 async fn list_installed(
     launcher: &Launcher,
     instance_id: &str,
     kind: ContentKind,
+    world: Option<&str>,
 ) -> CommandResult<Vec<InstalledFile>> {
     let instance = instance(launcher, instance_id).await?;
-    let game_dir = launcher.instances.game_dir(instance_id);
+    let game_dir = content_dir(launcher, instance_id, kind, world)?;
     let files = mods::list(&game_dir, kind).await?;
     let hashes: Vec<String> = files.iter().map(|file| file.sha1.clone()).collect();
     // Without a connection the list still shows, just with file names only.
@@ -461,9 +465,14 @@ pub async fn preview_install(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
     items: Vec<CatalogItem>,
 ) -> CommandResult<InstallPreview> {
-    Ok(plan(&launcher, &instance_id, kind, &items).await?.preview)
+    Ok(
+        plan(&launcher, &instance_id, kind, world.as_deref(), &items)
+            .await?
+            .preview,
+    )
 }
 
 /// Installs the picked projects and their required dependencies.
@@ -472,13 +481,14 @@ pub async fn install_content(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
     items: Vec<CatalogItem>,
 ) -> CommandResult<InstallResult> {
-    let plan = plan(&launcher, &instance_id, kind, &items).await?;
+    let plan = plan(&launcher, &instance_id, kind, world.as_deref(), &items).await?;
     if plan.files.is_empty() && plan.preview.manual.is_empty() {
         return Err(CommandError::NoCompatibleVersion);
     }
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
     mods::install(&launcher.client, &game_dir, kind, &plan.files).await?;
     Ok(InstallResult {
         installed: plan.files.len(),
@@ -490,11 +500,12 @@ async fn plan(
     launcher: &Launcher,
     instance_id: &str,
     kind: ContentKind,
+    world: Option<&str>,
     items: &[CatalogItem],
 ) -> CommandResult<Plan> {
     let instance = instance(launcher, instance_id).await?;
     let loader = loader_for(&instance, kind)?;
-    let game_dir = launcher.instances.game_dir(instance_id);
+    let game_dir = content_dir(launcher, instance_id, kind, world)?;
     let present = mods::list(&game_dir, kind).await?;
 
     let ids_from = |source: Source| -> Vec<String> {
@@ -689,10 +700,11 @@ pub async fn set_content_enabled(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
     file_name: String,
     enabled: bool,
 ) -> CommandResult<()> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
     Ok(mods::set_enabled(&game_dir, kind, &file_name, enabled).await?)
 }
 
@@ -701,9 +713,10 @@ pub async fn remove_content(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
     file_name: String,
 ) -> CommandResult<()> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
     Ok(mods::remove(&game_dir, kind, &file_name).await?)
 }
 
@@ -713,8 +726,9 @@ pub async fn check_updates(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
 ) -> CommandResult<Vec<ContentUpdate>> {
-    let installed = list_installed(&launcher, &instance_id, kind).await?;
+    let installed = list_installed(&launcher, &instance_id, kind, world.as_deref()).await?;
     let files: Vec<ModFile> = installed
         .iter()
         .map(|installed| installed.file.clone())
@@ -742,16 +756,18 @@ pub async fn update_content(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
 ) -> CommandResult<u32> {
-    update_all(&launcher, &instance_id, kind).await
+    update_all(&launcher, &instance_id, kind, world.as_deref()).await
 }
 
 pub(crate) async fn update_all(
     launcher: &Launcher,
     instance_id: &str,
     kind: ContentKind,
+    world: Option<&str>,
 ) -> CommandResult<u32> {
-    let game_dir = launcher.instances.game_dir(instance_id);
+    let game_dir = content_dir(launcher, instance_id, kind, world)?;
     let files = mods::list(&game_dir, kind).await?;
     let mut count = 0;
     for (file, update) in available_updates(launcher, instance_id, kind, &files).await? {
@@ -852,7 +868,7 @@ async fn change_plan(
         incompatible: Vec::new(),
         unknown: Vec::new(),
     };
-    let installed = list_installed(launcher, instance_id, ContentKind::Mod).await?;
+    let installed = list_installed(launcher, instance_id, ContentKind::Mod, None).await?;
     let Some(loader) = loader else {
         // Without a loader no mod runs at all.
         plan.incompatible = installed
@@ -979,11 +995,12 @@ pub async fn install_version(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
+    world: Option<String>,
     project: ProjectRef,
     version_id: String,
     file_name: String,
 ) -> CommandResult<()> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
     let old = mods::list(&game_dir, kind)
         .await?
         .into_iter()
@@ -1056,6 +1073,21 @@ async fn instance(launcher: &Launcher, id: &str) -> CommandResult<Instance> {
         .ok_or_else(|| CommandError::UnknownInstance(id.to_owned()))
 }
 
+/// The folder the content kind lives under: the instance, or one of its worlds.
+fn content_dir(
+    launcher: &Launcher,
+    instance_id: &str,
+    kind: ContentKind,
+    world: Option<&str>,
+) -> CommandResult<PathBuf> {
+    let game_dir = launcher.instances.game_dir(instance_id);
+    match (kind, world) {
+        (ContentKind::DataPack, Some(world)) => Ok(saves::world_dir(&game_dir, world)?),
+        (ContentKind::DataPack, None) => Err(CommandError::NoWorld),
+        _ => Ok(game_dir),
+    }
+}
+
 fn curseforge(launcher: &Launcher) -> CommandResult<&CurseForge> {
     launcher
         .curseforge
@@ -1086,6 +1118,7 @@ fn modrinth_section(kind: ContentKind) -> &'static str {
         ContentKind::Mod => "mod",
         ContentKind::ResourcePack => "resourcepack",
         ContentKind::ShaderPack => "shader",
+        ContentKind::DataPack => "datapack",
     }
 }
 

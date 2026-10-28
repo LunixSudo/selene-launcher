@@ -174,7 +174,7 @@ export interface InstallResult {
   manual: ManualDownload[];
 }
 
-export type ContentKind = "mod" | "resourcePack" | "shaderPack";
+export type ContentKind = "mod" | "resourcePack" | "shaderPack" | "dataPack";
 export type CatalogSort = "relevance" | "downloads" | "newest" | "updated";
 
 export interface CategoryTag {
@@ -398,22 +398,35 @@ export const api = {
     }),
   catalogCategories: (kind: ContentKind, source: Source) =>
     invoke<CategoryTag[]>("catalog_categories", { kind, source }),
-  installedProjects: (instanceId: string, kind: ContentKind) =>
-    invoke<string[]>("installed_projects", { instanceId, kind }),
-  installedContent: (instanceId: string, kind: ContentKind) =>
-    invoke<InstalledFile[]>("installed_content", { instanceId, kind }),
-  previewInstall: (instanceId: string, kind: ContentKind, items: CatalogItem[]) =>
-    invoke<InstallPreview>("preview_install", { instanceId, kind, items }),
-  installContent: (instanceId: string, kind: ContentKind, items: CatalogItem[]) =>
-    invoke<InstallResult>("install_content", { instanceId, kind, items }),
-  setContentEnabled: (instanceId: string, kind: ContentKind, fileName: string, enabled: boolean) =>
-    invoke<void>("set_content_enabled", { instanceId, kind, fileName, enabled }),
-  removeContent: (instanceId: string, kind: ContentKind, fileName: string) =>
-    invoke<void>("remove_content", { instanceId, kind, fileName }),
-  checkUpdates: (instanceId: string, kind: ContentKind) =>
-    invoke<ContentUpdate[]>("check_updates", { instanceId, kind }),
-  updateContent: (instanceId: string, kind: ContentKind) =>
-    invoke<number>("update_content", { instanceId, kind }),
+  installedProjects: (instanceId: string, kind: ContentKind, world: string | null) =>
+    invoke<string[]>("installed_projects", { instanceId, kind, world }),
+  installedContent: (instanceId: string, kind: ContentKind, world: string | null) =>
+    invoke<InstalledFile[]>("installed_content", { instanceId, kind, world }),
+  previewInstall: (
+    instanceId: string,
+    kind: ContentKind,
+    world: string | null,
+    items: CatalogItem[],
+  ) => invoke<InstallPreview>("preview_install", { instanceId, kind, world, items }),
+  installContent: (
+    instanceId: string,
+    kind: ContentKind,
+    world: string | null,
+    items: CatalogItem[],
+  ) => invoke<InstallResult>("install_content", { instanceId, kind, world, items }),
+  setContentEnabled: (
+    instanceId: string,
+    kind: ContentKind,
+    world: string | null,
+    fileName: string,
+    enabled: boolean,
+  ) => invoke<void>("set_content_enabled", { instanceId, kind, world, fileName, enabled }),
+  removeContent: (instanceId: string, kind: ContentKind, world: string | null, fileName: string) =>
+    invoke<void>("remove_content", { instanceId, kind, world, fileName }),
+  checkUpdates: (instanceId: string, kind: ContentKind, world: string | null) =>
+    invoke<ContentUpdate[]>("check_updates", { instanceId, kind, world }),
+  updateContent: (instanceId: string, kind: ContentKind, world: string | null) =>
+    invoke<number>("update_content", { instanceId, kind, world }),
   projectVersions: (instanceId: string, kind: ContentKind, project: ProjectRef) =>
     invoke<ProjectVersion[]>("project_versions", { instanceId, kind, project }),
   curseforgeChangelog: (projectId: string, fileId: string) =>
@@ -421,10 +434,11 @@ export const api = {
   installVersion: (
     instanceId: string,
     kind: ContentKind,
+    world: string | null,
     project: ProjectRef,
     versionId: string,
     fileName: string,
-  ) => invoke<void>("install_version", { instanceId, kind, project, versionId, fileName }),
+  ) => invoke<void>("install_version", { instanceId, kind, world, project, versionId, fileName }),
   previewVersionChange: (instanceId: string, version: string, loader: LoaderVersion | null) =>
     invoke<VersionChange>("preview_version_change", { instanceId, version, loader }),
   changeVersion: (instanceId: string, version: string, loader: LoaderVersion | null) =>

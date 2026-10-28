@@ -10,8 +10,11 @@ All notable changes to this project are documented here. The format follows
 
 - Sign-in with a Microsoft account; the refresh token is kept in the system credential store.
 - Instances for any game version with Fabric or Quilt, with automatic Java and memory.
-- Mod, resource pack and shader catalog from Modrinth and CurseForge, with categories,
-  sorting, project pages and required dependencies added automatically.
+- Mod, resource pack, shader and data pack catalog from Modrinth and CurseForge, with
+  several categories at once, sorting, project pages and required dependencies added
+  automatically. Data packs go into a chosen world.
+- An "Add-ons" tab that lists everything installed, with a warning before turning on
+  something made for another game version.
 - Mod updates, by hand or right before the game starts, and picking any older version.
 - Warnings in the mod list when a mod needs another one or conflicts with one.
 - Changing an instance's game version, with a check of which mods have a matching build.

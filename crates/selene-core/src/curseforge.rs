@@ -174,6 +174,7 @@ fn class_id(kind: ContentKind) -> u32 {
         ContentKind::Mod => 6,
         ContentKind::ResourcePack => 12,
         ContentKind::ShaderPack => 6552,
+        ContentKind::DataPack => 6945,
     }
 }
 

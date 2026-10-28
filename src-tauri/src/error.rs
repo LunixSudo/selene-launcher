@@ -23,6 +23,9 @@ pub enum CommandError {
     #[error("this instance has no mod loader")]
     NoLoader,
 
+    #[error("data packs need a world to go into")]
+    NoWorld,
+
     #[error("no version of this mod runs on this instance")]
     NoCompatibleVersion,
 
@@ -53,6 +56,7 @@ impl CommandError {
             Self::UnknownVersion(_) => "unknownVersion",
             Self::UnknownInstance(_) => "unknownInstance",
             Self::NoLoader => "noLoader",
+            Self::NoWorld => "noWorld",
             Self::NoCompatibleVersion => "noCompatibleVersion",
             Self::AlreadyRunning(_) => "alreadyRunning",
             Self::JavaNotFound(_) => "javaNotFound",

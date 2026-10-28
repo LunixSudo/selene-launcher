@@ -18,12 +18,21 @@
   import ProjectDialog from "./ProjectDialog.svelte";
   import Segmented from "./Segmented.svelte";
   import Select from "./Select.svelte";
+  import WorldPicker from "./WorldPicker.svelte";
 
   let {
     instanceId,
     kinds,
+    kind: chosenKind = $bindable("mod"),
+    world = $bindable(null),
     oninstall,
-  }: { instanceId: string; kinds: ContentKind[]; oninstall: () => void } = $props();
+  }: {
+    instanceId: string;
+    kinds: ContentKind[];
+    kind?: ContentKind;
+    world?: string | null;
+    oninstall: () => void;
+  } = $props();
 
   const SEARCH_DELAY_MS = 300;
   const SOURCE_NAMES: Record<Source, string> = { modrinth: "Modrinth", curseforge: "CurseForge" };
@@ -44,7 +53,6 @@
   };
 
   let source = $state<Source>(loadSource());
-  let chosenKind = $state<ContentKind>("mod");
   let chosenCategories = $state<string[]>([]);
   let sort = $state<CatalogSort>("relevance");
   let categories = $state<CategoryTag[]>([]);
@@ -100,7 +108,7 @@
   });
 
   $effect(() => {
-    void loadInstalled(instanceId, kind);
+    void loadInstalled(instanceId, kind, world);
   });
 
   $effect(() => {
@@ -123,15 +131,23 @@
     return "modrinth";
   }
 
-  async function loadInstalled(id: string, current: ContentKind) {
+  async function loadInstalled(id: string, current: ContentKind, place: string | null) {
+    installed = new Set();
+    if (current === "dataPack" && !place) {
+      return;
+    }
     try {
-      installed = new Set(await api.installedProjects(id, current));
+      installed = new Set(await api.installedProjects(id, current, worldFor(current, place)));
       if (current === "shaderPack") {
-        hasIris = (await api.installedProjects(id, "mod")).includes(`modrinth:${IRIS.id}`);
+        hasIris = (await api.installedProjects(id, "mod", null)).includes(`modrinth:${IRIS.id}`);
       }
     } catch {
       // Without it every entry just offers to install.
     }
+  }
+
+  function worldFor(target: ContentKind, place = world): string | null {
+    return target === "dataPack" ? place : null;
   }
 
   function status(hit: CatalogHit): "busy" | "done" | undefined {
@@ -211,7 +227,7 @@
     setStatus(picked, "busy");
     error = null;
     try {
-      const plan = await api.previewInstall(instanceId, target, items(picked));
+      const plan = await api.previewInstall(instanceId, target, worldFor(target), items(picked));
       const onlyPicked = plan.mods.every((planned) => planned.requested);
       if (onlyPicked && plan.manual.length === 0) {
         await install();
@@ -229,12 +245,17 @@
     const picked = pending;
     setStatus(picked, "busy");
     try {
-      const result = await api.installContent(instanceId, pendingKind, items(picked));
+      const result = await api.installContent(
+        instanceId,
+        pendingKind,
+        worldFor(pendingKind),
+        items(picked),
+      );
       manual = result.manual;
       setStatus(picked, "done");
       stopSelecting();
       oninstall();
-      void loadInstalled(instanceId, kind);
+      void loadInstalled(instanceId, kind, world);
     } catch (err) {
       setStatus(picked, undefined);
       error = describeError(err);
@@ -279,6 +300,10 @@
       label={t("instance.catalog")}
     />
   </div>
+{/if}
+
+{#if kind === "dataPack"}
+  <WorldPicker {instanceId} bind:value={world} />
 {/if}
 
 <div class="search-bar">
@@ -327,7 +352,8 @@
       type="button"
       class="add"
       disabled={status(IRIS) !== undefined}
-      onclick={() => requestInstall([IRIS], "mod").then(() => loadInstalled(instanceId, kind))}
+      onclick={() =>
+        requestInstall([IRIS], "mod").then(() => loadInstalled(instanceId, kind, world))}
     >
       {t("content.addIris")}
     </button>

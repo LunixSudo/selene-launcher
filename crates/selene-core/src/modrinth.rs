@@ -40,6 +40,7 @@ impl<'a> Target<'a> {
             (ContentKind::ResourcePack, _) => &["minecraft"],
             // Iris runs nearly every pack made for OptiFine.
             (ContentKind::ShaderPack, _) => &["iris", "optifine"],
+            (ContentKind::DataPack, _) => &["datapack"],
         };
         Self {
             game_version,
@@ -197,6 +198,7 @@ impl From<ContentKind> for ProjectType {
             ContentKind::Mod => Self::Mod,
             ContentKind::ResourcePack => Self::Resourcepack,
             ContentKind::ShaderPack => Self::Shader,
+            ContentKind::DataPack => Self::Datapack,
         }
     }
 }
@@ -314,7 +316,12 @@ pub async fn project(client: &Client, id: &str) -> Result<ProjectDetails> {
 /// Category tags for one kind of project, without the ones that describe resolution or
 /// performance impact.
 pub async fn categories(client: &Client, kind: ContentKind) -> Result<Vec<Category>> {
-    let project_type = ProjectType::from(kind).as_str();
+    // Data packs share their tags with mods.
+    let project_type = match kind {
+        ContentKind::DataPack => ProjectType::Mod,
+        kind => ProjectType::from(kind),
+    }
+    .as_str();
     let categories: Vec<Category> = client
         .get(format!("{API_URL}/tag/category"))
         .send()
