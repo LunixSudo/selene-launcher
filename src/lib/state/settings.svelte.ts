@@ -38,7 +38,7 @@ interface Settings {
 
 const DEFAULTS: Settings = {
   theme: "system",
-  style: "mica",
+  style: "solid",
   accent: "violet",
   font: "rounded",
   afterLaunch: "close",
