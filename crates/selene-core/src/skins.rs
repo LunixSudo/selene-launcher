@@ -125,7 +125,7 @@ impl SkinLibrary {
     fn save(&self, skins: &[SavedSkin]) -> Result<()> {
         let path = self.index_path();
         let bytes = serde_json::to_vec_pretty(skins)?;
-        std::fs::write(&path, bytes).map_err(|err| Error::io(path, err))
+        crate::fs::write_atomic_blocking(&path, &bytes)
     }
 
     fn index_path(&self) -> PathBuf {

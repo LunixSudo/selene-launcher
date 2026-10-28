@@ -241,7 +241,7 @@ pub fn save_servers(game_dir: &Path, servers: &[Server]) -> Result<()> {
 
     let path = game_dir.join(SERVERS_FILE);
     let bytes = fastnbt::to_bytes(&root)?;
-    fs::write(&path, bytes).map_err(|err| Error::io(&path, err))
+    crate::fs::write_atomic_blocking(&path, &bytes)
 }
 
 fn read_servers(game_dir: &Path) -> Result<Option<Value>> {

@@ -200,7 +200,9 @@ pub async fn set_instance_memory(
         .get(&instance_id)
         .await
         .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
-    instance.max_memory_mb = max_memory_mb;
+    let max = memory::max_mb(launcher.total_memory_mb);
+    let min = u32::try_from(memory::MIN_MB).unwrap_or(max);
+    instance.max_memory_mb = max_memory_mb.map(|amount| amount.clamp(min.min(max), max));
     launcher.instances.save(&instance).await?;
     Ok(instance)
 }
