@@ -32,7 +32,7 @@ async fn main() -> selene_core::Result<()> {
     let entry = manifest.get(&id).expect("unknown version");
 
     let loader = match loader_arg {
-        Some(arg) => Some(pick_loader(&client, &arg, &id).await?),
+        Some(arg) => Some(pick_loader(&client, &dirs, &arg, &id).await?),
         None => None,
     };
 
@@ -49,6 +49,7 @@ async fn main() -> selene_core::Result<()> {
 
 async fn pick_loader(
     client: &reqwest::Client,
+    dirs: &GameDirs,
     arg: &str,
     game_version: &str,
 ) -> selene_core::Result<LoaderVersion> {
@@ -61,12 +62,17 @@ async fn pick_loader(
         other => panic!("unknown loader {other}"),
     };
     let version = if version.is_empty() {
-        loader::releases(client, loader, game_version)
-            .await?
-            .into_iter()
-            .find(|release| release.stable)
-            .expect("no stable loader for this version")
-            .version
+        loader::releases(
+            client,
+            loader,
+            game_version,
+            &dirs.versions().join("loaders"),
+        )
+        .await?
+        .into_iter()
+        .find(|release| release.stable)
+        .expect("no stable loader for this version")
+        .version
     } else {
         version.to_owned()
     };

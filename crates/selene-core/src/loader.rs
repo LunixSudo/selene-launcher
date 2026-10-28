@@ -1,17 +1,20 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::path::Path;
+use std::time::Duration;
 
 use futures_util::{StreamExt, TryStreamExt, stream};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::version::{Arguments, Artifact, Library, LibraryDownloads, VersionInfo};
-use crate::{Result, forge, http};
+use crate::{Error, Result, forge, fs, http};
 
 const FABRIC_META_URL: &str = "https://meta.fabricmc.net/v2";
 const QUILT_META_URL: &str = "https://meta.quiltmc.org/v3";
 const HASH_CONCURRENCY: usize = 8;
+/// NeoForge's version API in particular fails now and then and answers a moment later.
+const RELEASES_RETRY_DELAY: Duration = Duration::from_secs(2);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -29,7 +32,7 @@ pub struct LoaderVersion {
     pub version: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LoaderRelease {
     pub version: String,
     pub stable: bool,
@@ -90,7 +93,39 @@ impl Loader {
 }
 
 /// Loader versions that support `game_version`, newest first. Empty if the loader does not.
+///
+/// A failed request is tried once more, then the list saved in `cache_dir` last time is used.
 pub async fn releases(
+    client: &Client,
+    loader: Loader,
+    game_version: &str,
+    cache_dir: &Path,
+) -> Result<Vec<LoaderRelease>> {
+    let cached = game_version
+        .chars()
+        .all(|char| char.is_ascii_alphanumeric() || matches!(char, '.' | '-' | '_'))
+        .then(|| cache_dir.join(format!("{loader:?}-{game_version}.json").to_lowercase()));
+    let mut fetched = fetch_releases(client, loader, game_version).await;
+    if matches!(fetched, Err(Error::Http(_))) {
+        tokio::time::sleep(RELEASES_RETRY_DELAY).await;
+        fetched = fetch_releases(client, loader, game_version).await;
+    }
+    match (fetched, cached) {
+        (Ok(releases), Some(path)) => {
+            if let Ok(bytes) = serde_json::to_vec(&releases) {
+                let _ = fs::write_atomic(&path, &bytes).await;
+            }
+            Ok(releases)
+        }
+        (Err(err @ Error::Http(_)), Some(path)) => match tokio::fs::read(&path).await {
+            Ok(bytes) => Ok(serde_json::from_slice(&bytes)?),
+            Err(_) => Err(err),
+        },
+        (result, _) => result,
+    }
+}
+
+async fn fetch_releases(
     client: &Client,
     loader: Loader,
     game_version: &str,

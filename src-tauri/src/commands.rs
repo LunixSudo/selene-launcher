@@ -155,7 +155,8 @@ pub async fn loader_versions(
     loader: Loader,
     game_version: String,
 ) -> CommandResult<Vec<LoaderRelease>> {
-    Ok(loader::releases(&launcher.client, loader, &game_version).await?)
+    let cache = launcher.dirs.versions().join("loaders");
+    Ok(loader::releases(&launcher.client, loader, &game_version, &cache).await?)
 }
 
 #[tauri::command]
