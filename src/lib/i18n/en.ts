@@ -322,6 +322,14 @@ export const en: Messages = {
     clear: "Clear",
     empty: "Game output shows up here once it starts.",
   },
+  updates: {
+    title: "Updates available",
+    loader: "Recommended {loader} version: {to} (you have {from}).",
+    content: "New versions: {list}.",
+    updateAll: "Update all",
+    working: "Updating…",
+    later: "Later",
+  },
   crash: {
     title: "The game closed with an error",
     showLogs: "Open logs",

@@ -38,6 +38,8 @@ All notable changes to this project are documented here. The format follows
 - Rounded tooltips in place of the system ones.
 - A third-party licenses page in the settings, generated at build time from the Rust and npm
   packages the launcher ships.
+- An instance page notice when the loader has a newer recommended build or mods, resource
+  packs or shaders have updates, with one button that updates all of it.
 - Changing an instance's mod loader build, newer or older, next to its game version; the
   recommended build is marked in every list.
 - An "Uninstall Selene Launcher" button at the bottom of the settings, which opens the Windows
@@ -93,6 +95,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Loader versions, NeoForge's especially, load more reliably: a failed request is tried
+  again, then the list saved last time is shown.
+- Hovering buttons in the solid style is visible in the dark theme.
 - A game log line that is not UTF-8 (the Windows console code page) no longer stops the log
   from being read, which could freeze the game once its output pipe filled up.
 - Two downloads of the same file in one batch no longer write over each other.

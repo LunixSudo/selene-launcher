@@ -10,6 +10,7 @@
   import Segmented from "$lib/components/Segmented.svelte";
   import ServerList from "$lib/components/ServerList.svelte";
   import ShareDialog from "$lib/components/ShareDialog.svelte";
+  import UpdateNotice from "$lib/components/UpdateNotice.svelte";
   import WorldList from "$lib/components/WorldList.svelte";
   import WorldPicker from "$lib/components/WorldPicker.svelte";
   import { playTime } from "$lib/format";
@@ -97,6 +98,13 @@
         ondismiss={() => delete library.crashes[instance.id]}
       />
     {/if}
+
+    <UpdateNotice
+      {instance}
+      {refresh}
+      disabled={launch?.status === "preparing" || running}
+      onupdated={() => refresh++}
+    />
 
     <div class="tabs" role="tablist">
       {#each tabs as name (name)}
