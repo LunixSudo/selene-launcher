@@ -45,7 +45,7 @@ pub fn run() {
         .setup(|app| {
             let data_dir = match portable_data_dir() {
                 Some(dir) => dir,
-                None => app.path().app_data_dir()?,
+                None => app.path().data_dir()?.join("SeleneLauncher"),
             };
             // World icons and screenshots are shown straight from the instance folders.
             app.asset_protocol_scope()

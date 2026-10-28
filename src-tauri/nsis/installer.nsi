@@ -927,7 +927,7 @@ Section Uninstall
     DeleteRegKey /ifempty HKCU "${MANUKEY}"
 
     SetShellVarContext current
-    RmDir /r "$APPDATA\${BUNDLEID}"
+    RmDir /r "$APPDATA\SeleneLauncher"
     RmDir /r "$LOCALAPPDATA\${BUNDLEID}"
   ${EndIf}
 

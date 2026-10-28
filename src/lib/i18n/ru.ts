@@ -114,6 +114,7 @@ export const ru = {
     loaderVersion: "Версия загрузчика",
     loadingLoader: "Загрузка версий…",
     unstable: "бета",
+    loaderBetas: "Показывать бета-сборки",
     oldVersions: "Показывать альфы и беты",
     recommended: "рекомендуемая",
     loaderUnsupported:
@@ -422,7 +423,7 @@ export const ru = {
     loaderInstaller: "Не удалось установить загрузчик модов. Подробности на вкладке «Логи».",
     invalidSkin: "Это не скин Minecraft: нужен PNG 64×64 или 64×32.",
     noLoader: "В этой сборке нет загрузчика модов.",
-    noWorld: "Выберите мир для датапака.",
+    noWorld: "В сборке пока нет миров. Создайте мир в игре, и датапак можно будет добавить в него.",
     noCompatibleVersion: "У этого мода нет версии для этой сборки.",
     alreadyRunning: "Сборка уже запущена.",
     javaNotFound: "Указанная Java не найдена. Проверьте путь в настройках сборки.",

@@ -7,7 +7,7 @@ Selene Launcher is a free, open-source launcher for Minecraft: Java Edition. It 
 What stays on your computer
 
 - Sign-in. You sign in on a Microsoft page, and the launcher never sees your password. The token used to sign you in again is kept in the Windows credential store (Credential Manager), not in a plain file. Your player name, UUID and skin are saved in the launcher folder to show your accounts.
-- Game data. Instances, worlds, mods, saved skins, logs, crash reports and settings live in %APPDATA%\io.github.lunixsudo.selene, or next to the program in the portable version.
+- Game data. Instances, worlds, mods, saved skins, logs, crash reports and settings live in %APPDATA%\SeleneLauncher, or next to the program in the portable version.
 
 None of this is sent anywhere, except as described below.
 

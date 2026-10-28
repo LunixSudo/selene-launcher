@@ -392,7 +392,7 @@
         type="button"
         class="add"
         class:done={status(hit) === "done"}
-        disabled={status(hit) === "busy"}
+        disabled={status(hit) === "busy" || (kind === "dataPack" && !world)}
         onclick={() => (status(hit) === "done" ? askRemove(hit) : requestInstall([hit]))}
       >
         {#if status(hit) === "busy"}

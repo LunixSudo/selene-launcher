@@ -47,6 +47,7 @@ All notable changes to this project are documented here. The format follows
   account is signed in, so the first start is quick.
 - Required dependencies of another kind are installed too, for example a mod that a resource
   pack or shader needs goes into `mods`.
+- A "Show beta builds" switch under the mod loader build list; betas are hidden by default.
 
 ### Changed
 
@@ -63,3 +64,11 @@ All notable changes to this project are documented here. The format follows
 - Mica and glass stay on while the launcher window is inactive, for example under a file dialog.
 - The settings page uses the full window width. Scrolling areas fade out at their edges instead
   of cutting content off, and scrollbars are thin and rounded instead of the Windows ones.
+- Launcher data lives in `%APPDATA%\SeleneLauncher` instead of a folder named after the app
+  identifier.
+- A data pack can only be added once the instance has a world, and the message says so.
+
+### Fixed
+
+- Dragging a link out of the window no longer drops a web shortcut on the desktop.
+- The focus ring of search fields is no longer cut off at the edge of a scrolling area.

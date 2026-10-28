@@ -7,7 +7,13 @@
     type VersionSummary,
   } from "$lib/api";
   import { t } from "$lib/i18n/index.svelte";
-  import { LOADER_NAMES, LOADERS, preferredRelease, releaseOptions } from "$lib/loaders";
+  import {
+    hasHiddenBetas,
+    LOADER_NAMES,
+    LOADERS,
+    preferredRelease,
+    releaseOptions,
+  } from "$lib/loaders";
   import { createInstance } from "$lib/state/instances.svelte";
   import Select from "./Select.svelte";
 
@@ -19,6 +25,7 @@
   let version = $state("");
   let showSnapshots = $state(false);
   let showOld = $state(false);
+  let showBetas = $state(false);
   let loader = $state<Loader | null>(null);
   let loaderReleases = $state<LoaderRelease[] | null>(null);
   let loaderVersion = $state("");
@@ -156,8 +163,14 @@
           <Select
             id="loader-version"
             bind:value={loaderVersion}
-            options={releaseOptions(loaderReleases)}
+            options={releaseOptions(loaderReleases, showBetas, loaderVersion)}
           />
+          {#if hasHiddenBetas(loaderReleases)}
+            <label class="toggle">
+              <input type="checkbox" bind:checked={showBetas}>
+              <span>{t("create.loaderBetas")}</span>
+            </label>
+          {/if}
         {/if}
       </div>
     {/if}
@@ -214,7 +227,7 @@
     font-weight: var(--display-weight);
   }
 
-  label {
+  label:not(.toggle) {
     display: grid;
     gap: 6px;
     color: var(--text-muted);
@@ -298,18 +311,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px 20px;
-  }
-
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text);
-    font-size: 13px;
-  }
-
-  .toggle input {
-    accent-color: var(--accent);
   }
 
   .error {

@@ -8,7 +8,7 @@
   } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
-  import { LOADER_NAMES, preferredRelease, releaseOptions } from "$lib/loaders";
+  import { hasHiddenBetas, LOADER_NAMES, preferredRelease, releaseOptions } from "$lib/loaders";
   import { replaceInstance } from "$lib/state/instances.svelte";
   import Dialog from "./Dialog.svelte";
   import Select from "./Select.svelte";
@@ -20,6 +20,7 @@
   let change = $state<VersionChange | null>(null);
   let loaderBuilds = $state<LoaderRelease[] | null>(null);
   let loaderVersion = $state("");
+  let showBetas = $state(false);
   let working = $state(false);
   let error = $state<string | null>(null);
 
@@ -140,7 +141,16 @@
           {t("create.loaderUnsupported", { loader: LOADER_NAMES[instance.loader.loader] })}
         </p>
       {:else}
-        <Select bind:value={loaderVersion} options={releaseOptions(loaderBuilds)} />
+        <Select
+          bind:value={loaderVersion}
+          options={releaseOptions(loaderBuilds, showBetas, loaderVersion)}
+        />
+        {#if hasHiddenBetas(loaderBuilds)}
+          <label class="toggle">
+            <input type="checkbox" bind:checked={showBetas}>
+            <span>{t("create.loaderBetas")}</span>
+          </label>
+        {/if}
       {/if}
     </div>
   {/if}

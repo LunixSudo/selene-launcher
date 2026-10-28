@@ -31,8 +31,8 @@ There is no offline mode. You need a Minecraft: Java Edition license to play.
   click, a game console, crash analysis, play time and a Discord status.
 - **Skins.** A 3D preview, a library of saved skins and cape selection.
 - **Launcher.** Updates from GitHub Releases checked against SHA-256, light and dark themes
-  with Mica and glass styles, Russian and English, and a portable mode: put an empty
-  `portable.txt` next to the executable.
+  with Mica and glass styles, Russian and English. Data lives in `%APPDATA%\SeleneLauncher`,
+  or next to the executable in portable mode: put an empty `portable.txt` beside it.
 
 ## Download
 

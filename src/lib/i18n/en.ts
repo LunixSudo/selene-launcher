@@ -116,6 +116,7 @@ export const en: Messages = {
     loaderVersion: "Loader version",
     loadingLoader: "Loading versions…",
     unstable: "beta",
+    loaderBetas: "Show beta builds",
     oldVersions: "Show alphas and betas",
     recommended: "recommended",
     loaderUnsupported:
@@ -424,7 +425,8 @@ export const en: Messages = {
     loaderInstaller: "Could not install the mod loader. The Logs tab has the details.",
     invalidSkin: "Not a Minecraft skin: it has to be a 64×64 or 64×32 PNG.",
     noLoader: "This instance has no mod loader.",
-    noWorld: "Pick a world for the data pack.",
+    noWorld:
+      "This instance has no worlds yet. Create one in the game, then add the data pack to it.",
     noCompatibleVersion: "This mod has no version for this instance.",
     alreadyRunning: "This instance is already running.",
     javaNotFound: "The chosen Java was not found. Check the path in the instance settings.",
