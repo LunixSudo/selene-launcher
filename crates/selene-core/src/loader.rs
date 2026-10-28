@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use futures_util::{StreamExt, TryStreamExt, stream};
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::version::{Arguments, Artifact, Library, LibraryDownloads, VersionInfo};
@@ -79,7 +79,15 @@ pub async fn releases(
     game_version: &str,
 ) -> Result<Vec<LoaderRelease>> {
     let url = format!("{}/versions/loader/{game_version}", loader.meta_url());
-    let entries: Vec<LoaderEntry> = http::get_json(client, &url).await?;
+    let response = client.get(&url).send().await?;
+    // Both sites answer versions they do not support (anything before 1.14) with an error.
+    if matches!(
+        response.status(),
+        StatusCode::BAD_REQUEST | StatusCode::NOT_FOUND
+    ) {
+        return Ok(Vec::new());
+    }
+    let entries: Vec<LoaderEntry> = response.error_for_status()?.json().await?;
     Ok(entries
         .into_iter()
         .map(|entry| LoaderRelease {

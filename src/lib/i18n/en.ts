@@ -114,7 +114,8 @@ export const en: Messages = {
     loaderVersion: "Loader version",
     loadingLoader: "Loading versions…",
     unstable: "beta",
-    loaderUnsupported: "{loader} does not support this game version yet.",
+    loaderUnsupported:
+      "{loader} is not available for this game version. Pick another version or no mod loader.",
     loadingVersions: "Loading versions…",
     cancel: "Cancel",
     submit: "Create",
