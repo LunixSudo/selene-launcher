@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
@@ -70,6 +71,12 @@ pub async fn download_all<F>(
 where
     F: Fn(Progress) + Sync,
 {
+    // Two entries for one file would write the same `.part` at once.
+    let mut seen = HashSet::new();
+    let downloads: Vec<Download> = downloads
+        .into_iter()
+        .filter(|download| seen.insert(download.path.clone()))
+        .collect();
     let bytes_total = downloads.iter().map(|download| download.size).sum();
     let bytes_done = &AtomicU64::new(0);
     let on_progress = &on_progress;
@@ -234,6 +241,28 @@ mod tests {
         assert!(is_valid(&path, &ABC_SHA1.to_uppercase()).await);
         assert!(!is_valid(&path, "0000000000000000000000000000000000000000").await);
         assert!(!is_valid(&dir.path().join("missing"), ABC_SHA1).await);
+    }
+
+    #[tokio::test]
+    async fn skips_duplicate_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("abc.txt");
+        fs::write(&path, b"abc").await.unwrap();
+        let download = Download {
+            url: "https://example.invalid/abc.txt".into(),
+            path,
+            sha1: ABC_SHA1.into(),
+            size: 3,
+        };
+        let client = Client::new();
+        let last = std::sync::Mutex::new(Progress::default());
+
+        download_all(&client, vec![download.clone(), download], 4, |progress| {
+            *last.lock().unwrap() = progress;
+        })
+        .await
+        .unwrap();
+        assert_eq!(last.into_inner().unwrap().bytes_total, 3);
     }
 
     #[test]
