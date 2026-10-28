@@ -134,11 +134,34 @@ impl Accounts {
         if self.list().active.is_none() {
             return dev_account().ok_or(CommandError::NotSignedIn);
         }
-        let session = self.session(client).await?;
+        let session = match self.session(client).await {
+            Ok(session) => session,
+            // Like the official launcher, an account that has signed in before can still play
+            // single player when Microsoft cannot be reached at all.
+            Err(CommandError::Core(selene_core::Error::Http(err))) if err.status().is_none() => {
+                return self.offline_account();
+            }
+            Err(err) => return Err(err),
+        };
         Ok(LaunchAccount {
             name: session.profile.name,
             uuid: session.profile.id,
             access_token: session.access_token,
+            xuid: None,
+        })
+    }
+
+    fn offline_account(&self) -> CommandResult<LaunchAccount> {
+        let list = self.list();
+        let account = list
+            .accounts
+            .iter()
+            .find(|account| Some(&account.id) == list.active.as_ref())
+            .ok_or(CommandError::NotSignedIn)?;
+        Ok(LaunchAccount {
+            name: account.name.clone(),
+            uuid: account.id.clone(),
+            access_token: "0".into(),
             xuid: None,
         })
     }

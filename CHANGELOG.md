@@ -38,6 +38,8 @@ All notable changes to this project are documented here. The format follows
 - Rounded tooltips in place of the system ones.
 - A third-party licenses page in the settings, generated at build time from the Rust and npm
   packages the launcher ships.
+- Single player without an internet connection for an account that has signed in before, as
+  in the official launcher.
 - An instance page notice when the loader has a newer recommended build or mods, resource
   packs or shaders have updates, with a checkbox for each and one button that updates them.
   A refresh button in the instance header checks again.

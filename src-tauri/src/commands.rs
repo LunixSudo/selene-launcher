@@ -39,7 +39,7 @@ use crate::discord::Presence;
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
-/// Placeholder tokens like the debug player's "0" would blank out every matching character.
+/// Placeholder tokens like the offline "0" would blank out every matching character.
 const MIN_HIDDEN_TOKEN_LEN: usize = 8;
 /// A game at start-up prints thousands of lines; the console gets them in batches.
 const LOG_FLUSH_INTERVAL: Duration = Duration::from_millis(100);
