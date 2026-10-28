@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasher;
 
+use chrono::{DateTime, Utc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -122,7 +124,7 @@ pub struct Version {
     #[serde(default)]
     pub changelog: Option<String>,
     #[serde(default)]
-    pub date_published: Option<String>,
+    pub date_published: Option<DateTime<Utc>>,
     pub files: Vec<VersionFile>,
     #[serde(default)]
     pub dependencies: Vec<Dependency>,
@@ -353,29 +355,49 @@ pub async fn versions_by_hash(
     Ok(versions)
 }
 
-/// The newest compatible version for each file, keyed by the file's SHA-1.
-pub async fn updates_by_hash(
+/// The newest compatible version for each file, keyed by the file's SHA-1. `current` holds
+/// the installed versions; each file only moves to its own release channel or a more stable
+/// one, so a release is never swapped for an alpha.
+pub async fn updates_by_hash<S: BuildHasher>(
     client: &Client,
-    sha1s: &[String],
+    current: &HashMap<String, Version, S>,
     target: Target<'_>,
 ) -> Result<HashMap<String, Version>> {
-    if sha1s.is_empty() {
-        return Ok(HashMap::new());
+    let mut by_channel: HashMap<&[&str], Vec<&String>> = HashMap::new();
+    for (sha1, version) in current {
+        by_channel
+            .entry(stable_as(&version.version_type))
+            .or_default()
+            .push(sha1);
     }
-    let versions = client
-        .post(format!("{API_URL}/version_files/update"))
-        .json(&json!({
-            "hashes": sha1s,
-            "algorithm": "sha1",
-            "loaders": target.loaders,
-            "game_versions": [target.game_version],
-        }))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
-    Ok(versions)
+    let mut updates = HashMap::new();
+    for (channels, sha1s) in by_channel {
+        let found: HashMap<String, Version> = client
+            .post(format!("{API_URL}/version_files/update"))
+            .json(&json!({
+                "hashes": sha1s,
+                "algorithm": "sha1",
+                "loaders": target.loaders,
+                "game_versions": [target.game_version],
+                "version_types": channels,
+            }))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        updates.extend(found);
+    }
+    Ok(updates)
+}
+
+/// Channels at least as stable as `version_type`.
+fn stable_as(version_type: &str) -> &'static [&'static str] {
+    match version_type {
+        "alpha" => &["release", "beta", "alpha"],
+        "beta" => &["release", "beta"],
+        _ => &["release"],
+    }
 }
 
 /// The project plus every required dependency that is not installed yet.
@@ -428,6 +450,13 @@ pub async fn resolve_install(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn updates_never_get_less_stable() {
+        assert_eq!(stable_as("release"), ["release"]);
+        assert_eq!(stable_as("beta"), ["release", "beta"]);
+        assert!(stable_as("alpha").contains(&"alpha"));
+    }
 
     #[test]
     fn parses_versions() {

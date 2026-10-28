@@ -743,14 +743,16 @@ async fn available_updates(
     let instance = instance(launcher, instance_id).await?;
     let target = Target::new(kind, &instance.version, loader_for(&instance, kind)?);
     let hashes: Vec<String> = files.iter().map(|file| file.sha1.clone()).collect();
-    let mut updates = modrinth::updates_by_hash(&launcher.client, &hashes, target).await?;
+    let current = modrinth::versions_by_hash(&launcher.client, &hashes).await?;
+    let mut updates = modrinth::updates_by_hash(&launcher.client, &current, target).await?;
     Ok(files
         .iter()
         .filter_map(|file| {
             let update = updates.remove(&file.sha1)?;
-            let newer = update
-                .primary_file()
-                .is_some_and(|remote| remote.hashes.sha1 != file.sha1);
+            let installed = current.get(&file.sha1)?;
+            // A beta newer than the latest release must not be "updated" back to that release.
+            let newer =
+                update.id != installed.id && update.date_published >= installed.date_published;
             newer.then(|| (file.clone(), update))
         })
         .collect())
@@ -857,7 +859,8 @@ async fn change_plan(
         .iter()
         .map(|file| file.file.sha1.clone())
         .collect();
-    let mut builds = modrinth::updates_by_hash(&launcher.client, &hashes, target).await?;
+    let current = modrinth::versions_by_hash(&launcher.client, &hashes).await?;
+    let mut builds = modrinth::updates_by_hash(&launcher.client, &current, target).await?;
     for installed in installed
         .into_iter()
         .filter(|installed| installed.file.enabled)
@@ -917,7 +920,7 @@ pub async fn project_versions(
                         id: version.id,
                         name: version.name,
                         version_number: version.version_number,
-                        published: version.date_published,
+                        published: version.date_published.map(|date| date.to_rfc3339()),
                         changelog: version.changelog,
                     })
                     .collect(),
