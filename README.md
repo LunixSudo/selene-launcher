@@ -18,8 +18,7 @@ There is no offline mode. You need a Minecraft: Java Edition license to play.
   Forge and NeoForge run their own installer in the background, without any windows. A new
   instance downloads all of it right away, so the first start is quick. If a site is down,
   the launcher falls back to the official mirrors of Mojang, Fabric and Forge. An installed
-  game starts without hashing its files again, and without a connection too: an account that
-  has signed in before can play single player offline, as in the official launcher.
+  game starts without hashing its files again.
 - **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts drawn
   with the instance's own icon and cover, and
   moving an instance to another game version with its mods swapped for matching builds, and
