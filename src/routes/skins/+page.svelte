@@ -120,11 +120,11 @@
 
 <section class="page">
   <header>
-    <a class="back" href="/">
+    <a class="back-link" href="/">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
       {t("instance.back")}
     </a>
-    <h1>{t("skins.title")}</h1>
+    <h1 class="page-title">{t("skins.title")}</h1>
   </header>
 
   <div class="layout">
@@ -172,9 +172,9 @@
         <p class="notice error" role="alert">{t(`errors.${actionError.kind}`)}</p>
       {/if}
 
-      <section class="group">
-        <div class="group-header">
-          <h2>{t("skins.library")}</h2>
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">{t("skins.library")}</h2>
           <button type="button" class="pill-button" onclick={addSkin}>{t("skins.add")}</button>
         </div>
         {#if library.length}
@@ -203,8 +203,8 @@
       </section>
 
       {#if profile}
-        <section class="group">
-          <h2>{t("skins.cape")}</h2>
+        <section class="panel">
+          <h2 class="panel-title">{t("skins.cape")}</h2>
           <div class="capes">
             <button
               type="button"
@@ -236,7 +236,7 @@
           {/if}
         </section>
 
-        <section class="group">
+        <section class="panel">
           <div class="row">
             <div>
               <h3>{t("skins.reset")}</h3>
@@ -258,49 +258,10 @@
 </section>
 
 <style>
-  .page {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    height: 100%;
-  }
-
   header {
     display: grid;
     gap: 4px;
     padding-top: 8px;
-  }
-
-  .back {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    width: fit-content;
-    color: var(--text-muted);
-    font-size: 13px;
-    text-decoration: none;
-  }
-
-  .back:hover {
-    color: var(--text);
-  }
-
-  .back svg {
-    width: 14px;
-    height: 14px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  h1 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: var(--display-weight);
-    letter-spacing: -0.02em;
   }
 
   .layout {
@@ -342,6 +303,7 @@
 
   .content {
     display: grid;
+    grid-auto-rows: max-content;
     align-content: start;
     gap: 16px;
     min-height: 0;
@@ -361,31 +323,16 @@
     color: var(--danger);
   }
 
-  .group {
-    display: grid;
+  .panel {
     gap: 8px;
     padding-bottom: 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background: var(--surface);
-    backdrop-filter: blur(24px) saturate(1.4);
   }
 
-  .group-header {
+  .panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding-right: 14px;
-  }
-
-  h2 {
-    margin: 0;
-    padding: 14px 18px 6px;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
   }
 
   .hint {

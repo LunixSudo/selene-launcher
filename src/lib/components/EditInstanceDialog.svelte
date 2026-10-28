@@ -53,12 +53,12 @@
     <span class="name">{name || instance.name}</span>
   </div>
 
-  <label class="field">
+  <label class="form-field">
     <span>{t("edit.name")}</span>
     <input bind:value={name} maxlength="64" required>
   </label>
 
-  <label class="field">
+  <label class="form-field">
     <span>{t("edit.group")}</span>
     <input
       bind:value={group}
@@ -150,24 +150,6 @@
     text-overflow: ellipsis;
     text-shadow: 0 1px 6px rgb(0 0 0 / 0.3);
     white-space: nowrap;
-  }
-
-  .field {
-    display: grid;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  .field input {
-    height: 36px;
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--field);
-    color: var(--text);
-    font: inherit;
-    font-size: 14px;
   }
 
   fieldset {

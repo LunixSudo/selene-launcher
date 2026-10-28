@@ -106,8 +106,6 @@
   </div>
 </section>
 
-<ChangeVersionDialog {instance} bind:open={changingVersion} />
-
 <section class="group">
   <h2>{t("launchOptions.javaTitle")}</h2>
 
@@ -163,7 +161,7 @@
     </button>
   </div>
 
-  <label class="field">
+  <label class="form-field">
     <span>{t("launchOptions.javaArgs")}</span>
     <input
       bind:value={javaArgs}
@@ -206,7 +204,7 @@
 
   {#if instance.window && !instance.fullscreen}
     <div class="size">
-      <label class="field">
+      <label class="form-field">
         <span>{t("launchOptions.width")}</span>
         <input
           type="number"
@@ -217,7 +215,7 @@
         >
       </label>
       <span class="times">×</span>
-      <label class="field">
+      <label class="form-field">
         <span>{t("launchOptions.height")}</span>
         <input
           type="number"
@@ -230,6 +228,8 @@
     </div>
   {/if}
 </section>
+
+<ChangeVersionDialog {instance} bind:open={changingVersion} />
 
 <style>
   .group {
@@ -265,6 +265,10 @@
     font-size: 12px;
   }
 
+  .form-field {
+    flex: 1;
+  }
+
   .slider {
     display: flex;
     align-items: center;
@@ -280,25 +284,6 @@
     min-width: 56px;
     font-weight: 600;
     text-align: right;
-  }
-
-  .field {
-    display: grid;
-    flex: 1;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  .field input {
-    height: 34px;
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--field);
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
   }
 
   .row {

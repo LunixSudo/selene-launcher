@@ -56,12 +56,12 @@
 {#if instance}
   <section class="page">
     <header>
-      <a class="back" href="/">
+      <a class="back-link" href="/">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
         {t("instance.back")}
       </a>
       <div class="heading">
-        <h1>{instance.name}</h1>
+        <h1 class="page-title">{instance.name}</h1>
         <span class="chip">
           {instance.loader
             ? `${LOADER_NAMES[instance.loader.loader]} ${instance.loader.version} · ${instance.version}`
@@ -143,13 +143,6 @@
 {/if}
 
 <style>
-  .page {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    height: 100%;
-  }
-
   header {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -158,25 +151,8 @@
     padding-top: 4px;
   }
 
-  .back {
-    display: inline-flex;
+  .back-link {
     grid-column: 1 / -1;
-    align-items: center;
-    gap: 4px;
-    width: fit-content;
-    color: var(--accent);
-    font-size: 13px;
-    text-decoration: none;
-  }
-
-  .back svg {
-    width: 14px;
-    height: 14px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   .heading {
@@ -187,12 +163,7 @@
   }
 
   h1 {
-    margin: 0;
     overflow: hidden;
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: var(--display-weight);
-    letter-spacing: -0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

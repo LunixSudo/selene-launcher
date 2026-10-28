@@ -282,7 +282,7 @@
   </div>
 {/if}
 
-<div class="toolbar">
+<div class="search-bar">
   <input
     class="search"
     type="search"
@@ -541,8 +541,9 @@
     }
   }
 
-  .toolbar {
+  .search-bar {
     display: flex;
+    align-items: center;
     gap: 8px;
     margin-bottom: 8px;
   }

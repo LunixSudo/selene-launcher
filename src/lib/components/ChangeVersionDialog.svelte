@@ -84,7 +84,7 @@
 </script>
 
 <Dialog bind:open title={t("changeVersion.title")} width={480} onsubmit={apply}>
-  <div class="field">
+  <div class="form-field">
     <span>{t("create.version")}</span>
     <Select bind:value={version} {options} />
   </div>
@@ -145,13 +145,6 @@
 </Dialog>
 
 <style>
-  .field {
-    display: grid;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
   h3 {
     margin: 0 0 6px;
     font-size: 13px;

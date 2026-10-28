@@ -133,11 +133,11 @@
   title={editIndex === null ? t("servers.add") : t("servers.edit")}
   onsubmit={submit}
 >
-  <label class="field">
+  <label class="form-field">
     <span>{t("servers.name")}</span>
     <input bind:value={name} maxlength="64" placeholder={t("servers.namePlaceholder")}>
   </label>
-  <label class="field">
+  <label class="form-field">
     <span>{t("servers.address")}</span>
     <input bind:value={address} required spellcheck="false" placeholder="play.example.com">
   </label>
@@ -149,24 +149,6 @@
 </Dialog>
 
 <style>
-  .field {
-    display: grid;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  .field input {
-    height: 36px;
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--field);
-    color: var(--text);
-    font: inherit;
-    font-size: 14px;
-  }
-
   .error {
     color: var(--danger);
   }

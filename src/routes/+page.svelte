@@ -171,7 +171,7 @@
 
 <section class="page">
   <header>
-    <h1>{t("instances.title")}</h1>
+    <h1 class="page-title">{t("instances.title")}</h1>
     <div class="actions">
       <button type="button" class="create" onclick={chooseImport}>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v7M5 7l3 3 3-3M3 13h10" /></svg>
@@ -271,26 +271,11 @@
 {/if}
 
 <style>
-  .page {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    height: 100%;
-  }
-
   header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding-top: 8px;
-  }
-
-  h1 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 28px;
-    font-weight: var(--display-weight);
-    letter-spacing: -0.02em;
   }
 
   .actions {

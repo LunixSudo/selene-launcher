@@ -64,7 +64,7 @@
 </script>
 
 <div class="console">
-  <div class="toolbar">
+  <div class="controls">
     <input type="search" data-search bind:value={filter} placeholder={t("logs.filter")}>
     <button type="button" onclick={copy} disabled={visible.length === 0}>
       {copied ? t("logs.copied") : t("logs.copy")}
@@ -94,8 +94,9 @@
     min-height: 0;
   }
 
-  .toolbar {
+  .controls {
     display: flex;
+    align-items: center;
     gap: 8px;
   }
 

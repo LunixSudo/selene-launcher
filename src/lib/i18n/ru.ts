@@ -190,6 +190,8 @@ export const ru = {
     notifications: "Уведомления Windows",
     notificationsHint:
       "Когда лаунчер свёрнут: игра готова к запуску, моды обновлены, сборка импортирована.",
+    legal:
+      "Не является официальным продуктом Minecraft. Не одобрено Mojang или Microsoft и не связано с ними.",
     discordStatus: "Статус в Discord",
     discordStatusHint:
       "Показывает друзьям «Играет в Selene Launcher», название сборки и время в игре.",

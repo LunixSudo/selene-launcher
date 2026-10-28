@@ -32,3 +32,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for code style and commit conventions.
 ## License
 
 [GPL-3.0-or-later](LICENSE)
+
+Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
+Minecraft is a trademark of Mojang AB.

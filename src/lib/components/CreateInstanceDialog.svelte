@@ -105,7 +105,7 @@
       <input bind:value={name} placeholder={t("create.namePlaceholder")} maxlength="64">
     </label>
 
-    <div class="field">
+    <div class="form-field">
       <label for="instance-version">{t("create.version")}</label>
       {#if versions}
         <Select
@@ -123,7 +123,7 @@
       <span>{t("create.snapshots")}</span>
     </label>
 
-    <fieldset class="field">
+    <fieldset class="form-field">
       <legend>{t("create.loader")}</legend>
       <div class="segmented">
         {#each [null, ...LOADERS] as option (option)}
@@ -136,7 +136,7 @@
     </fieldset>
 
     {#if loader}
-      <div class="field">
+      <div class="form-field">
         <label for="loader-version">{t("create.loaderVersion")}</label>
         {#if !loaderReleases}
           <div class="placeholder">{t("create.loadingLoader")}</div>
@@ -210,13 +210,6 @@
   }
 
   label,
-  .field {
-    display: grid;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
   input:not([type="checkbox"]),
   .placeholder {
     height: 36px;
