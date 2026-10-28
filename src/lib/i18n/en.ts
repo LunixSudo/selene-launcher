@@ -173,7 +173,7 @@ export const en: Messages = {
     fontNames: { rounded: "Soft", modern: "Modern", rubik: "Bold", system: "System" },
     game: "Game launch",
     afterLaunch: "After the game starts",
-    afterLaunchHint: "What to do with the launcher window once Minecraft is open.",
+    afterLaunchHint: "Close frees memory; the launcher opens again when you quit the game.",
     afterLaunchOptions: { keep: "Keep", minimize: "Minimize", close: "Close" },
     restoreAfterGame: "Bring the launcher back after playing",
     restoreAfterGameHint: "The window comes back when you close Minecraft.",

@@ -10,6 +10,7 @@ pub mod shortcut;
 pub mod skins;
 pub mod update;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -283,6 +284,12 @@ pub fn set_discord_presence(launcher: State<'_, Launcher>, presence: Option<Pres
     launcher.discord.set(presence);
 }
 
+/// Crashes of games that ended while the launcher window was closed, handed out once.
+#[tauri::command]
+pub fn take_missed_crashes(launcher: State<'_, Launcher>) -> HashMap<String, CrashReport> {
+    launcher.take_missed_crashes()
+}
+
 /// The instance a desktop shortcut asked to start, handed out once.
 #[tauri::command]
 pub fn take_startup_launch(launcher: State<'_, Launcher>) -> Option<String> {
@@ -301,7 +308,8 @@ pub fn set_config(launcher: State<'_, Launcher>, config: Config) -> CommandResul
 
 #[tauri::command]
 pub fn open_data_folder(app: AppHandle, launcher: State<'_, Launcher>) -> CommandResult<()> {
-    saves::open_path(&app, &launcher.dirs.root)
+    std::fs::create_dir_all(&launcher.data_dir)?;
+    saves::open_path(&app, &launcher.data_dir)
 }
 
 #[tauri::command]
@@ -489,6 +497,14 @@ async fn watch_game(
     add_play_time(&launcher, &instance_id, started.elapsed().as_secs()).await;
 
     let crash = (!killed && code != Some(0)).then(|| crash::analyze(&launcher.log(&instance_id)));
+    if app.get_webview_window(crate::MAIN_WINDOW).is_none() {
+        // The player closed the launcher for the game; it opens again now.
+        if let Some(crash) = crash {
+            launcher.miss_crash(&instance_id, crash);
+        }
+        crate::show_main_window(&app);
+        return;
+    }
     let _ = app.emit(
         "game-exited",
         GameExited {

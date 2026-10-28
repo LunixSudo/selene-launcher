@@ -41,7 +41,7 @@ const DEFAULTS: Settings = {
   style: "mica",
   accent: "violet",
   font: "rounded",
-  afterLaunch: "minimize",
+  afterLaunch: "close",
   restoreAfterGame: true,
   sort: "lastPlayed",
   collapsedGroups: [],

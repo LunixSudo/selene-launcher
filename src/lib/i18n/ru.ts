@@ -173,7 +173,8 @@ export const ru = {
     fontNames: { rounded: "Мягкий", modern: "Современный", rubik: "Плотный", system: "Системный" },
     game: "Запуск игры",
     afterLaunch: "После запуска игры",
-    afterLaunchHint: "Что делать с окном лаунчера, когда Minecraft открылся.",
+    afterLaunchHint:
+      "«Закрыть» освобождает память, а когда вы выйдете из игры, лаунчер откроется сам.",
     afterLaunchOptions: { keep: "Оставить", minimize: "Свернуть", close: "Закрыть" },
     restoreAfterGame: "Вернуть лаунчер после игры",
     restoreAfterGameHint: "Окно развернётся, когда вы закроете Minecraft.",

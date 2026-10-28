@@ -1,8 +1,9 @@
 use std::collections::{HashMap, VecDeque};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use reqwest::Client;
+use selene_core::crash::CrashReport;
 use selene_core::curseforge::CurseForge;
 use selene_core::game::GameDirs;
 use selene_core::instance::Instances;
@@ -16,6 +17,7 @@ use crate::discord::Discord;
 use crate::error::CommandResult;
 
 pub struct Launcher {
+    pub data_dir: PathBuf,
     pub client: Client,
     pub curseforge: Option<CurseForge>,
     pub accounts: Accounts,
@@ -30,6 +32,8 @@ pub struct Launcher {
     running: Mutex<HashMap<String, Option<oneshot::Sender<()>>>>,
     logs: Mutex<HashMap<String, VecDeque<String>>>,
     startup_launch: Mutex<Option<String>>,
+    /// Crashes of games that ended while the window was closed, shown once it opens again.
+    missed_crashes: Mutex<HashMap<String, CrashReport>>,
 }
 
 /// Lines kept per instance; older ones are dropped.
@@ -39,6 +43,7 @@ impl Launcher {
     pub fn new(data_dir: &Path, startup_launch: Option<String>) -> selene_core::Result<Self> {
         let client = selene_core::http::client()?;
         Ok(Self {
+            data_dir: data_dir.to_path_buf(),
             curseforge: curseforge(&client),
             client,
             accounts: Accounts::load(data_dir.join("accounts.json")),
@@ -52,6 +57,7 @@ impl Launcher {
             running: Mutex::new(HashMap::new()),
             logs: Mutex::new(HashMap::new()),
             startup_launch: Mutex::new(startup_launch),
+            missed_crashes: Mutex::new(HashMap::new()),
         })
     }
 
@@ -95,6 +101,18 @@ impl Launcher {
 
     pub fn is_running(&self, id: &str) -> bool {
         self.running_map().contains_key(id)
+    }
+
+    pub fn any_running(&self) -> bool {
+        !self.running_map().is_empty()
+    }
+
+    pub fn miss_crash(&self, id: &str, crash: CrashReport) {
+        lock(&self.missed_crashes).insert(id.to_owned(), crash);
+    }
+
+    pub fn take_missed_crashes(&self) -> HashMap<String, CrashReport> {
+        std::mem::take(&mut *lock(&self.missed_crashes))
     }
 
     pub fn take_startup_launch(&self) -> Option<String> {
@@ -151,4 +169,10 @@ fn total_memory_mb() -> u64 {
 fn curseforge(client: &Client) -> Option<CurseForge> {
     let api_key = option_env!("CURSEFORGE_API_KEY").map(str::to_owned);
     (api_key.is_some() || cfg!(debug_assertions)).then(|| CurseForge::new(client.clone(), api_key))
+}
+
+fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    mutex
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }

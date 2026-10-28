@@ -338,6 +338,7 @@ export const api = {
   config: () => invoke<LauncherConfig>("config"),
   createShortcut: (id: string) => invoke<void>("create_shortcut", { id }),
   takeStartupLaunch: () => invoke<string | null>("take_startup_launch"),
+  takeMissedCrashes: () => invoke<Record<string, CrashReport>>("take_missed_crashes"),
   checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),
   installUpdate: () => invoke<void>("install_update"),
   setConfig: (config: LauncherConfig) => invoke<void>("set_config", { config }),

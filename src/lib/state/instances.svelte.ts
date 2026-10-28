@@ -59,6 +59,8 @@ export async function importPack(path: string) {
     library.importError = isCommandError(error) ? error : UNKNOWN_ERROR;
   } finally {
     library.importing--;
+    // Reread from disk: the list on screen may have been loaded while the import was running.
+    await loadInstances();
   }
 }
 
@@ -153,6 +155,7 @@ export async function listenToGames(): Promise<() => void> {
       }
     }),
   ]);
+  Object.assign(library.crashes, await api.takeMissedCrashes());
   const requested = await api.takeStartupLaunch();
   if (requested) {
     void play(requested);

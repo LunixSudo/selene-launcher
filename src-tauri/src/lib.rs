@@ -7,11 +7,12 @@ mod state;
 
 use std::path::PathBuf;
 
-use tauri::{Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, WebviewWindowBuilder};
 
 use crate::commands::shortcut::launch_arg;
-
 use crate::state::Launcher;
+
+pub(crate) const MAIN_WINDOW: &str = "main";
 
 /// A `portable.txt` next to the executable keeps everything in a `data` folder beside it,
 /// so the launcher can live on a USB stick. Prism Launcher uses the same marker.
@@ -34,10 +35,7 @@ pub fn run() {
             if let Some(id) = launch_arg(&args) {
                 let _ = app.emit("launch-request", id);
             }
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
+            show_main_window(app);
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -71,6 +69,7 @@ pub fn run() {
             commands::open_data_folder,
             commands::config,
             commands::take_startup_launch,
+            commands::take_missed_crashes,
             commands::set_discord_presence,
             commands::shortcut::create_shortcut,
             commands::skins::skin_profile,
@@ -118,6 +117,36 @@ pub fn run() {
             commands::saves::open_screenshot,
             commands::saves::delete_screenshot,
         ])
-        .run(tauri::generate_context!())
-        .expect("failed to run tauri application");
+        .build(tauri::generate_context!())
+        .expect("failed to build tauri application")
+        .run(|app, event| {
+            // Closing the window while a game runs keeps the launcher alive in the
+            // background, so play time is counted and the window comes back afterwards.
+            if let RunEvent::ExitRequested {
+                code: None, api, ..
+            } = event
+                && app.state::<Launcher>().any_running()
+            {
+                api.prevent_exit();
+            }
+        });
+}
+
+/// Brings the main window to the front, opening it again if it was closed.
+pub(crate) fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+        return;
+    }
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|window| window.label == MAIN_WINDOW);
+    if let Some(config) = config {
+        let _ =
+            WebviewWindowBuilder::from_config(app, config).and_then(WebviewWindowBuilder::build);
+    }
 }
