@@ -25,3 +25,8 @@ LangString webview2Downloading ${LANG_ENGLISH} "Downloading WebView2 bootstrappe
 LangString webview2InstallError ${LANG_ENGLISH} "Error: Installing WebView2 failed with exit code $1"
 LangString webview2InstallSuccess ${LANG_ENGLISH} "WebView2 installed successfully"
 LangString deleteAppData ${LANG_ENGLISH} "Delete instances, worlds and launcher settings"
+LicenseLangString privacyPolicy ${LANG_ENGLISH} "${PRIVACY_DIR}\English.txt"
+LangString privacyTitle ${LANG_ENGLISH} "Privacy policy"
+LangString privacySubtitle ${LANG_ENGLISH} "How Selene Launcher handles your data."
+LangString privacyTop ${LANG_ENGLISH} "Please read it before installing."
+LangString privacyAccept ${LANG_ENGLISH} "I have read the privacy policy and agree to it"

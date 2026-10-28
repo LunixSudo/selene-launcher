@@ -51,10 +51,12 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": [
-          "Russian",
-          "English"
+          "English",
+          "Russian"
         ],
         "displayLanguageSelector": false,
+        "template": "nsis/installer.nsi",
+        "installerHooks": "nsis/hooks.nsh",
         "customLanguageFiles": {
           "Russian": "nsis/Russian.nsh",
           "English": "nsis/English.nsh"

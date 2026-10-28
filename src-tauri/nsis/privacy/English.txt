@@ -1,0 +1,41 @@
+﻿Selene Launcher Privacy Policy
+
+Effective October 28, 2026.
+
+Selene Launcher is a free, open-source launcher for Minecraft: Java Edition. It has no servers of its own: its developers do not receive or store any data about you.
+
+What stays on your computer
+
+- Sign-in. You sign in on a Microsoft page, and the launcher never sees your password. The token used to sign you in again is kept in the Windows credential store (Credential Manager), not in a plain file. Your player name, UUID and skin are saved in the launcher folder to show your accounts.
+- Game data. Instances, worlds, mods, saved skins, logs, crash reports and settings live in %APPDATA%\io.github.lunixsudo.selene, or next to the program in the portable version.
+
+None of this is sent anywhere, except as described below.
+
+What the launcher connects to
+
+- Microsoft and Xbox Live: signing in. Sent: sign-in tokens.
+- Mojang and Minecraft Services: checking you own the game, downloading the game and Java, skins and capes. Sent: your Minecraft token, the skin you choose.
+- Fabric and Quilt: mod loaders. Sent: the game version.
+- Modrinth and CurseForge: the catalog, installing and updating mods. Sent: search queries, and checksums of installed files to recognise them and find updates.
+- GitHub: checking for launcher updates. Sent: nothing beyond the request itself.
+- Discord (the app on your computer): the "Playing Selene Launcher" status. Sent: the game version and instance name. Can be turned off in settings.
+
+Like any website, these services see your IP address and handle data under their own policies. The launcher sends them nothing beyond what a feature needs.
+
+The launcher does not collect statistics or analytics, show ads, or sell or share data with anyone.
+
+Deleting your data
+
+- "Sign out" in the account menu removes the token from the Windows credential store.
+- When uninstalling, tick "Delete instances, worlds and launcher settings".
+- Data held by Microsoft and Mojang is deleted through their own services.
+
+Children
+
+The launcher collects no data about anyone, children included. Age rules for Microsoft accounts are set by Microsoft.
+
+Changes and contact
+
+New versions of this policy are published in the project repository: https://github.com/LunixSudo/selene-launcher. Questions can be asked there, under Issues.
+
+Selene Launcher is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft.
