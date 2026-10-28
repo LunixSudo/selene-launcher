@@ -132,10 +132,14 @@ pub async fn install(
                 .is_none_or(|env| env.client != "unsupported")
         })
         .map(|file| {
+            // The format allows only these hosts, so a pack cannot send the launcher anywhere.
             let url = file
                 .downloads
-                .first()
-                .ok_or_else(|| Error::InvalidPack(format!("{} has no download", file.path)))?;
+                .iter()
+                .find(|url| is_allowed_host(url))
+                .ok_or_else(|| {
+                    Error::InvalidPack(format!("{} has no allowed download", file.path))
+                })?;
             Ok(Download {
                 url: url.clone(),
                 path: game_dir.join(safe_relative_path(&file.path)?),
@@ -349,10 +353,12 @@ fn zip_path(path: &Path) -> String {
 }
 
 fn is_allowed_host(url: &str) -> bool {
-    url::Url::parse(url)
-        .ok()
-        .and_then(|url| url.host_str().map(str::to_owned))
-        .is_some_and(|host| ALLOWED_HOSTS.contains(&host.as_str()))
+    url::Url::parse(url).is_ok_and(|url| {
+        url.scheme() == "https"
+            && url
+                .host_str()
+                .is_some_and(|host| ALLOWED_HOSTS.contains(&host))
+    })
 }
 
 #[cfg(test)]
@@ -374,6 +380,7 @@ mod tests {
         assert!(!is_allowed_host(
             "https://edge.forgecdn.net/files/1/2/a.jar"
         ));
+        assert!(!is_allowed_host("http://cdn.modrinth.com/data/a/b.jar"));
     }
 
     #[test]
