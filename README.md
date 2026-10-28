@@ -10,7 +10,8 @@ There is no offline mode. You need a Minecraft: Java Edition license to play.
 
 - **Accounts.** Sign in with a Microsoft account; game ownership is verified on every login.
   Several accounts, with the player's head in the title bar.
-- **Game.** Versions, libraries and assets come straight from Mojang, and the right Java
+- **Game.** Every version from the first alphas to the newest snapshots. Versions, libraries
+  and assets come straight from Mojang, and the right Java
   runtime is downloaded for each version. Fabric, Quilt, Forge and NeoForge are supported;
   Forge and NeoForge run their own installer in the background, without any windows. A new
   instance downloads all of it right away, so the first start is quick.

@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use futures_util::{StreamExt, TryStreamExt, stream};
@@ -62,8 +63,6 @@ struct LoaderEntry {
 #[derive(Deserialize)]
 struct LoaderInfo {
     version: String,
-    /// Quilt leaves this out and marks pre-releases in the version string instead.
-    stable: Option<bool>,
 }
 
 impl Loader {
@@ -86,9 +85,21 @@ pub async fn releases(
     loader: Loader,
     game_version: &str,
 ) -> Result<Vec<LoaderRelease>> {
-    if loader.uses_installer() {
-        return forge::releases(client, loader, game_version).await;
-    }
+    let mut releases = if loader.uses_installer() {
+        forge::releases(client, loader, game_version).await?
+    } else {
+        profile_releases(client, loader, game_version).await?
+    };
+    // Quilt lists its builds in no particular order.
+    releases.sort_by(|a, b| compare_versions(&b.version, &a.version));
+    Ok(releases)
+}
+
+async fn profile_releases(
+    client: &Client,
+    loader: Loader,
+    game_version: &str,
+) -> Result<Vec<LoaderRelease>> {
     let url = format!("{}/versions/loader/{game_version}", loader.meta_url());
     let response = client.get(&url).send().await?;
     // Both sites answer versions they do not support (anything before 1.14) with an error.
@@ -99,17 +110,55 @@ pub async fn releases(
         return Ok(Vec::new());
     }
     let entries: Vec<LoaderEntry> = response.error_for_status()?.json().await?;
+    // Fabric calls only its newest build stable, so the version string decides instead.
     Ok(entries
         .into_iter()
         .map(|entry| LoaderRelease {
-            stable: entry
-                .loader
-                .stable
-                .unwrap_or_else(|| !entry.loader.version.contains('-')),
+            stable: !entry.loader.version.contains('-'),
             recommended: false,
             version: entry.loader.version,
         })
         .collect())
+}
+
+/// Orders versions like `0.30.0-beta.10` by their numbers, with a pre-release before the
+/// release it leads to.
+fn compare_versions(a: &str, b: &str) -> Ordering {
+    let split = |version: &str| {
+        let (release, pre) = version.split_once('-').unwrap_or((version, ""));
+        (release.to_owned(), pre.to_owned())
+    };
+    let (a_release, a_pre) = split(a);
+    let (b_release, b_pre) = split(b);
+    compare_parts(&a_release, &b_release).then_with(|| match (a_pre.is_empty(), b_pre.is_empty()) {
+        (true, true) => Ordering::Equal,
+        (true, false) => Ordering::Greater,
+        (false, true) => Ordering::Less,
+        (false, false) => compare_parts(&a_pre, &b_pre),
+    })
+}
+
+/// Compares dot-separated parts, numbers by value and words alphabetically.
+fn compare_parts(a: &str, b: &str) -> Ordering {
+    let mut a_parts = a.split(['.', '+']);
+    let mut b_parts = b.split(['.', '+']);
+    loop {
+        return match (a_parts.next(), b_parts.next()) {
+            (None, None) => Ordering::Equal,
+            (None, Some(_)) => Ordering::Less,
+            (Some(_), None) => Ordering::Greater,
+            (Some(a), Some(b)) => {
+                let order = match (a.parse::<u64>(), b.parse::<u64>()) {
+                    (Ok(a), Ok(b)) => a.cmp(&b),
+                    _ => a.cmp(b),
+                };
+                if order == Ordering::Equal {
+                    continue;
+                }
+                order
+            }
+        };
+    }
 }
 
 pub async fn fetch_patch(
@@ -316,21 +365,32 @@ mod tests {
     }
 
     #[test]
-    fn quilt_marks_betas_unstable() {
-        let entries: Vec<LoaderEntry> = serde_json::from_str(
-            r#"[{ "loader": { "version": "0.29.0" } }, { "loader": { "version": "0.30.0-beta.1" } }]"#,
-        )
-        .unwrap();
-        let stable: Vec<_> = entries
-            .into_iter()
-            .map(|entry| {
-                entry
-                    .loader
-                    .stable
-                    .unwrap_or_else(|| !entry.loader.version.contains('-'))
-            })
-            .collect();
+    fn sorts_versions_newest_first() {
+        let mut versions = vec![
+            "0.30.0-beta.4",
+            "0.19.5",
+            "0.30.0-beta.10",
+            "0.30.0",
+            "0.19.10",
+            "0.30.0-beta.2",
+        ];
+        versions.sort_by(|a, b| compare_versions(b, a));
 
-        assert_eq!(stable, [true, false]);
+        assert_eq!(
+            versions,
+            [
+                "0.30.0",
+                "0.30.0-beta.10",
+                "0.30.0-beta.4",
+                "0.30.0-beta.2",
+                "0.19.10",
+                "0.19.5"
+            ]
+        );
+        assert_eq!(compare_versions("21.1.265", "21.1.77"), Ordering::Greater);
+        assert_eq!(
+            compare_versions("14.23.5.2860", "14.23.5.2860"),
+            Ordering::Equal
+        );
     }
 }

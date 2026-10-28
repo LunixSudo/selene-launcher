@@ -106,6 +106,12 @@ pub enum ArgumentValue {
 #[derive(Debug, Clone, Deserialize)]
 pub struct AssetIndex {
     pub objects: HashMap<String, AssetObject>,
+    /// 1.6 reads assets by name from `assets/virtual/<index>` instead of by hash.
+    #[serde(default, rename = "virtual")]
+    pub is_virtual: bool,
+    /// Versions before 1.6 read them by name from `resources` in the game folder.
+    #[serde(default)]
+    pub map_to_resources: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]

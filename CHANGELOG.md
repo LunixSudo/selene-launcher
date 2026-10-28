@@ -53,6 +53,9 @@ All notable changes to this project are documented here. The format follows
 - Fabric and Quilt say when they have no build for an old game version instead of reporting
   a connection error.
 - The catalog no longer has a separate select mode.
+- Alpha and beta versions of the game can be picked when creating an instance, and versions
+  before 1.7.3 get their sounds and textures laid out the way they expect.
+- Loader builds are listed newest first, and Fabric builds are no longer all marked as betas.
 - Desktop shortcut icons carry an image for every size Explorer shows, so their rounded corners
   stay smooth.
 - Mica and glass stay on while the launcher window is inactive, for example under a file dialog.

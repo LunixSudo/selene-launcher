@@ -18,6 +18,7 @@
   let name = $state("");
   let version = $state("");
   let showSnapshots = $state(false);
+  let showOld = $state(false);
   let loader = $state<Loader | null>(null);
   let loaderReleases = $state<LoaderRelease[] | null>(null);
   let loaderVersion = $state("");
@@ -26,7 +27,10 @@
 
   const visibleVersions = $derived(
     (versions ?? []).filter(
-      (entry) => entry.kind === "release" || (showSnapshots && entry.kind === "snapshot"),
+      (entry) =>
+        entry.kind === "release" ||
+        (showSnapshots && entry.kind === "snapshot") ||
+        (showOld && (entry.kind === "old_beta" || entry.kind === "old_alpha")),
     ),
   );
 
@@ -118,10 +122,16 @@
       {/if}
     </div>
 
-    <label class="toggle">
-      <input type="checkbox" bind:checked={showSnapshots}>
-      <span>{t("create.snapshots")}</span>
-    </label>
+    <div class="toggles">
+      <label class="toggle">
+        <input type="checkbox" bind:checked={showSnapshots}>
+        <span>{t("create.snapshots")}</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" bind:checked={showOld}>
+        <span>{t("create.oldVersions")}</span>
+      </label>
+    </div>
 
     <fieldset class="form-field">
       <legend>{t("create.loader")}</legend>
@@ -282,6 +292,12 @@
     margin: 0;
     color: var(--text-muted);
     font-size: 13px;
+  }
+
+  .toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
   }
 
   .toggle {

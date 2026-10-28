@@ -114,6 +114,7 @@ export const ru = {
     loaderVersion: "Версия загрузчика",
     loadingLoader: "Загрузка версий…",
     unstable: "бета",
+    oldVersions: "Показывать альфы и беты",
     recommended: "рекомендуемая",
     loaderUnsupported:
       "{loader} нет для этой версии игры. Выберите другую версию или сборку без модов.",

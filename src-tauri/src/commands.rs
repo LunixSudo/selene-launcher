@@ -408,10 +408,13 @@ async fn start_game(
         Some(path) => return Err(CommandError::JavaNotFound(path.clone())),
         None => installed.java.executable(),
     };
+    let game_dir = launcher.instances.game_dir(&instance.id);
+    let game_assets_dir = installed.game_assets(dirs, &game_dir)?;
     let options = LaunchOptions {
         java,
-        game_dir: launcher.instances.game_dir(&instance.id),
+        game_dir,
         assets_dir: dirs.assets(),
+        game_assets_dir,
         libraries_dir: dirs.libraries(),
         versions_dir: dirs.versions(),
         natives_dir: dirs.natives(&installed.version.id),
