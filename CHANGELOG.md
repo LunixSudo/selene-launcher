@@ -30,3 +30,5 @@ All notable changes to this project are documented here. The format follows
 - Windows notifications, download speed and parallelism limits, custom Java path.
 - Portable mode: a `portable.txt` next to the executable keeps all data beside it.
 - Russian and English interface; light, dark, Mica and glass styles.
+- Privacy policy in English and Russian, shown in the installer in the system language and
+  linked from the settings.

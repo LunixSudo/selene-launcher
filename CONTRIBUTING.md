@@ -38,6 +38,20 @@ CI runs the same commands.
   then markup, then `<style>`.
 - Use the CSS variables from `src/lib/styles/global.css` for colors, radii and timing.
 
+## Installer
+
+`src-tauri/nsis/installer.nsi` is Tauri's NSIS template from `@tauri-apps/cli` 2.12.4 with one
+change: the license page shows the privacy policy in the installer's language. The texts live
+in `src-tauri/nsis/privacy/` and must say the same as `PRIVACY.md` and `PRIVACY.ru.md`. When
+upgrading the Tauri CLI, take the new template from `crates/tauri-bundler` and apply the
+change again; do the same for `English.nsh` and `Russian.nsh`.
+
+## Docs
+
+Update `README.md` and the `Unreleased` section of `CHANGELOG.md` in the same commit as the
+change. If the launcher starts talking to a new service or storing something new, update
+both privacy policies and the installer texts too.
+
 ## Comments
 
 Explain why, not what. If a comment restates the code, delete it.
