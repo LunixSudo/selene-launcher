@@ -147,7 +147,6 @@
           <input
             class="switch"
             type="checkbox"
-            role="switch"
             bind:checked={settings.restoreAfterGame}
           >
         </label>
