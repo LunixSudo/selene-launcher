@@ -144,11 +144,7 @@
             <h3>{t("settings.restoreAfterGame")}</h3>
             <p>{t("settings.restoreAfterGameHint")}</p>
           </div>
-          <input
-            class="switch"
-            type="checkbox"
-            bind:checked={settings.restoreAfterGame}
-          >
+          <input class="switch" type="checkbox" bind:checked={settings.restoreAfterGame}>
         </label>
       {/if}
       <div class="row">
