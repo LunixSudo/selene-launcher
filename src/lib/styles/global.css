@@ -321,6 +321,27 @@ textarea:focus-visible {
   background: var(--background);
 }
 
+/* Blur costs the GPU even behind an opaque surface, and solid is the style for slower PCs. */
+:root[data-style="solid"] * {
+  backdrop-filter: none !important;
+}
+
+/* Windows turns this on with "Animation effects" off. Loading spinners keep turning. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  *:not(.spinner),
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+  }
+}
+
 .page {
   display: flex;
   flex-direction: column;
