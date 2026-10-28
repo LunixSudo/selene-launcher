@@ -74,6 +74,11 @@
       },
       { label: t("instance.share"), icon: UI_ICONS.share, action: () => (sharing = true) },
       {
+        label: t("instances.shortcut"),
+        icon: UI_ICONS.shortcut,
+        action: () => api.createShortcut(instance.id),
+      },
+      {
         label: t("instances.delete"),
         icon: UI_ICONS.delete,
         danger: true,

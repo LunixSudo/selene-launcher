@@ -115,6 +115,9 @@ export async function listenToGames(): Promise<() => void> {
         void appWindow.close();
       }
     }),
+    listen<string>("launch-request", ({ payload }) => {
+      void play(payload);
+    }),
     listen<GameLog>("game-log", ({ payload }) => {
       for (const listener of logListeners) {
         listener(payload);
@@ -132,6 +135,10 @@ export async function listenToGames(): Promise<() => void> {
       }
     }),
   ]);
+  const requested = await api.takeStartupLaunch();
+  if (requested) {
+    void play(requested);
+  }
   return () => {
     for (const unlisten of unlisteners) {
       unlisten();

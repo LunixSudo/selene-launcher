@@ -46,6 +46,7 @@ export const en: Messages = {
     },
     ungrouped: "No group",
     nothingFound: "Nothing found",
+    shortcut: "Desktop shortcut",
     duplicate: "Duplicate",
     copyName: "{name} (copy)",
     continue: "Continue last world",

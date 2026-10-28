@@ -44,6 +44,7 @@ export const ru = {
     },
     ungrouped: "Без группы",
     nothingFound: "Ничего не нашлось",
+    shortcut: "Ярлык на рабочий стол",
     duplicate: "Создать копию",
     copyName: "{name} (копия)",
     continue: "Продолжить последний мир",

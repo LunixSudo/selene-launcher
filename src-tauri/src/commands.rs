@@ -6,6 +6,7 @@
 pub mod content;
 pub mod packs;
 pub mod saves;
+pub mod shortcut;
 pub mod update;
 
 use std::path::PathBuf;
@@ -273,6 +274,12 @@ pub async fn open_instance_folder(
     let dir = launcher.instances.game_dir(&id);
     tokio::fs::create_dir_all(&dir).await?;
     saves::open_path(&app, &dir)
+}
+
+/// The instance a desktop shortcut asked to start, handed out once.
+#[tauri::command]
+pub fn take_startup_launch(launcher: State<'_, Launcher>) -> Option<String> {
+    launcher.take_startup_launch()
 }
 
 #[tauri::command]

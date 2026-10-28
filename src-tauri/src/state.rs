@@ -25,13 +25,14 @@ pub struct Launcher {
     /// Instances being prepared or played; the sender stops a game that has started.
     running: Mutex<HashMap<String, Option<oneshot::Sender<()>>>>,
     logs: Mutex<HashMap<String, VecDeque<String>>>,
+    startup_launch: Mutex<Option<String>>,
 }
 
 /// Lines kept per instance; older ones are dropped.
 const LOG_LINES: usize = 5000;
 
 impl Launcher {
-    pub fn new(data_dir: &Path) -> selene_core::Result<Self> {
+    pub fn new(data_dir: &Path, startup_launch: Option<String>) -> selene_core::Result<Self> {
         let client = selene_core::http::client()?;
         Ok(Self {
             curseforge: curseforge(&client),
@@ -44,6 +45,7 @@ impl Launcher {
             manifest: OnceCell::new(),
             running: Mutex::new(HashMap::new()),
             logs: Mutex::new(HashMap::new()),
+            startup_launch: Mutex::new(startup_launch),
         })
     }
 
@@ -87,6 +89,13 @@ impl Launcher {
 
     pub fn is_running(&self, id: &str) -> bool {
         self.running_map().contains_key(id)
+    }
+
+    pub fn take_startup_launch(&self) -> Option<String> {
+        self.startup_launch
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
     }
 
     /// Forgets the previous run's output.

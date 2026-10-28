@@ -6,7 +6,9 @@ mod state;
 
 use std::path::PathBuf;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+
+use crate::commands::shortcut::launch_arg;
 
 use crate::state::Launcher;
 
@@ -26,6 +28,16 @@ fn portable_data_dir() -> Option<PathBuf> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // A second start, say from a desktop shortcut, hands its request to the open window.
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if let Some(id) = launch_arg(&args) {
+                let _ = app.emit("launch-request", id);
+            }
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
@@ -37,7 +49,8 @@ pub fn run() {
             // World icons and screenshots are shown straight from the instance folders.
             app.asset_protocol_scope()
                 .allow_directory(&data_dir, true)?;
-            app.manage(Launcher::new(&data_dir)?);
+            let args: Vec<String> = std::env::args().collect();
+            app.manage(Launcher::new(&data_dir, launch_arg(&args))?);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -56,6 +69,8 @@ pub fn run() {
             commands::open_instance_folder,
             commands::open_data_folder,
             commands::config,
+            commands::take_startup_launch,
+            commands::shortcut::create_shortcut,
             commands::set_config,
             commands::game_log,
             commands::memory_info,
