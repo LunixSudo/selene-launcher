@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -21,7 +21,11 @@ pub struct Launcher {
     pub total_memory_mb: u64,
     manifest: OnceCell<VersionManifest>,
     running: Mutex<HashSet<String>>,
+    logs: Mutex<HashMap<String, VecDeque<String>>>,
 }
+
+/// Lines kept per instance; older ones are dropped.
+const LOG_LINES: usize = 5000;
 
 impl Launcher {
     pub fn new(data_dir: &Path) -> selene_core::Result<Self> {
@@ -35,6 +39,7 @@ impl Launcher {
             total_memory_mb: total_memory_mb(),
             manifest: OnceCell::new(),
             running: Mutex::new(HashSet::new()),
+            logs: Mutex::new(HashMap::new()),
         })
     }
 
@@ -58,6 +63,33 @@ impl Launcher {
 
     pub fn is_running(&self, id: &str) -> bool {
         self.running_set().contains(id)
+    }
+
+    /// Forgets the previous run's output.
+    pub fn clear_log(&self, id: &str) {
+        self.log_map().remove(id);
+    }
+
+    pub fn push_log(&self, id: &str, line: String) {
+        let mut logs = self.log_map();
+        let log = logs.entry(id.to_owned()).or_default();
+        if log.len() == LOG_LINES {
+            log.pop_front();
+        }
+        log.push_back(line);
+    }
+
+    pub fn log(&self, id: &str) -> Vec<String> {
+        self.log_map()
+            .get(id)
+            .map(|log| log.iter().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    fn log_map(&self) -> std::sync::MutexGuard<'_, HashMap<String, VecDeque<String>>> {
+        self.logs
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     fn running_set(&self) -> std::sync::MutexGuard<'_, HashSet<String>> {

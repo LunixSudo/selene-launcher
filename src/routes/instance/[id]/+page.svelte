@@ -1,15 +1,18 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { api } from "$lib/api";
+  import CrashNotice from "$lib/components/CrashNotice.svelte";
+  import GameConsole from "$lib/components/GameConsole.svelte";
   import InstanceSettings from "$lib/components/InstanceSettings.svelte";
   import ModCatalog from "$lib/components/ModCatalog.svelte";
   import ModList from "$lib/components/ModList.svelte";
   import ShareDialog from "$lib/components/ShareDialog.svelte";
+  import { playTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { library, loadInstances, play } from "$lib/state/instances.svelte";
 
-  type Tab = "mods" | "catalog" | "settings";
+  type Tab = "mods" | "catalog" | "settings" | "logs";
 
   let chosenTab = $state<Tab | null>(null);
   let refresh = $state(0);
@@ -18,7 +21,10 @@
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
   const launch = $derived(instance ? library.launches[instance.id] : undefined);
   const busy = $derived(launch?.status === "preparing" || launch?.status === "running");
-  const tabs = $derived<Tab[]>(instance?.loader ? ["mods", "catalog", "settings"] : ["settings"]);
+  const tabs = $derived<Tab[]>(
+    instance?.loader ? ["mods", "catalog", "settings", "logs"] : ["settings", "logs"],
+  );
+  const crash = $derived(instance ? library.crashes[instance.id] : undefined);
   const tab = $derived(chosenTab ?? tabs[0]);
 
   $effect(() => {
@@ -42,6 +48,11 @@
             ? `${LOADER_NAMES[instance.loader.loader]} ${instance.loader.version} · ${instance.version}`
             : instance.version}
         </span>
+        {#if instance.playSeconds >= 60}
+          <span class="played">
+            {t("instances.playTime", { time: playTime(instance.playSeconds) })}
+          </span>
+        {/if}
       </div>
       <div class="actions">
         <button type="button" class="share" onclick={() => api.openInstanceFolder(instance.id)}>
@@ -55,6 +66,14 @@
         </button>
       </div>
     </header>
+
+    {#if crash}
+      <CrashNotice
+        {crash}
+        onlogs={() => (chosenTab = "logs")}
+        ondismiss={() => delete library.crashes[instance.id]}
+      />
+    {/if}
 
     <div class="tabs" role="tablist">
       {#each tabs as name (name)}
@@ -74,6 +93,8 @@
         <ModList instanceId={instance.id} {refresh} />
       {:else if tab === "catalog"}
         <ModCatalog instanceId={instance.id} oninstall={() => refresh++} />
+      {:else if tab === "logs"}
+        <GameConsole instanceId={instance.id} />
       {:else}
         {#if !instance.loader}
           <p class="muted">{t("instance.noLoader")}</p>
@@ -149,6 +170,12 @@
     color: var(--text-muted);
     font-size: 12px;
     font-weight: 600;
+  }
+
+  .played {
+    flex: none;
+    color: var(--text-muted);
+    font-size: 12px;
   }
 
   .actions {

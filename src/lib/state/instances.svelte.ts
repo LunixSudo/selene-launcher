@@ -3,7 +3,9 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   api,
   type CommandError,
+  type CrashReport,
   type GameExited,
+  type GameLog,
   type Instance,
   isCommandError,
   type LaunchProgress,
@@ -26,6 +28,7 @@ export const library = $state({
   importError: null as CommandError | null,
   importManual: [] as ManualDownload[],
   launches: {} as Record<string, LaunchState>,
+  crashes: {} as Record<string, CrashReport>,
 });
 
 export async function loadInstances() {
@@ -67,6 +70,7 @@ export async function deleteInstance(id: string) {
 
 export async function play(id: string) {
   library.launches[id] = { status: "preparing", stage: null, percent: 0 };
+  delete library.crashes[id];
   try {
     await api.launchInstance(id);
   } catch (error) {
@@ -75,6 +79,14 @@ export async function play(id: string) {
       error: isCommandError(error) ? error : UNKNOWN_ERROR,
     };
   }
+}
+
+const logListeners = new Set<(log: GameLog) => void>();
+
+/** Calls `listener` for every line a running game prints. Returns a function that unsubscribes. */
+export function onGameLog(listener: (log: GameLog) => void): () => void {
+  logListeners.add(listener);
+  return () => logListeners.delete(listener);
 }
 
 /** Subscribes to game events from the backend. Returns a function that unsubscribes. */
@@ -97,8 +109,17 @@ export async function listenToGames(): Promise<() => void> {
         void appWindow.close();
       }
     }),
+    listen<GameLog>("game-log", ({ payload }) => {
+      for (const listener of logListeners) {
+        listener(payload);
+      }
+    }),
     listen<GameExited>("game-exited", ({ payload }) => {
       delete library.launches[payload.instanceId];
+      if (payload.crash) {
+        library.crashes[payload.instanceId] = payload.crash;
+      }
+      void loadInstances();
       if (settings.afterLaunch === "minimize" && settings.restoreAfterGame) {
         const appWindow = getCurrentWindow();
         void appWindow.unminimize().then(() => appWindow.setFocus());

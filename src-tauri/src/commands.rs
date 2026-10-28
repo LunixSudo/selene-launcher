@@ -8,11 +8,13 @@ pub mod packs;
 
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::time::Instant;
 
 use chrono::{DateTime, Utc};
+use selene_core::crash::{self, CrashReport};
 use selene_core::download::Progress;
 use selene_core::game::{self, Stage};
-use selene_core::instance::Instance;
+use selene_core::instance::{Instance, WindowSize};
 use selene_core::launch::{self, LaunchAccount, LaunchOptions};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
@@ -20,6 +22,7 @@ use selene_core::memory;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
+use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 
 use crate::account::{Account, AccountList};
 use crate::error::{CommandError, CommandResult};
@@ -55,6 +58,15 @@ struct LaunchProgress<'a> {
 struct GameExited {
     instance_id: String,
     code: Option<i32>,
+    /// Set when the game closed with an error.
+    crash: Option<CrashReport>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GameLog<'a> {
+    instance_id: &'a str,
+    line: &'a str,
 }
 
 #[tauri::command]
@@ -184,6 +196,27 @@ pub async fn update_instance(
     Ok(instance)
 }
 
+/// Game window and JVM options for one instance.
+#[tauri::command]
+pub async fn set_launch_options(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+    window: Option<WindowSize>,
+    fullscreen: bool,
+    java_args: String,
+) -> CommandResult<Instance> {
+    let mut instance = launcher
+        .instances
+        .get(&instance_id)
+        .await
+        .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
+    instance.window = window;
+    instance.fullscreen = fullscreen;
+    java_args.trim().clone_into(&mut instance.java_args);
+    launcher.instances.save(&instance).await?;
+    Ok(instance)
+}
+
 async fn recommended_memory(launcher: &Launcher, instance_id: &str) -> CommandResult<u32> {
     let mods = selene_core::mods::list(&launcher.instances.game_dir(instance_id)).await?;
     let enabled = mods.iter().filter(|file| file.enabled).count();
@@ -285,6 +318,7 @@ async fn start_game(
     .await?;
 
     let dirs = &launcher.dirs;
+    let token = account.access_token.clone();
     let options = LaunchOptions {
         java: installed.java.executable(),
         game_dir: launcher.instances.game_dir(&instance.id),
@@ -297,9 +331,14 @@ async fn start_game(
             Some(amount) => amount,
             None => recommended_memory(launcher, &instance.id).await?,
         },
-        resolution: None,
+        resolution: instance.window.map(|size| (size.width, size.height)),
+        fullscreen: instance.fullscreen,
         quick_play: None,
-        extra_jvm_args: Vec::new(),
+        extra_jvm_args: instance
+            .java_args
+            .split_whitespace()
+            .map(str::to_owned)
+            .collect(),
     };
     launch::extract_natives(&installed.version, &options)?;
 
@@ -307,28 +346,91 @@ async fn start_game(
         launch::build_command(&installed.version, &options).to_command(),
     )
     .stdin(Stdio::null())
-    .stdout(Stdio::null())
-    .stderr(Stdio::null())
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
     .spawn()
     .map_err(CommandError::Spawn)?;
 
     instance.last_played = Some(Utc::now());
     launcher.instances.save(&instance).await?;
+    launcher.clear_log(&instance.id);
     let _ = app.emit("game-started", &instance.id);
 
+    let stdout = child.stdout.take().map(|out| {
+        tauri::async_runtime::spawn(forward_log(
+            app.clone(),
+            instance.id.clone(),
+            token.clone(),
+            out,
+        ))
+    });
+    let stderr = child.stderr.take().map(|err| {
+        tauri::async_runtime::spawn(forward_log(app.clone(), instance.id.clone(), token, err))
+    });
+
     let app = app.clone();
+    let started = Instant::now();
     tauri::async_runtime::spawn(async move {
         let code = child.wait().await.ok().and_then(|status| status.code());
-        app.state::<Launcher>().stop_running(&instance.id);
+        // Let the readers drain what the game printed last; that is where the error is.
+        for reader in [stdout, stderr].into_iter().flatten() {
+            let _ = reader.await;
+        }
+        let launcher = app.state::<Launcher>();
+        launcher.stop_running(&instance.id);
+        add_play_time(&launcher, &instance.id, started.elapsed().as_secs()).await;
+
+        let crash = (code != Some(0)).then(|| crash::analyze(&launcher.log(&instance.id)));
         let _ = app.emit(
             "game-exited",
             GameExited {
                 instance_id: instance.id,
                 code,
+                crash,
             },
         );
     });
     Ok(())
+}
+
+/// Sends each line the game prints to the UI, with the session token blanked out in case
+/// an old version prints it.
+async fn forward_log(
+    app: AppHandle,
+    instance_id: String,
+    token: String,
+    output: impl AsyncRead + Unpin,
+) {
+    let mut lines = BufReader::new(output).lines();
+    while let Ok(Some(line)) = lines.next_line().await {
+        let line = if token.is_empty() {
+            line
+        } else {
+            line.replace(&token, "<hidden>")
+        };
+        let _ = app.emit(
+            "game-log",
+            GameLog {
+                instance_id: &instance_id,
+                line: &line,
+            },
+        );
+        app.state::<Launcher>().push_log(&instance_id, line);
+    }
+}
+
+async fn add_play_time(launcher: &Launcher, id: &str, seconds: u64) {
+    // Re-read the instance: it may have been renamed while the game was running.
+    if let Some(mut instance) = launcher.instances.get(id).await {
+        instance.play_seconds += seconds;
+        let _ = launcher.instances.save(&instance).await;
+    }
+}
+
+/// What the game printed during its last run.
+#[tauri::command]
+pub fn game_log(launcher: State<'_, Launcher>, instance_id: String) -> Vec<String> {
+    launcher.log(&instance_id)
 }
 
 fn percent(progress: Progress) -> u32 {

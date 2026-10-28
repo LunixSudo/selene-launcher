@@ -2,7 +2,7 @@
   import { api, type Instance, type MemoryInfo } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
-  import { library } from "$lib/state/instances.svelte";
+  import { replaceInstance } from "$lib/state/instances.svelte";
 
   let { instance }: { instance: Instance } = $props();
 
@@ -31,12 +31,33 @@
     return t("instance.gigabytes", { count });
   }
 
+  const DEFAULT_WINDOW = { width: 1280, height: 720 };
+
+  let javaArgs = $derived(instance.javaArgs);
+
+  async function saveLaunch(
+    changes: Partial<Pick<Instance, "window" | "fullscreen" | "javaArgs">>,
+  ) {
+    const next = { window: instance.window, fullscreen: instance.fullscreen, javaArgs, ...changes };
+    try {
+      replaceInstance(
+        await api.setLaunchOptions(instance.id, next.window, next.fullscreen, next.javaArgs),
+      );
+    } catch (err) {
+      error = describeError(err);
+    }
+  }
+
+  function resize(side: "width" | "height", value: number) {
+    const window = instance.window ?? DEFAULT_WINDOW;
+    if (Number.isFinite(value) && value >= 200) {
+      void saveLaunch({ window: { ...window, [side]: Math.round(value) } });
+    }
+  }
+
   async function save(maxMemoryMb: number | null) {
     try {
-      const updated = await api.setInstanceMemory(instance.id, maxMemoryMb);
-      library.instances = library.instances.map((entry) =>
-        entry.id === updated.id ? updated : entry,
-      );
+      replaceInstance(await api.setInstanceMemory(instance.id, maxMemoryMb));
     } catch (err) {
       error = describeError(err);
     }
@@ -50,16 +71,12 @@
     {@const recommended = info.recommended}
     <label class="row">
       <span>{t("instance.memoryAuto")}</span>
-      <span class="switch">
-        <input
-          type="checkbox"
-          role="switch"
-          checked={manual === null}
-          aria-checked={manual === null}
-          onchange={(event) => save(event.currentTarget.checked ? null : recommended)}
-        >
-        <span aria-hidden="true"></span>
-      </span>
+      <input
+        class="switch"
+        type="checkbox"
+        checked={manual === null}
+        onchange={(event) => save(event.currentTarget.checked ? null : recommended)}
+      >
     </label>
 
     {#if manual === null}
@@ -87,8 +104,71 @@
     {/if}
   {/if}
 
+  <label class="field">
+    <span>{t("launchOptions.javaArgs")}</span>
+    <input
+      bind:value={javaArgs}
+      spellcheck="false"
+      placeholder="-XX:+UseZGC"
+      onchange={() => saveLaunch({})}
+    >
+  </label>
+  <p class="hint">{t("launchOptions.javaArgsHint")}</p>
+
   {#if error}
     <p class="error" role="alert">{error}</p>
+  {/if}
+</section>
+
+<section class="group">
+  <h2>{t("launchOptions.title")}</h2>
+
+  <label class="row">
+    <span>{t("launchOptions.fullscreen")}</span>
+    <input
+      class="switch"
+      type="checkbox"
+      checked={instance.fullscreen}
+      onchange={(event) => saveLaunch({ fullscreen: event.currentTarget.checked })}
+    >
+  </label>
+
+  <label class="row">
+    <span>{t("launchOptions.customSize")}</span>
+    <input
+      class="switch"
+      type="checkbox"
+      checked={instance.window !== null}
+      disabled={instance.fullscreen}
+      onchange={(event) =>
+        saveLaunch({ window: event.currentTarget.checked ? DEFAULT_WINDOW : null })}
+    >
+  </label>
+
+  {#if instance.window && !instance.fullscreen}
+    <div class="size">
+      <label class="field">
+        <span>{t("launchOptions.width")}</span>
+        <input
+          type="number"
+          min="200"
+          step="1"
+          value={instance.window.width}
+          onchange={(event) => resize("width", event.currentTarget.valueAsNumber)}
+        >
+      </label>
+      <span class="times">×</span>
+      <label class="field">
+        <span>{t("launchOptions.height")}</span>
+        <input
+          type="number"
+          min="200"
+          step="1"
+          value={instance.window.height}
+          onchange={(event) => resize("height", event.currentTarget.valueAsNumber)}
+        >
+      </label>
+    </div>
   {/if}
 </section>
 
@@ -101,6 +181,10 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
+  }
+
+  .group + .group {
+    margin-top: 12px;
   }
 
   h2 {
@@ -139,55 +223,34 @@
     text-align: right;
   }
 
-  .switch {
-    position: relative;
-    flex: none;
-    width: 38px;
-    height: 22px;
+  .field {
+    display: grid;
+    flex: 1;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
   }
 
-  .switch input {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .switch span {
-    position: absolute;
-    inset: 0;
-    border-radius: 999px;
+  .field input {
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     background: var(--field);
-    box-shadow: inset 0 0 0 1px var(--border);
-    transition: background 150ms var(--ease);
-    pointer-events: none;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
   }
 
-  .switch span::after {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #ffffff;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
-    transition: transform 150ms var(--ease);
-    content: "";
+  .size {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
   }
 
-  .switch input:checked + span {
-    background: var(--accent);
-  }
-
-  .switch input:checked + span::after {
-    transform: translateX(16px);
-  }
-
-  .switch input:focus-visible + span {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+  .times {
+    padding-bottom: 8px;
+    color: var(--text-muted);
   }
 
   .error {

@@ -1,10 +1,11 @@
 <script lang="ts">
   import type { Instance } from "$lib/api";
   import { coverOf, iconOf } from "$lib/appearance";
+  import { playTime } from "$lib/format";
   import { locale, t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
   import { LOADER_NAMES } from "$lib/loaders";
-  import { type LaunchState, play } from "$lib/state/instances.svelte";
+  import { type LaunchState, library, play } from "$lib/state/instances.svelte";
 
   let {
     instance,
@@ -79,9 +80,16 @@
       </span>
       {instance.version}
     </p>
-    <p>{lastPlayed()}</p>
+    <p>
+      {lastPlayed()}
+      {#if instance.playSeconds >= 60}
+        · {t("instances.playTime", { time: playTime(instance.playSeconds) })}
+      {/if}
+    </p>
     {#if launch?.status === "failed"}
       <p class="error" role="alert">{t(`errors.${launch.error.kind}`)}</p>
+    {:else if library.crashes[instance.id]}
+      <p class="error" role="alert">{t("crash.title")}</p>
     {/if}
   </div>
 

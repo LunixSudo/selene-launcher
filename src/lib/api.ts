@@ -30,6 +30,15 @@ export interface Instance {
   maxMemoryMb: number | null;
   icon: string | null;
   cover: string | null;
+  playSeconds: number;
+  window: WindowSize | null;
+  fullscreen: boolean;
+  javaArgs: string;
+}
+
+export interface WindowSize {
+  width: number;
+  height: number;
 }
 
 export interface Account {
@@ -155,9 +164,29 @@ export interface LaunchProgress {
   bytesTotal: number;
 }
 
+export type CrashCause =
+  | "outOfMemory"
+  | "wrongJava"
+  | "missingDependency"
+  | "incompatibleMods"
+  | "modError"
+  | "graphicsDriver"
+  | "unknown";
+
+export interface CrashReport {
+  cause: CrashCause;
+  details: string[];
+}
+
 export interface GameExited {
   instanceId: string;
   code: number | null;
+  crash: CrashReport | null;
+}
+
+export interface GameLog {
+  instanceId: string;
+  line: string;
 }
 
 export function isCommandError(value: unknown): value is CommandError {
@@ -179,6 +208,13 @@ export const api = {
   updateInstance: (id: string, name: string, icon: string | null, cover: string | null) =>
     invoke<Instance>("update_instance", { id, name, icon, cover }),
   openDataFolder: () => invoke<void>("open_data_folder"),
+  setLaunchOptions: (
+    instanceId: string,
+    window: WindowSize | null,
+    fullscreen: boolean,
+    javaArgs: string,
+  ) => invoke<Instance>("set_launch_options", { instanceId, window, fullscreen, javaArgs }),
+  gameLog: (instanceId: string) => invoke<string[]>("game_log", { instanceId }),
   openInstanceFolder: (id: string) => invoke<void>("open_instance_folder", { id }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
   memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),
