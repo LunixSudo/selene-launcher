@@ -324,6 +324,8 @@ export const en: Messages = {
   },
   updates: {
     title: "Updates available",
+    none: "Everything is up to date",
+    check: "Check for updates",
     loader: "{loader} loader: {from} → {to} (recommended)",
     kinds: {
       mod: "Mods: {count}",

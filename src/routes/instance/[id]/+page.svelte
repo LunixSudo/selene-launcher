@@ -26,6 +26,8 @@
   let chosenKind = $state<ContentKind>("mod");
   let world = $state<string | null>(null);
   let sharing = $state(false);
+  let recheck = $state(0);
+  let checking = $state(false);
 
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
   const launch = $derived(instance ? library.launches[instance.id] : undefined);
@@ -73,6 +75,20 @@
         {/if}
       </div>
       <div class="actions">
+        <button
+          type="button"
+          class="share refresh"
+          class:checking
+          disabled={checking}
+          title={t("updates.check")}
+          aria-label={t("updates.check")}
+          onclick={() => recheck++}
+        >
+          <svg class="spinner" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M13 8a5 5 0 1 1-1.46-3.54" />
+            <path d="M13 2.5v3h-3" />
+          </svg>
+        </button>
         <button type="button" class="share" onclick={() => api.openInstanceFolder(instance.id)}>
           {t("instances.openFolder")}
         </button>
@@ -102,6 +118,8 @@
     <UpdateNotice
       {instance}
       {refresh}
+      {recheck}
+      bind:checking
       disabled={launch?.status === "preparing" || running}
       onupdated={() => refresh++}
     />
@@ -223,6 +241,33 @@
 
   .share:hover {
     background: var(--surface-hover);
+  }
+
+  .refresh {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    padding: 0;
+  }
+
+  .refresh svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .refresh.checking svg {
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .play {

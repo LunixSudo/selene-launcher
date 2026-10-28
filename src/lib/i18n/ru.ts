@@ -322,6 +322,8 @@ export const ru = {
   },
   updates: {
     title: "Есть обновления",
+    none: "Всё уже обновлено",
+    check: "Проверить обновления",
     loader: "Загрузчик {loader}: {from} → {to} (рекомендуемая)",
     kinds: {
       mod: "Моды: {count}",

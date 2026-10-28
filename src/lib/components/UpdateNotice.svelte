@@ -14,8 +14,18 @@
     instance,
     disabled,
     refresh,
+    recheck,
+    checking = $bindable(false),
     onupdated,
-  }: { instance: Instance; disabled: boolean; refresh: number; onupdated: () => void } = $props();
+  }: {
+    instance: Instance;
+    disabled: boolean;
+    refresh: number;
+    /** Bumped by the refresh button: checks again and shows the notice even if dismissed. */
+    recheck: number;
+    checking?: boolean;
+    onupdated: () => void;
+  } = $props();
 
   let loaderTarget = $state<string | null>(null);
   let counts = $state<Partial<Record<ContentKind, number>>>({});
@@ -30,22 +40,28 @@
   const chosen = $derived(
     (loaderTarget !== null && !skipped.loader) || pending.some((kind) => !skipped[kind]),
   );
+  const found = $derived(loaderTarget !== null || pending.length > 0);
   const visible = $derived(
-    !dismissed[instance.id] && (loaderTarget !== null || pending.length > 0 || error !== null),
+    !dismissed[instance.id] && (found || error !== null || (recheck > 0 && !checking)),
   );
 
   $effect(() => {
     const { id, version, loader } = instance;
     const checked = kinds;
     void refresh;
+    if (recheck > 0) {
+      delete dismissed[id];
+    }
     let stale = false;
+    checking = true;
     loaderTarget = null;
     counts = {};
     skipped = {};
     error = null;
 
+    const checks: Promise<void>[] = [];
     if (loader) {
-      api
+      const check = api
         .loaderVersions(loader.loader, version)
         .then((releases) => {
           const preferred = preferredRelease(releases);
@@ -56,9 +72,10 @@
           }
         })
         .catch(() => {});
+      checks.push(check);
     }
     for (const kind of checked) {
-      api
+      const check = api
         .checkUpdates(id, kind, null)
         .then((updates) => {
           if (!stale) {
@@ -66,7 +83,13 @@
           }
         })
         .catch(() => {});
+      checks.push(check);
     }
+    void Promise.all(checks).then(() => {
+      if (!stale) {
+        checking = false;
+      }
+    });
     return () => {
       stale = true;
     };
@@ -95,7 +118,7 @@
 {#if visible}
   <div class="notice" role="status">
     <div class="text">
-      <strong>{t("updates.title")}</strong>
+      <strong>{found ? t("updates.title") : t("updates.none")}</strong>
       {#if instance.loader && loaderTarget}
         <label class="toggle">
           <input
@@ -125,11 +148,13 @@
       {/if}
     </div>
     <div class="actions">
-      <button type="button" disabled={disabled || working || !chosen} onclick={update}>
-        {working ? t("updates.working") : t("updates.update")}
-      </button>
+      {#if found}
+        <button type="button" disabled={disabled || working || !chosen} onclick={update}>
+          {working ? t("updates.working") : t("updates.update")}
+        </button>
+      {/if}
       <button type="button" class="ghost" onclick={() => (dismissed[instance.id] = true)}>
-        {t("updates.later")}
+        {found ? t("updates.later") : t("account.dismiss")}
       </button>
     </div>
   </div>
