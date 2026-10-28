@@ -56,8 +56,11 @@ pub async fn check(client: &Client, current: &str) -> Result<Option<Update>> {
     }
     let installer = release.assets.into_iter().find_map(|asset| {
         let sha256 = asset.digest?.strip_prefix("sha256:")?.to_owned();
-        (asset.name.starts_with(INSTALLER_PREFIX) && asset.name.ends_with(".exe"))
-            .then_some((asset.browser_download_url, sha256))
+        let is_installer = asset.name.starts_with(INSTALLER_PREFIX)
+            && Path::new(&asset.name)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("exe"));
+        is_installer.then_some((asset.browser_download_url, sha256))
     });
     Ok(installer.map(|(url, sha256)| Update {
         version: version.to_owned(),
