@@ -5,11 +5,13 @@ export type Style = "glass" | "mica" | "solid";
 export type Accent = "violet" | "blue" | "green" | "pink" | "orange";
 export type Font = "rounded" | "modern" | "rubik" | "system";
 export type AfterLaunch = "keep" | "minimize" | "close";
+export type SortOrder = "lastPlayed" | "name" | "playTime" | "created";
 
 export const THEMES: Theme[] = ["system", "light", "dark"];
 export const STYLES: Style[] = ["glass", "mica", "solid"];
 export const FONTS: Font[] = ["rounded", "modern", "rubik", "system"];
 export const AFTER_LAUNCH: AfterLaunch[] = ["keep", "minimize", "close"];
+export const SORT_ORDERS: SortOrder[] = ["lastPlayed", "name", "playTime", "created"];
 export const ACCENTS: Record<Accent, string> = {
   violet: "#6b5bff",
   blue: "#0f6cbd",
@@ -27,6 +29,8 @@ interface Settings {
   font: Font;
   afterLaunch: AfterLaunch;
   restoreAfterGame: boolean;
+  sort: SortOrder;
+  collapsedGroups: string[];
 }
 
 const DEFAULTS: Settings = {
@@ -36,6 +40,8 @@ const DEFAULTS: Settings = {
   font: "rounded",
   afterLaunch: "minimize",
   restoreAfterGame: true,
+  sort: "lastPlayed",
+  collapsedGroups: [],
 };
 
 export const settings = $state<Settings>(load());
@@ -56,6 +62,10 @@ function load(): Settings {
     font: oneOf(saved.font, FONTS, DEFAULTS.font),
     afterLaunch: oneOf(saved.afterLaunch, AFTER_LAUNCH, DEFAULTS.afterLaunch),
     restoreAfterGame: oneOf(saved.restoreAfterGame, [true, false], DEFAULTS.restoreAfterGame),
+    sort: oneOf(saved.sort, SORT_ORDERS, DEFAULTS.sort),
+    collapsedGroups: Array.isArray(saved.collapsedGroups)
+      ? saved.collapsedGroups.filter((group) => typeof group === "string")
+      : DEFAULTS.collapsedGroups,
   };
 }
 

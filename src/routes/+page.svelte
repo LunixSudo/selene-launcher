@@ -8,6 +8,7 @@
   import CreateInstanceDialog from "$lib/components/CreateInstanceDialog.svelte";
   import EditInstanceDialog from "$lib/components/EditInstanceDialog.svelte";
   import InstanceCard from "$lib/components/InstanceCard.svelte";
+  import Select from "$lib/components/Select.svelte";
   import ShareDialog from "$lib/components/ShareDialog.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
@@ -18,6 +19,7 @@
     loadInstances,
     play,
   } from "$lib/state/instances.svelte";
+  import { SORT_ORDERS, type SortOrder, settings } from "$lib/state/settings.svelte";
 
   let creating = $state(false);
   let selected = $state<Instance | null>(null);
@@ -25,6 +27,7 @@
   let editing = $state(false);
   let sharing = $state(false);
   let deleting = $state(false);
+  let query = $state("");
 
   const menu = $derived.by((): MenuItem[] => {
     const instance = selected;
@@ -34,11 +37,23 @@
     const status = library.launches[instance.id]?.status;
     const busy = status === "preparing" || status === "running";
     return [
+      status === "running"
+        ? {
+            label: t("instances.stop"),
+            icon: UI_ICONS.stop,
+            action: () => api.stopInstance(instance.id),
+          }
+        : {
+            label: t("instances.play"),
+            icon: UI_ICONS.play,
+            disabled: busy,
+            action: () => play(instance.id),
+          },
       {
-        label: t("instances.play"),
-        icon: UI_ICONS.play,
-        disabled: busy,
-        action: () => play(instance.id),
+        label: t("instances.continue"),
+        icon: UI_ICONS.open,
+        disabled: busy || !instance.lastPlayed,
+        action: () => continueLastWorld(instance.id),
       },
       {
         label: t("instances.open"),
@@ -51,6 +66,12 @@
         action: () => api.openInstanceFolder(instance.id),
       },
       { label: t("instances.edit"), icon: UI_ICONS.edit, action: () => (editing = true) },
+      {
+        label: t("instances.duplicate"),
+        icon: UI_ICONS.copy,
+        disabled: busy,
+        action: () => duplicate(instance),
+      },
       { label: t("instance.share"), icon: UI_ICONS.share, action: () => (sharing = true) },
       {
         label: t("instances.delete"),
@@ -61,6 +82,68 @@
       },
     ];
   });
+
+  const sortOptions = $derived(
+    SORT_ORDERS.map((value) => ({ value, label: t(`instances.sorts.${value}`) })),
+  );
+
+  const visible = $derived.by(() => {
+    const needle = query.trim().toLowerCase();
+    const matches = library.instances.filter(
+      (instance) =>
+        !needle ||
+        instance.name.toLowerCase().includes(needle) ||
+        instance.version.includes(needle) ||
+        (instance.loader?.loader.includes(needle) ?? false) ||
+        (instance.group?.toLowerCase().includes(needle) ?? false),
+    );
+    return matches.sort(compare(settings.sort));
+  });
+
+  const groups = $derived.by(() => {
+    const byName = new Map<string | null, Instance[]>();
+    for (const instance of visible) {
+      byName.set(instance.group, [...(byName.get(instance.group) ?? []), instance]);
+    }
+    return [...byName.entries()].sort(([a], [b]) =>
+      a === null ? -1 : b === null ? 1 : a.localeCompare(b),
+    );
+  });
+
+  function compare(order: SortOrder): (a: Instance, b: Instance) => number {
+    const time = (date: string | null) => (date ? new Date(date).getTime() : 0);
+    switch (order) {
+      case "name":
+        return (a, b) => a.name.localeCompare(b.name);
+      case "playTime":
+        return (a, b) => b.playSeconds - a.playSeconds;
+      case "created":
+        return (a, b) => time(b.createdAt) - time(a.createdAt);
+      default:
+        return (a, b) =>
+          time(b.lastPlayed) - time(a.lastPlayed) || time(b.createdAt) - time(a.createdAt);
+    }
+  }
+
+  function toggleGroup(name: string) {
+    settings.collapsedGroups = settings.collapsedGroups.includes(name)
+      ? settings.collapsedGroups.filter((group) => group !== name)
+      : [...settings.collapsedGroups, name];
+  }
+
+  async function continueLastWorld(id: string) {
+    const { worlds, quickPlay } = await api.worlds(id);
+    const last = worlds[0];
+    await play(id, quickPlay && last ? { kind: "world", value: last.folder } : null);
+  }
+
+  async function duplicate(instance: Instance) {
+    const copy = await api.duplicateInstance(
+      instance.id,
+      t("instances.copyName", { name: instance.name }),
+    );
+    library.instances = [...library.instances, copy];
+  }
 
   function showMenu(instance: Instance, x: number, y: number) {
     selected = instance;
@@ -119,13 +202,49 @@
       <p>{t("instances.emptyHint")}</p>
     </div>
   {:else}
-    <div class="grid">
-      {#each library.instances as instance (instance.id)}
-        <InstanceCard
-          {instance}
-          launch={library.launches[instance.id]}
-          onmenu={(x, y) => showMenu(instance, x, y)}
-        />
+    <div class="filters">
+      <input
+        type="search"
+        class="search"
+        data-search
+        bind:value={query}
+        placeholder={t("instances.search")}
+        aria-label={t("instances.search")}
+      >
+      <div class="sort">
+        <Select bind:value={settings.sort} options={sortOptions} />
+      </div>
+    </div>
+
+    <div class="scroll">
+      {#if visible.length === 0}
+        <p class="status">{t("instances.nothingFound")}</p>
+      {/if}
+      {#each groups as [name, instances] (name)}
+        {@const collapsed = name !== null && settings.collapsedGroups.includes(name)}
+        {#if name !== null || groups.length > 1}
+          <button
+            type="button"
+            class="group"
+            aria-expanded={!collapsed}
+            onclick={() => name !== null && toggleGroup(name)}
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
+            {name ?? t("instances.ungrouped")}
+            <span>{instances.length}</span>
+          </button>
+        {/if}
+        {#if !collapsed}
+          <div class="grid">
+            {#each instances as instance (instance.id)}
+              <InstanceCard
+                {instance}
+                launch={library.launches[instance.id]}
+                onmenu={(x, y) => showMenu(instance, x, y)}
+              />
+            {/each}
+          </div>
+        {/if}
       {/each}
     </div>
   {/if}
@@ -234,13 +353,83 @@
     stroke-linecap: round;
   }
 
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-top: -6px;
+  }
+
+  .search {
+    flex: 1;
+    max-width: 360px;
+    height: 36px;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+  }
+
+  .sort {
+    width: 210px;
+  }
+
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    margin: -6px;
+    overflow-y: auto;
+    padding: 6px 6px 10px;
+  }
+
+  .group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0 10px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .group:first-child {
+    margin-top: 0;
+  }
+
+  .group span {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--field);
+    font-size: 11px;
+  }
+
+  .group svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 150ms var(--ease);
+  }
+
+  .group[aria-expanded="false"] svg {
+    transform: rotate(-90deg);
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
-    margin: -6px;
-    overflow-y: auto;
-    padding: 6px 6px 10px;
+  }
+
+  .grid + .group {
+    margin-top: 22px;
   }
 
   .empty {

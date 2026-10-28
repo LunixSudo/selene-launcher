@@ -65,7 +65,7 @@
 
 <div class="console">
   <div class="toolbar">
-    <input type="search" bind:value={filter} placeholder={t("logs.filter")}>
+    <input type="search" data-search bind:value={filter} placeholder={t("logs.filter")}>
     <button type="button" onclick={copy} disabled={visible.length === 0}>
       {copied ? t("logs.copied") : t("logs.copy")}
     </button>

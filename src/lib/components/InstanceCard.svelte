@@ -72,12 +72,10 @@
       </span>
       {instance.version}
     </p>
-    <p>
-      {lastPlayed()}
-      {#if instance.playSeconds >= 60}
-        · {t("instances.playTime", { time: playTime(instance.playSeconds) })}
-      {/if}
-    </p>
+    <p>{lastPlayed()}</p>
+    {#if instance.playSeconds >= 60}
+      <p>{t("instances.playTime", { time: playTime(instance.playSeconds) })}</p>
+    {/if}
     {#if launch?.status === "failed"}
       <p class="error" role="alert">{t(`errors.${launch.error.kind}`)}</p>
     {:else if library.crashes[instance.id]}
@@ -221,7 +219,7 @@
   }
 
   p {
-    margin: 4px 0 0;
+    margin: 2px 0 0;
     color: var(--text-muted);
     font-size: 12px;
   }

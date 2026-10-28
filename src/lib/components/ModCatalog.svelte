@@ -196,7 +196,13 @@
 </script>
 
 <div class="toolbar">
-  <input class="search" type="search" bind:value={query} placeholder={t("instance.search")}>
+  <input
+    class="search"
+    type="search"
+    data-search
+    bind:value={query}
+    placeholder={t("instance.search")}
+  >
   <Segmented
     bind:value={source}
     options={SOURCES}

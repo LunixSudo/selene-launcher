@@ -199,6 +199,7 @@ pub async fn update_instance(
     name: String,
     icon: Option<String>,
     cover: Option<String>,
+    group: Option<String>,
 ) -> CommandResult<Instance> {
     let mut instance = launcher
         .instances
@@ -211,8 +212,23 @@ pub async fn update_instance(
     }
     instance.icon = icon;
     instance.cover = cover;
+    instance.group = group
+        .map(|group| group.trim().to_owned())
+        .filter(|group| !group.is_empty());
     launcher.instances.save(&instance).await?;
     Ok(instance)
+}
+
+#[tauri::command]
+pub async fn duplicate_instance(
+    launcher: State<'_, Launcher>,
+    id: String,
+    name: String,
+) -> CommandResult<Instance> {
+    if launcher.is_running(&id) {
+        return Err(CommandError::AlreadyRunning(id));
+    }
+    Ok(launcher.instances.duplicate(&id, &name).await?)
 }
 
 /// Game window and JVM options for one instance.

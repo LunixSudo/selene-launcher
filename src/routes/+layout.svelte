@@ -34,6 +34,27 @@
   });
 
   $effect(() => {
+    const onkeydown = (event: KeyboardEvent) => {
+      const ctrl = event.ctrlKey || event.metaKey;
+      if (ctrl && event.code === "KeyF") {
+        // Every page with a list marks its search field; Ctrl+F jumps there.
+        const search = document.querySelector<HTMLInputElement>("[data-search]");
+        event.preventDefault();
+        search?.focus();
+        search?.select();
+      } else if (
+        import.meta.env.PROD &&
+        (event.key === "F5" || (ctrl && ["KeyR", "KeyP", "KeyU", "KeyG"].includes(event.code)))
+      ) {
+        // Reloading or printing the webview would only break the launcher.
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", onkeydown);
+    return () => window.removeEventListener("keydown", onkeydown);
+  });
+
+  $effect(() => {
     const unlisten = listenToGames();
     return () => {
       void unlisten.then((stop) => stop());

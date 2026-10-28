@@ -41,6 +41,9 @@ pub struct Instance {
     /// Extra JVM arguments, separated by spaces.
     #[serde(default)]
     pub java_args: String,
+    /// Group the instance is filed under on the home screen.
+    #[serde(default)]
+    pub group: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -115,6 +118,7 @@ impl Instances {
             window: None,
             fullscreen: false,
             java_args: String::new(),
+            group: None,
         };
         let game_dir = self.game_dir(&instance.id);
         fs::create_dir_all(&game_dir)
@@ -129,6 +133,31 @@ impl Instances {
         fs::write(&path, serde_json::to_vec_pretty(instance)?)
             .await
             .map_err(|err| Error::io(&path, err))
+    }
+
+    /// Copies an instance with its mods, worlds and settings under a new name.
+    pub async fn duplicate(&self, id: &str, name: &str) -> Result<Instance> {
+        let source = self.root.join(id);
+        let mut instance = read_config(&source).await.ok_or_else(|| {
+            Error::io(&source, std::io::Error::from(std::io::ErrorKind::NotFound))
+        })?;
+        instance.id = self.free_id(name).await;
+        name.trim().clone_into(&mut instance.name);
+        instance.created_at = Utc::now();
+        instance.last_played = None;
+        instance.play_seconds = 0;
+
+        let target = self.root.join(&instance.id);
+        let from = source.join(GAME_DIR);
+        let to = target.join(GAME_DIR);
+        let copied = tokio::task::spawn_blocking(move || copy_dir(&from, &to))
+            .await
+            .map_err(|err| Error::io(&target, std::io::Error::other(err)))?;
+        if let Err(err) = copied.and(self.save(&instance).await) {
+            let _ = fs::remove_dir_all(&target).await;
+            return Err(err);
+        }
+        Ok(instance)
     }
 
     pub async fn delete(&self, id: &str) -> Result<()> {
@@ -153,6 +182,27 @@ impl Instances {
 async fn read_config(dir: &Path) -> Option<Instance> {
     let bytes = fs::read(dir.join(CONFIG_FILE)).await.ok()?;
     serde_json::from_slice(&bytes).ok()
+}
+
+fn copy_dir(from: &Path, to: &Path) -> Result<()> {
+    std::fs::create_dir_all(to).map_err(|err| Error::io(to, err))?;
+    let entries = match std::fs::read_dir(from) {
+        Ok(entries) => entries,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(err) => return Err(Error::io(from, err)),
+    };
+    for entry in entries {
+        let entry = entry.map_err(|err| Error::io(from, err))?;
+        let path = entry.path();
+        let target = to.join(entry.file_name());
+        let kind = entry.file_type().map_err(|err| Error::io(&path, err))?;
+        if kind.is_dir() {
+            copy_dir(&path, &target)?;
+        } else if kind.is_file() && entry.file_name() != "session.lock" {
+            std::fs::copy(&path, &target).map_err(|err| Error::io(&path, err))?;
+        }
+    }
+    Ok(())
 }
 
 /// A folder name that is safe on every file system.
@@ -203,6 +253,29 @@ mod tests {
 
         instances.delete(&second.id).await.unwrap();
         assert_eq!(instances.list().await.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn duplicates_with_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let instances = Instances::new(dir.path());
+        let original = instances.create("Survival", "1.21.10", None).await.unwrap();
+        let mods = instances.game_dir(&original.id).join("mods");
+        std::fs::create_dir_all(&mods).unwrap();
+        std::fs::write(mods.join("sodium.jar"), b"jar").unwrap();
+
+        let copy = instances
+            .duplicate(&original.id, "Survival copy")
+            .await
+            .unwrap();
+        assert_eq!(copy.id, "survival-copy");
+        assert_eq!(copy.version, original.version);
+        assert!(
+            instances
+                .game_dir(&copy.id)
+                .join("mods/sodium.jar")
+                .is_file()
+        );
     }
 
     #[tokio::test]

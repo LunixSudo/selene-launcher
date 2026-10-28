@@ -3,7 +3,7 @@
   import { COVERS, coverOf, DEFAULT_ICON, ICONS, iconOf } from "$lib/appearance";
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
-  import { replaceInstance } from "$lib/state/instances.svelte";
+  import { library, replaceInstance } from "$lib/state/instances.svelte";
   import Dialog from "./Dialog.svelte";
 
   let { instance, open = $bindable() }: { instance: Instance; open: boolean } = $props();
@@ -11,6 +11,7 @@
   let name = $state("");
   let icon = $state<string | null>(null);
   let cover = $state<string | null>(null);
+  let group = $state("");
   let saving = $state(false);
   let error = $state<string | null>(null);
 
@@ -19,15 +20,22 @@
       name = instance.name;
       icon = instance.icon ?? DEFAULT_ICON;
       cover = instance.cover;
+      group = instance.group ?? "";
       error = null;
     }
   });
+
+  const groups = $derived(
+    [
+      ...new Set(library.instances.map((entry) => entry.group).filter((name) => name !== null)),
+    ].sort(),
+  );
 
   async function save() {
     saving = true;
     error = null;
     try {
-      replaceInstance(await api.updateInstance(instance.id, name, icon, cover));
+      replaceInstance(await api.updateInstance(instance.id, name, icon, cover, group || null));
       open = false;
     } catch (err) {
       error = describeError(err);
@@ -48,6 +56,21 @@
   <label class="field">
     <span>{t("edit.name")}</span>
     <input bind:value={name} maxlength="64" required>
+  </label>
+
+  <label class="field">
+    <span>{t("edit.group")}</span>
+    <input
+      bind:value={group}
+      maxlength="32"
+      list="instance-groups"
+      placeholder={t("edit.groupPlaceholder")}
+    >
+    <datalist id="instance-groups">
+      {#each groups as name (name)}
+        <option value={name}></option>
+      {/each}
+    </datalist>
   </label>
 
   <fieldset>

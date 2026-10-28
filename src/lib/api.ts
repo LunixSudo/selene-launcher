@@ -34,6 +34,7 @@ export interface Instance {
   window: WindowSize | null;
   fullscreen: boolean;
   javaArgs: string;
+  group: string | null;
 }
 
 export interface WindowSize {
@@ -234,8 +235,15 @@ export const api = {
     invoke<LoaderRelease[]>("loader_versions", { loader, gameVersion }),
   createInstance: (name: string, version: string, loader: LoaderVersion | null) =>
     invoke<Instance>("create_instance", { name, version, loader }),
-  updateInstance: (id: string, name: string, icon: string | null, cover: string | null) =>
-    invoke<Instance>("update_instance", { id, name, icon, cover }),
+  updateInstance: (
+    id: string,
+    name: string,
+    icon: string | null,
+    cover: string | null,
+    group: string | null,
+  ) => invoke<Instance>("update_instance", { id, name, icon, cover, group }),
+  duplicateInstance: (id: string, name: string) =>
+    invoke<Instance>("duplicate_instance", { id, name }),
   openDataFolder: () => invoke<void>("open_data_folder"),
   setLaunchOptions: (
     instanceId: string,

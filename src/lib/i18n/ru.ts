@@ -34,6 +34,19 @@ export const ru = {
     playTime: "В игре {time}",
     hours: "{hours} ч {minutes} мин",
     minutes: "{minutes} мин",
+    search: "Поиск сборок",
+    sortBy: "Сортировка",
+    sorts: {
+      lastPlayed: "Недавние",
+      name: "По названию",
+      playTime: "По времени в игре",
+      created: "Новые",
+    },
+    ungrouped: "Без группы",
+    nothingFound: "Ничего не нашлось",
+    duplicate: "Создать копию",
+    copyName: "{name} (копия)",
+    continue: "Продолжить последний мир",
   },
   instance: {
     back: "Сборки",
@@ -120,10 +133,12 @@ export const ru = {
     confirm: "Установить ({count})",
   },
   edit: {
-    title: "Оформление сборки",
+    title: "Изменить сборку",
     name: "Название",
     icon: "Иконка",
     cover: "Фон",
+    group: "Группа",
+    groupPlaceholder: "Без группы",
     save: "Сохранить",
   },
   delete: {

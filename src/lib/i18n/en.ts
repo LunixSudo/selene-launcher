@@ -36,6 +36,19 @@ export const en: Messages = {
     playTime: "{time} played",
     hours: "{hours} h {minutes} min",
     minutes: "{minutes} min",
+    search: "Search instances",
+    sortBy: "Sort",
+    sorts: {
+      lastPlayed: "Recent",
+      name: "Name",
+      playTime: "Play time",
+      created: "Newest",
+    },
+    ungrouped: "No group",
+    nothingFound: "Nothing found",
+    duplicate: "Duplicate",
+    copyName: "{name} (copy)",
+    continue: "Continue last world",
   },
   instance: {
     back: "Instances",
@@ -121,10 +134,12 @@ export const en: Messages = {
     confirm: "Install ({count})",
   },
   edit: {
-    title: "Customize instance",
+    title: "Edit instance",
     name: "Name",
     icon: "Icon",
     cover: "Cover",
+    group: "Group",
+    groupPlaceholder: "No group",
     save: "Save",
   },
   delete: {
