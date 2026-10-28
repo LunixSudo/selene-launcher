@@ -230,10 +230,10 @@
     stroke-linejoin="round"
   />
   <polygon
-    points="36,36 38.8,43.2 46,46 38.8,48.8 36,56 33.2,48.8 26,46 33.2,43.2"
-    fill="#fff4c2"
+    points="34,29 38.2,37.8 47,42 38.2,46.2 34,55 29.8,46.2 21,42 29.8,37.8"
+    fill="#ffe591"
     stroke="#241a3d"
-    stroke-width="4"
+    stroke-width="3"
     stroke-linejoin="round"
   />
 </svg>
