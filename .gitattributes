@@ -2,3 +2,4 @@
 *.png binary
 *.ico binary
 *.icns binary
+src-tauri/nsis/privacy/*.txt text eol=crlf
