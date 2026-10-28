@@ -303,7 +303,7 @@ export interface GameExited {
 
 export interface GameLog {
   instanceId: string;
-  line: string;
+  lines: string[];
 }
 
 export function isCommandError(value: unknown): value is CommandError {

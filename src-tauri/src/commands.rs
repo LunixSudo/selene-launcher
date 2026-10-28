@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
 use selene_core::crash::{self, CrashReport};
@@ -38,6 +38,11 @@ use crate::config::Config;
 use crate::discord::Presence;
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
+
+/// Placeholder tokens like the offline "0" would blank out every matching character.
+const MIN_HIDDEN_TOKEN_LEN: usize = 8;
+/// A game at start-up prints thousands of lines; the console gets them in batches.
+const LOG_FLUSH_INTERVAL: Duration = Duration::from_millis(100);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -94,7 +99,7 @@ struct GameExited {
 #[serde(rename_all = "camelCase")]
 struct GameLog<'a> {
     instance_id: &'a str,
-    line: &'a str,
+    lines: &'a [String],
 }
 
 #[tauri::command]
@@ -582,28 +587,51 @@ async fn forward_log(
 ) {
     let mut reader = BufReader::new(output);
     let mut buffer = Vec::new();
+    let mut pending = Vec::new();
+    let mut flush = tokio::time::interval(LOG_FLUSH_INTERVAL);
+    flush.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     loop {
-        buffer.clear();
-        match reader.read_until(b'\n', &mut buffer).await {
-            Ok(0) | Err(_) => break,
-            Ok(_) => {}
+        tokio::select! {
+            read = reader.read_until(b'\n', &mut buffer) => {
+                // After a flush the read starts over, so a last line without a newline can
+                // come back as zero bytes with the line still in the buffer.
+                let ended = matches!(read, Ok(0) | Err(_));
+                if !buffer.is_empty() {
+                    let line = String::from_utf8_lossy(&buffer);
+                    let line = line.trim_end_matches(['\r', '\n']);
+                    let line = if token.len() < MIN_HIDDEN_TOKEN_LEN {
+                        line.to_owned()
+                    } else {
+                        line.replace(&token, "<hidden>")
+                    };
+                    buffer.clear();
+                    app.state::<Launcher>().push_log(&instance_id, line.clone());
+                    pending.push(line);
+                }
+                if ended {
+                    break;
+                }
+            }
+            _ = flush.tick(), if !pending.is_empty() => {
+                emit_log(&app, &instance_id, &mut pending);
+            }
         }
-        let line = String::from_utf8_lossy(&buffer);
-        let line = line.trim_end_matches(['\r', '\n']);
-        let line = if token.is_empty() {
-            line.to_owned()
-        } else {
-            line.replace(&token, "<hidden>")
-        };
-        let _ = app.emit(
-            "game-log",
-            GameLog {
-                instance_id: &instance_id,
-                line: &line,
-            },
-        );
-        app.state::<Launcher>().push_log(&instance_id, line);
     }
+    emit_log(&app, &instance_id, &mut pending);
+}
+
+fn emit_log(app: &AppHandle, instance_id: &str, lines: &mut Vec<String>) {
+    if lines.is_empty() {
+        return;
+    }
+    let _ = app.emit(
+        "game-log",
+        GameLog {
+            instance_id,
+            lines: lines.as_slice(),
+        },
+    );
+    lines.clear();
 }
 
 async fn add_play_time(launcher: &Launcher, id: &str, seconds: u64) {

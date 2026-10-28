@@ -28,7 +28,7 @@
       if (log.instanceId !== id) {
         return;
       }
-      lines.push(log.line);
+      lines.push(...log.lines);
       if (lines.length > MAX_LINES) {
         lines.splice(0, lines.length - MAX_LINES);
       }

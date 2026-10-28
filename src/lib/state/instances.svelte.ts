@@ -128,7 +128,7 @@ export function discordPresence(): DiscordPresence {
 
 const logListeners = new Set<(log: GameLog) => void>();
 
-/** Calls `listener` for every line a running game prints. Returns a function that unsubscribes. */
+/** Calls `listener` with each batch of lines a running game prints. Returns a function that unsubscribes. */
 export function onGameLog(listener: (log: GameLog) => void): () => void {
   logListeners.add(listener);
   return () => logListeners.delete(listener);
