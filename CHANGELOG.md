@@ -70,6 +70,9 @@ All notable changes to this project are documented here. The format follows
 - New logo: a moon-rock cube with a golden crescent and no stars, with a simpler drawing for
   16–32 px icons. Sources are in `docs/brand`.
 - The solid style is the default, so the launcher stays light on slower PCs.
+- The solid style turns blur off completely, and the launcher follows the Windows setting that
+  turns animations off.
+- The game console stays light with thousands of lines.
 - An imported modpack shows up in the list right away, while its files download.
 - Fabric and Quilt say when they have no build for an old game version instead of reporting
   a connection error.
@@ -116,3 +119,12 @@ All notable changes to this project are documented here. The format follows
 - A slow catalog search can no longer replace the results of a newer one.
 - A mod loader that could not be reached shows its error under the loader and no longer
   keeps it on screen after picking another loader or game version.
+- Downloads wait a moment before trying again, skip retries for files that do not exist and
+  clean up what a failed one left behind.
+- Files that an antivirus holds for a moment after they are written no longer fail the
+  download or the save.
+- A full disk and a PC without enough free memory for the game get their own messages.
+- The portable version says it needs the WebView2 runtime instead of closing silently.
+- The skins page says when the PC has no WebGL for the 3D preview.
+- The home screen and the settings show when instances could not be read or settings
+  could not be saved.
