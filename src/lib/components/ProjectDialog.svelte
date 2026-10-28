@@ -8,6 +8,7 @@
     type ProjectVersion,
   } from "$lib/api";
   import { describeError } from "$lib/errors";
+  import { externalLinks } from "$lib/external-links";
   import { relativeTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { renderMarkup } from "$lib/markup";
@@ -46,7 +47,6 @@
   let changelogs = $state<Record<string, string>>({});
   let busy = $state<string | null>(null);
   let error = $state<string | null>(null);
-  let scroller = $state<HTMLDivElement>();
 
   const views = $derived([
     { value: "about" as View, label: t("project.about") },
@@ -108,25 +108,6 @@
       busy = null;
     }
   }
-
-  // Links in descriptions open in the browser instead of inside the launcher.
-  $effect(() => {
-    const element = scroller;
-    if (!element) {
-      return;
-    }
-    const onclick = (event: MouseEvent) => {
-      const link = (event.target as HTMLElement).closest("a");
-      if (link) {
-        event.preventDefault();
-        if (link.href.startsWith("http")) {
-          void openUrl(link.href);
-        }
-      }
-    };
-    element.addEventListener("click", onclick);
-    return () => element.removeEventListener("click", onclick);
-  });
 </script>
 
 <Dialog bind:open title={page?.title ?? ""} width={720} onsubmit={() => (open = false)}>
@@ -142,7 +123,7 @@
     <p class="error" role="alert">{error}</p>
   {/if}
 
-  <div class="scroll" bind:this={scroller}>
+  <div class="scroll" {@attach externalLinks}>
     {#if view === "about"}
       {#if page}
         {#if page.gallery.length > 0}

@@ -1,10 +1,13 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { api } from "$lib/api";
+  import { externalLinks } from "$lib/external-links";
   import { locale, t } from "$lib/i18n/index.svelte";
   import { renderMarkup } from "$lib/markup";
   import privacyEn from "../../../PRIVACY.md?raw";
   import privacyRu from "../../../PRIVACY.ru.md?raw";
+
+  const titleId = $props.id();
 
   let dialog: HTMLDialogElement;
   let open = $state(false);
@@ -42,10 +45,10 @@
   }
 </script>
 
-<dialog bind:this={dialog} oncancel={(event) => event.preventDefault()}>
-  <h2>{t("privacy.title")}</h2>
+<dialog bind:this={dialog} aria-labelledby={titleId} oncancel={(event) => event.preventDefault()}>
+  <h2 id={titleId}>{t("privacy.title")}</h2>
   <p class="lead">{updated ? t("privacy.updated") : t("privacy.lead")}</p>
-  <div class="policy">{@html policy}</div>
+  <div class="policy" {@attach externalLinks}>{@html policy}</div>
   <div class="actions">
     <button type="button" onclick={() => getCurrentWindow().close()}>{t("privacy.decline")}</button>
     <button type="button" class="primary" disabled={saving} onclick={accept}>

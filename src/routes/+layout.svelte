@@ -41,38 +41,37 @@
     }
   });
 
-  $effect(() => {
-    // The webview's own menu (open link in new window, save link as) makes no sense here.
-    const block = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest("input, textarea")) {
-        event.preventDefault();
-      }
-    };
-    window.addEventListener("contextmenu", block);
-    return () => window.removeEventListener("contextmenu", block);
-  });
+  // The webview's own menu (open link in new window, save link as) makes no sense here.
+  function oncontextmenu(event: MouseEvent) {
+    if (!(event.target as HTMLElement).closest("input, textarea")) {
+      event.preventDefault();
+    }
+  }
 
-  $effect(() => {
-    const onkeydown = (event: KeyboardEvent) => {
-      const ctrl = event.ctrlKey || event.metaKey;
-      if (ctrl && event.code === "KeyF") {
-        // Every page with a list marks its search field; Ctrl+F jumps there.
-        const search = document.querySelector<HTMLInputElement>("[data-search]");
-        event.preventDefault();
-        search?.focus();
-        search?.select();
-      } else if (
-        import.meta.env.PROD &&
-        (event.key === "F5" || (ctrl && ["KeyR", "KeyP", "KeyU", "KeyG"].includes(event.code)))
-      ) {
-        // Reloading or printing the webview would only break the launcher.
-        event.preventDefault();
-      }
-    };
-    window.addEventListener("keydown", onkeydown);
-    return () => window.removeEventListener("keydown", onkeydown);
-  });
+  // Ctrl, Shift or middle click on a link would open a bare webview window.
+  function blockNewWindow(event: MouseEvent) {
+    const opensWindow = event.button === 1 || event.ctrlKey || event.shiftKey || event.metaKey;
+    if (opensWindow && (event.target as HTMLElement).closest("a")) {
+      event.preventDefault();
+    }
+  }
+
+  function onkeydown(event: KeyboardEvent) {
+    const ctrl = event.ctrlKey || event.metaKey;
+    if (ctrl && event.code === "KeyF") {
+      // Every page with a list marks its search field; Ctrl+F jumps there.
+      const search = document.querySelector<HTMLInputElement>("[data-search]");
+      event.preventDefault();
+      search?.focus();
+      search?.select();
+    } else if (
+      import.meta.env.PROD &&
+      (event.key === "F5" || (ctrl && ["KeyR", "KeyP", "KeyU", "KeyG"].includes(event.code)))
+    ) {
+      // Reloading or printing the webview would only break the launcher.
+      event.preventDefault();
+    }
+  }
 
   $effect(() => {
     const unlisten = listenToGames();
@@ -81,6 +80,8 @@
     };
   });
 </script>
+
+<svelte:window {oncontextmenu} {onkeydown} onclick={blockNewWindow} onauxclick={blockNewWindow} />
 
 <div class="app">
   <TitleBar />
