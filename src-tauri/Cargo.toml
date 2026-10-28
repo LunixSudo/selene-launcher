@@ -39,4 +39,5 @@ workspace = true
 
 [target."cfg(windows)".dependencies]
 mslnk = "0.1.8"
+rfd = { version = "0.17.2", default-features = false }
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

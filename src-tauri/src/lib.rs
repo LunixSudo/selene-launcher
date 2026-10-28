@@ -23,14 +23,12 @@ pub(crate) fn portable_data_dir() -> Option<PathBuf> {
     dir.join("portable.txt").is_file().then(|| dir.join("data"))
 }
 
+const WEBVIEW2_URL: &str = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
+
 /// Starts the launcher.
-///
-/// # Panics
-///
-/// Panics if the Tauri runtime fails to initialize.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         // A second start, say from a desktop shortcut, hands its request to the open window.
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if let Some(id) = launch_arg(&args) {
@@ -125,9 +123,30 @@ pub fn run() {
             commands::saves::open_screenshot,
             commands::saves::delete_screenshot,
         ])
-        .build(tauri::generate_context!())
-        .expect("failed to build tauri application")
-        .run(keep_alive_while_playing);
+        .build(tauri::generate_context!());
+    match app {
+        Ok(app) => app.run(keep_alive_while_playing),
+        Err(err) => report_startup_error(&err),
+    }
+}
+
+/// Without a window there is nowhere else to say why the launcher did not open. The usual
+/// cause is a PC without the `WebView2` runtime, which the installer adds but the portable zip
+/// cannot.
+fn report_startup_error(err: &tauri::Error) -> ! {
+    let message = format!(
+        "Selene Launcher could not start. It needs the Microsoft Edge WebView2 Runtime: \
+         {WEBVIEW2_URL}\n\nSelene Launcher не удалось запустить. Нужен Microsoft Edge \
+         WebView2 Runtime: {WEBVIEW2_URL}\n\n{err}"
+    );
+    #[cfg(windows)]
+    rfd::MessageDialog::new()
+        .set_level(rfd::MessageLevel::Error)
+        .set_title("Selene Launcher")
+        .set_description(message.as_str())
+        .show();
+    eprintln!("{message}");
+    std::process::exit(1);
 }
 
 /// Closing the window while a game runs keeps the launcher alive in the background, so play
