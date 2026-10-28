@@ -7,9 +7,9 @@ use discord_rich_presence::activity::{Activity, Assets, Timestamps};
 use discord_rich_presence::{DiscordIpc, DiscordIpcClient};
 use serde::Deserialize;
 
-/// The Discord application whose name the status shows. Set at build time; without it the
-/// status is simply off.
-const CLIENT_ID: Option<&str> = option_env!("DISCORD_CLIENT_ID");
+/// The "Selene Launcher" application in the Discord developer portal; its name is what the
+/// status shows. The id is public.
+const CLIENT_ID: &str = "1564950619213799584";
 /// How often to try again while Discord is closed.
 const RETRY_EVERY: Duration = Duration::from_secs(20);
 
@@ -24,63 +24,58 @@ pub struct Presence {
 }
 
 pub struct Discord {
-    sender: Option<Sender<Option<Presence>>>,
+    sender: Sender<Option<Presence>>,
 }
 
 impl Discord {
     pub fn start() -> Self {
-        let sender = CLIENT_ID.map(|client_id| {
-            let (sender, receiver) = mpsc::channel::<Option<Presence>>();
-            std::thread::spawn(move || {
-                let mut client: Option<DiscordIpcClient> = None;
-                let mut wanted: Option<Presence> = None;
-                let mut shown = false;
-                loop {
-                    match receiver.recv_timeout(RETRY_EVERY) {
-                        Ok(presence) => {
-                            wanted = presence;
-                            shown = false;
-                        }
-                        Err(RecvTimeoutError::Timeout) => {}
-                        Err(RecvTimeoutError::Disconnected) => break,
+        let (sender, receiver) = mpsc::channel::<Option<Presence>>();
+        std::thread::spawn(move || {
+            let mut client: Option<DiscordIpcClient> = None;
+            let mut wanted: Option<Presence> = None;
+            let mut shown = false;
+            loop {
+                match receiver.recv_timeout(RETRY_EVERY) {
+                    Ok(presence) => {
+                        wanted = presence;
+                        shown = false;
                     }
-                    if shown {
+                    Err(RecvTimeoutError::Timeout) => {}
+                    Err(RecvTimeoutError::Disconnected) => break,
+                }
+                if shown {
+                    continue;
+                }
+                if client.is_none() {
+                    let mut fresh = DiscordIpcClient::new(CLIENT_ID);
+                    if fresh.connect().is_err() {
                         continue;
                     }
-                    if client.is_none() {
-                        let mut fresh = DiscordIpcClient::new(client_id);
-                        if fresh.connect().is_err() {
-                            continue;
-                        }
-                        client = Some(fresh);
-                    }
-                    let Some(connected) = client.as_mut() else {
-                        continue;
-                    };
-                    let sent = match &wanted {
-                        Some(presence) => connected.set_activity(activity(presence)),
-                        None => connected.clear_activity(),
-                    };
-                    // Discord was closed in between; reconnect on the next round.
-                    shown = sent.is_ok();
-                    if !shown {
-                        client = None;
-                    }
+                    client = Some(fresh);
                 }
-                if let Some(mut connected) = client {
-                    let _ = connected.close();
+                let Some(connected) = client.as_mut() else {
+                    continue;
+                };
+                let sent = match &wanted {
+                    Some(presence) => connected.set_activity(activity(presence)),
+                    None => connected.clear_activity(),
+                };
+                // Discord was closed in between; reconnect on the next round.
+                shown = sent.is_ok();
+                if !shown {
+                    client = None;
                 }
-            });
-            sender
+            }
+            if let Some(mut connected) = client {
+                let _ = connected.close();
+            }
         });
         Self { sender }
     }
 
     /// `None` clears the status.
     pub fn set(&self, presence: Option<Presence>) {
-        if let Some(sender) = &self.sender {
-            let _ = sender.send(presence);
-        }
+        let _ = self.sender.send(presence);
     }
 }
 

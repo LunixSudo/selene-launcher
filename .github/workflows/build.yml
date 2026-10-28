@@ -24,7 +24,6 @@ jobs:
       - run: pnpm tauri build --bundles nsis
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-          DISCORD_CLIENT_ID: ${{ vars.DISCORD_CLIENT_ID }}
       - name: Pack the portable version
         shell: pwsh
         run: |
