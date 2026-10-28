@@ -79,6 +79,8 @@ pub fn run() {
             commands::content::project_page,
             commands::packs::import_pack,
             commands::packs::export_pack,
+            commands::update::check_update,
+            commands::update::install_update,
             commands::saves::worlds,
             commands::saves::open_world_folder,
             commands::saves::back_up_world,

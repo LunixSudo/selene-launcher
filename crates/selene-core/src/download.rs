@@ -192,7 +192,7 @@ fn partial_path(path: &Path) -> PathBuf {
     path.with_file_name(name)
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     use std::fmt::Write;
 
     bytes

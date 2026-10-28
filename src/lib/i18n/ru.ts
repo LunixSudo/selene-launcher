@@ -301,6 +301,16 @@ export const ru = {
     javaArgs: "Аргументы Java",
     javaArgsHint: "Для опытных, например -XX:+UseZGC. Память задаётся выше.",
   },
+  update: {
+    available: "Обновить до {version}",
+    installing: "Обновление…",
+    title: "Обновления лаунчера",
+    checkOnStart: "Проверять при запуске",
+    checkOnStartHint: "Новая версия скачивается с GitHub и проверяется по контрольной сумме.",
+    checkNow: "Проверить",
+    checking: "Проверка…",
+    upToDate: "У вас последняя версия",
+  },
   notify: {
     gameReady: "«{name}» запускается",
     gameReadyBody: "Игра загружена, окно Minecraft вот-вот откроется.",

@@ -9,7 +9,8 @@
   import TitleBar from "$lib/components/TitleBar.svelte";
   import { locale } from "$lib/i18n/index.svelte";
   import { listenToGames } from "$lib/state/instances.svelte";
-  import { applySettings } from "$lib/state/settings.svelte";
+  import { applySettings, settings } from "$lib/state/settings.svelte";
+  import { checkForUpdate } from "$lib/state/update.svelte";
 
   let { children }: { children: Snippet } = $props();
 
@@ -19,6 +20,12 @@
 
   $effect(() => {
     applySettings();
+  });
+
+  $effect(() => {
+    if (import.meta.env.PROD && settings.checkUpdates) {
+      void checkForUpdate();
+    }
   });
 
   $effect(() => {

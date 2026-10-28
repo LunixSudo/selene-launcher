@@ -13,6 +13,7 @@
     settings,
     THEMES,
   } from "$lib/state/settings.svelte";
+  import { checkForUpdate, installUpdate, launcherUpdate } from "$lib/state/update.svelte";
 
   const LANGUAGES: { value: Locale; label: string }[] = [
     { value: "ru", label: "Русский" },
@@ -275,7 +276,45 @@
       </div>
     </section>
 
-    <p class="about">Selene Launcher {version}</p>
+    <section class="group">
+      <h2>{t("update.title")}</h2>
+      <label class="row switch-row">
+        <div>
+          <h3>{t("update.checkOnStart")}</h3>
+          <p>{t("update.checkOnStartHint")}</p>
+        </div>
+        <input class="switch" type="checkbox" bind:checked={settings.checkUpdates}>
+      </label>
+      <div class="row">
+        <div>
+          <h3>Selene Launcher {version}</h3>
+          {#if launcherUpdate.checked && !launcherUpdate.available}
+            <p>{t("update.upToDate")}</p>
+          {/if}
+        </div>
+        {#if launcherUpdate.available}
+          <button
+            type="button"
+            class="button primary"
+            disabled={launcherUpdate.installing}
+            onclick={installUpdate}
+          >
+            {launcherUpdate.installing
+              ? t("update.installing")
+              : t("update.available", { version: launcherUpdate.available.version })}
+          </button>
+        {:else}
+          <button
+            type="button"
+            class="button"
+            disabled={launcherUpdate.checking}
+            onclick={checkForUpdate}
+          >
+            {launcherUpdate.checking ? t("update.checking") : t("update.checkNow")}
+          </button>
+        {/if}
+      </div>
+    </section>
   </div>
 </section>
 
@@ -570,10 +609,9 @@
     background: var(--surface-hover);
   }
 
-  .about {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 12px;
-    text-align: center;
+  .button.primary {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--accent-text);
   }
 </style>

@@ -72,6 +72,12 @@ export interface Screenshot {
   takenAt: string | null;
 }
 
+export interface LauncherUpdate {
+  version: string;
+  notes: string;
+  url: string;
+}
+
 export interface LauncherConfig {
   autoUpdateMods: boolean;
   maxDownloads: number | null;
@@ -292,6 +298,8 @@ export const api = {
   ) =>
     invoke<Instance>("set_launch_options", { instanceId, window, fullscreen, javaArgs, javaPath }),
   config: () => invoke<LauncherConfig>("config"),
+  checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),
+  installUpdate: () => invoke<void>("install_update"),
   setConfig: (config: LauncherConfig) => invoke<void>("set_config", { config }),
   gameLog: (instanceId: string) => invoke<string[]>("game_log", { instanceId }),
   openInstanceFolder: (id: string) => invoke<void>("open_instance_folder", { id }),

@@ -300,6 +300,16 @@ export const en: Messages = {
     javaArgs: "Java arguments",
     javaArgsHint: "For advanced users, e.g. -XX:+UseZGC. Memory is set above.",
   },
+  update: {
+    available: "Update to {version}",
+    installing: "Updating…",
+    title: "Launcher updates",
+    checkOnStart: "Check on startup",
+    checkOnStartHint: "New versions come from GitHub and are verified by checksum.",
+    checkNow: "Check now",
+    checking: "Checking…",
+    upToDate: "You have the latest version",
+  },
   notify: {
     gameReady: "“{name}” is starting",
     gameReadyBody: "The game is downloaded, Minecraft will open in a moment.",

@@ -3,6 +3,7 @@
   import logo from "$lib/assets/logo.png";
   import AccountMenu from "$lib/components/AccountMenu.svelte";
   import { t } from "$lib/i18n/index.svelte";
+  import { installUpdate, launcherUpdate } from "$lib/state/update.svelte";
 
   const appWindow = getCurrentWindow();
 </script>
@@ -14,6 +15,19 @@
   </a>
 
   <div class="controls">
+    {#if launcherUpdate.available}
+      <button
+        type="button"
+        class="update"
+        disabled={launcherUpdate.installing}
+        title={launcherUpdate.available.notes}
+        onclick={installUpdate}
+      >
+        {launcherUpdate.installing
+          ? t("update.installing")
+          : t("update.available", { version: launcherUpdate.available.version })}
+      </button>
+    {/if}
     <AccountMenu />
     <a class="settings" href="/settings" title={t("settings.title")}>
       <span class="label">{t("settings.title")}</span>
@@ -74,6 +88,18 @@
     font-size: 13px;
     font-weight: var(--display-weight);
     letter-spacing: 0.02em;
+  }
+
+  .update {
+    width: auto;
+    height: 26px;
+    margin-right: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 12px;
+    font-weight: 600;
   }
 
   .controls {

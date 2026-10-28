@@ -32,6 +32,7 @@ interface Settings {
   sort: SortOrder;
   collapsedGroups: string[];
   notifications: boolean;
+  checkUpdates: boolean;
 }
 
 const DEFAULTS: Settings = {
@@ -44,6 +45,7 @@ const DEFAULTS: Settings = {
   sort: "lastPlayed",
   collapsedGroups: [],
   notifications: true,
+  checkUpdates: true,
 };
 
 export const settings = $state<Settings>(load());
@@ -69,6 +71,7 @@ function load(): Settings {
       ? saved.collapsedGroups.filter((group) => typeof group === "string")
       : DEFAULTS.collapsedGroups,
     notifications: oneOf(saved.notifications, [true, false], DEFAULTS.notifications),
+    checkUpdates: oneOf(saved.checkUpdates, [true, false], DEFAULTS.checkUpdates),
   };
 }
 
