@@ -23,9 +23,15 @@
     applySettings();
   });
 
+  let sentPresence = "";
   $effect(() => {
     const presence = settings.discordStatus ? discordPresence() : null;
-    api.setDiscordPresence(presence).catch(() => {});
+    // Launch progress reruns this many times a second; Discord only needs real changes.
+    const key = JSON.stringify(presence);
+    if (key !== sentPresence) {
+      sentPresence = key;
+      api.setDiscordPresence(presence).catch(() => {});
+    }
   });
 
   $effect(() => {
