@@ -22,6 +22,13 @@ pub enum ContentKind {
 }
 
 impl ContentKind {
+    pub const ALL: [Self; 4] = [
+        Self::Mod,
+        Self::ResourcePack,
+        Self::ShaderPack,
+        Self::DataPack,
+    ];
+
     pub fn folder(self) -> &'static str {
         match self {
             Self::Mod => "mods",

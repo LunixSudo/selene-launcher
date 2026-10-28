@@ -167,7 +167,8 @@ pub struct VersionChange {
 }
 
 struct Plan {
-    files: Vec<RemoteFile>,
+    /// Each file with its kind, since a dependency can be of another kind than what needs it.
+    files: Vec<(ContentKind, RemoteFile)>,
     preview: InstallPreview,
 }
 
@@ -494,8 +495,19 @@ pub async fn install_content(
     if plan.files.is_empty() && plan.preview.manual.is_empty() {
         return Err(CommandError::NoCompatibleVersion);
     }
-    let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
-    mods::install(&launcher.client, &game_dir, kind, &plan.files).await?;
+    for file_kind in ContentKind::ALL {
+        let files: Vec<RemoteFile> = plan
+            .files
+            .iter()
+            .filter(|(kind, _)| *kind == file_kind)
+            .map(|(_, file)| file.clone())
+            .collect();
+        if files.is_empty() {
+            continue;
+        }
+        let dir = content_dir(&launcher, &instance_id, file_kind, world.as_deref())?;
+        mods::install(&launcher.client, &dir, file_kind, &files).await?;
+    }
     Ok(InstallResult {
         installed: plan.files.len(),
         manual: plan.preview.manual,
@@ -531,34 +543,16 @@ async fn plan(
 
     let modrinth_ids = ids_from(Source::Modrinth);
     if !modrinth_ids.is_empty() {
-        let hashes: Vec<String> = present.iter().map(|file| file.sha1.clone()).collect();
-        let installed = modrinth::versions_by_hash(&launcher.client, &hashes).await?;
-        let versions = modrinth::resolve_install(
-            &launcher.client,
+        plan_modrinth(
+            launcher,
+            &instance,
+            kind,
+            loader,
+            &present,
             &modrinth_ids,
-            Target::new(kind, &instance.version, loader),
-            installed.into_values().map(|version| version.project_id),
+            &mut plan,
         )
         .await?;
-        let project_ids: Vec<String> = versions.iter().map(|v| v.project_id.clone()).collect();
-        let titles: HashMap<String, String> = modrinth::projects(&launcher.client, &project_ids)
-            .await?
-            .into_iter()
-            .map(|project| (project.id, project.title))
-            .collect();
-        for version in &versions {
-            let Some(file) = version.remote_file() else {
-                continue;
-            };
-            plan.preview.mods.push(PlannedFile {
-                title: titles
-                    .get(&version.project_id)
-                    .cloned()
-                    .unwrap_or_else(|| file.file_name.clone()),
-                requested: modrinth_ids.contains(&version.project_id),
-            });
-            plan.files.push(file);
-        }
     }
 
     let curseforge_ids: Vec<u32> = ids_from(Source::Curseforge)
@@ -594,7 +588,7 @@ async fn plan(
                     .unwrap_or_else(|| file.file_name.clone()),
                 requested: curseforge_ids.contains(&mod_id),
             });
-            plan.files.push(file);
+            plan.files.push((kind, file));
         }
         plan.preview.manual = manual_downloads(curseforge, &resolved.manual).await;
     }
@@ -602,6 +596,73 @@ async fn plan(
     // Requested projects first, then the dependencies they pull in.
     plan.preview.mods.sort_by_key(|planned| !planned.requested);
     Ok(plan)
+}
+
+/// Adds the picked Modrinth projects and their dependencies to `plan`.
+async fn plan_modrinth(
+    launcher: &Launcher,
+    instance: &Instance,
+    kind: ContentKind,
+    loader: Option<Loader>,
+    present: &[ModFile],
+    modrinth_ids: &[String],
+    plan: &mut Plan,
+) -> CommandResult<()> {
+    let mut hashes: Vec<String> = present.iter().map(|file| file.sha1.clone()).collect();
+    // Dependencies of another kind are nearly always mods, so installed mods count too.
+    if kind != ContentKind::Mod && instance.loader.is_some() {
+        let game_dir = launcher.instances.game_dir(&instance.id);
+        hashes.extend(
+            mods::list(&game_dir, ContentKind::Mod)
+                .await?
+                .into_iter()
+                .map(|file| file.sha1),
+        );
+    }
+    let installed = modrinth::versions_by_hash(&launcher.client, &hashes).await?;
+    let instance_loader = instance.loader.as_ref().map(|loader| loader.loader);
+    let target_for = |dependency_kind: ContentKind| match dependency_kind {
+        _ if dependency_kind == kind => Some(Target::new(kind, &instance.version, loader)),
+        ContentKind::Mod if instance_loader.is_none() => None,
+        // Data packs need a world, which only the requested project names.
+        ContentKind::DataPack => None,
+        _ => Some(Target::new(
+            dependency_kind,
+            &instance.version,
+            instance_loader,
+        )),
+    };
+    let versions = modrinth::resolve_install(
+        &launcher.client,
+        modrinth_ids,
+        kind,
+        target_for,
+        installed.into_values().map(|version| version.project_id),
+    )
+    .await?;
+    let project_ids: Vec<String> = versions
+        .iter()
+        .map(|(_, version)| version.project_id.clone())
+        .collect();
+    let titles: HashMap<String, String> = modrinth::projects(&launcher.client, &project_ids)
+        .await?
+        .into_iter()
+        .map(|project| (project.id, project.title))
+        .collect();
+    for (file_kind, version) in &versions {
+        let Some(file) = version.remote_file() else {
+            continue;
+        };
+        plan.preview.mods.push(PlannedFile {
+            title: titles
+                .get(&version.project_id)
+                .cloned()
+                .unwrap_or_else(|| file.file_name.clone()),
+            requested: modrinth_ids.contains(&version.project_id),
+        });
+        plan.files.push((*file_kind, file));
+    }
+    Ok(())
 }
 
 /// Problems a Modrinth version declares with the rest of the instance.

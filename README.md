@@ -21,7 +21,8 @@ There is no offline mode. You need a Minecraft: Java Edition license to play.
   picking a newer or older mod loader build.
 - **Add-ons.** Mods, resource packs, shaders and data packs from Modrinth and CurseForge in
   one tab. Filter the catalog by several categories at once, remove a project right from its
-  catalog entry, and get required dependencies added for you. Updates stay on the release channel you
+  catalog entry, and get required dependencies added for you, even a mod that a resource pack
+  needs. Updates stay on the release channel you
   installed, and the launcher warns before you turn on something made for another version.
   Data packs go into the world you pick.
 - **Modpacks.** Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the

@@ -45,6 +45,8 @@ All notable changes to this project are documented here. The format follows
   suggests its recommended build. Forge goes back to 1.12.2 and NeoForge to 1.20.1.
 - A new or imported instance downloads its game, Java and mod loader right away when an
   account is signed in, so the first start is quick.
+- Required dependencies of another kind are installed too, for example a mod that a resource
+  pack or shader needs goes into `mods`.
 
 ### Changed
 

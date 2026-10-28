@@ -431,17 +431,19 @@ fn stable_as(version_type: &str) -> &'static [&'static str] {
     }
 }
 
-/// The project plus every required dependency that is not installed yet.
-///
-/// Dependencies pinned to a version get that version; the rest get their newest compatible
-/// one. A dependency with no compatible version is skipped rather than failing the install,
-/// the same way the Modrinth app handles it.
-pub async fn resolve_install(
+/// The projects to download, each with its kind and the version picked for the instance:
+/// the requested ones first, then their required dependencies. A dependency can be of
+/// another kind than what it is for, like a mod a resource pack needs; `target_for` says
+/// what each kind has to run on, or `None` when the instance cannot take that kind.
+/// Dependencies pinned to a version get it; one with no fitting version is skipped rather than
+/// failing the install, the way the Modrinth app does.
+pub async fn resolve_install<'a>(
     client: &Client,
     project_ids: &[String],
-    target: Target<'_>,
+    kind: ContentKind,
+    target_for: impl Fn(ContentKind) -> Option<Target<'a>>,
     installed_projects: impl IntoIterator<Item = String>,
-) -> Result<Vec<Version>> {
+) -> Result<Vec<(ContentKind, Version)>> {
     let mut seen: HashSet<String> = installed_projects.into_iter().collect();
     let mut queue: Vec<(String, Option<String>)> = project_ids
         .iter()
@@ -454,14 +456,14 @@ pub async fn resolve_install(
         if !seen.insert(project.clone()) {
             continue;
         }
-        let version = match pinned {
-            Some(version_id) => Some(version(client, &version_id).await?),
-            None => compatible_versions(client, &project, target)
-                .await?
-                .into_iter()
-                .next(),
+        let found = match pinned {
+            Some(version_id) => {
+                let version = version(client, &version_id).await?;
+                Some((kind_of(&version, kind), version))
+            }
+            None => newest_for_kind(client, &project, kind, &target_for).await?,
         };
-        let Some(version) = version else {
+        let Some((found_kind, version)) = found else {
             continue;
         };
 
@@ -473,9 +475,77 @@ pub async fn resolve_install(
                 queue.push((project_id.clone(), dependency.version_id.clone()));
             }
         }
-        plan.push(version);
+        plan.push((found_kind, version));
     }
     Ok(plan)
+}
+
+/// The newest fitting version, looked up as `kind` first and then as the project's own kind.
+async fn newest_for_kind<'a>(
+    client: &Client,
+    project_id: &str,
+    kind: ContentKind,
+    target_for: &impl Fn(ContentKind) -> Option<Target<'a>>,
+) -> Result<Option<(ContentKind, Version)>> {
+    if let Some(target) = target_for(kind)
+        && let Some(version) = compatible_versions(client, project_id, target)
+            .await?
+            .into_iter()
+            .next()
+    {
+        return Ok(Some((kind, version)));
+    }
+    let Some(own_kind) = project_kind(client, project_id).await? else {
+        return Ok(None);
+    };
+    if own_kind == kind {
+        return Ok(None);
+    }
+    let Some(target) = target_for(own_kind) else {
+        return Ok(None);
+    };
+    Ok(compatible_versions(client, project_id, target)
+        .await?
+        .into_iter()
+        .next()
+        .map(|version| (own_kind, version)))
+}
+
+async fn project_kind(client: &Client, project_id: &str) -> Result<Option<ContentKind>> {
+    #[derive(Deserialize)]
+    struct ProjectType {
+        project_type: String,
+    }
+    let project: ProjectType = client
+        .get(format!("{API_URL}/project/{project_id}"))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    Ok(match project.project_type.as_str() {
+        "mod" => Some(ContentKind::Mod),
+        "resourcepack" => Some(ContentKind::ResourcePack),
+        "shader" => Some(ContentKind::ShaderPack),
+        "datapack" => Some(ContentKind::DataPack),
+        _ => None,
+    })
+}
+
+/// A version's kind from its loader tags, for versions pinned by a dependency.
+fn kind_of(version: &Version, fallback: ContentKind) -> ContentKind {
+    let has = |tag: &str| version.loaders.iter().any(|loader| loader == tag);
+    if has("minecraft") {
+        ContentKind::ResourcePack
+    } else if has("iris") || has("optifine") || has("canvas") {
+        ContentKind::ShaderPack
+    } else if has("datapack") {
+        ContentKind::DataPack
+    } else if version.loaders.is_empty() {
+        fallback
+    } else {
+        ContentKind::Mod
+    }
 }
 
 #[cfg(test)]
@@ -523,5 +593,30 @@ mod tests {
     fn quilt_accepts_fabric_mods() {
         let target = Target::new(ContentKind::Mod, "1.21.10", Some(Loader::Quilt));
         assert_eq!(target.loaders, ["quilt", "fabric"]);
+    }
+
+    #[test]
+    fn tells_pinned_dependency_kind_by_loaders() {
+        let with = |loaders: &[&str]| Version {
+            id: String::new(),
+            project_id: String::new(),
+            name: String::new(),
+            version_number: String::new(),
+            version_type: "release".into(),
+            changelog: None,
+            date_published: None,
+            files: Vec::new(),
+            dependencies: Vec::new(),
+            game_versions: Vec::new(),
+            loaders: loaders.iter().map(ToString::to_string).collect(),
+        };
+        let fallback = ContentKind::ResourcePack;
+        assert_eq!(kind_of(&with(&["fabric"]), fallback), ContentKind::Mod);
+        assert_eq!(
+            kind_of(&with(&["minecraft"]), fallback),
+            ContentKind::ResourcePack
+        );
+        assert_eq!(kind_of(&with(&["iris"]), fallback), ContentKind::ShaderPack);
+        assert_eq!(kind_of(&with(&[]), fallback), fallback);
     }
 }
