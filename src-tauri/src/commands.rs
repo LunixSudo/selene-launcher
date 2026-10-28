@@ -264,7 +264,7 @@ pub async fn set_launch_options(
 }
 
 async fn recommended_memory(launcher: &Launcher, instance_id: &str) -> CommandResult<u32> {
-    let mods = mods::list(&launcher.instances.game_dir(instance_id), ContentKind::Mod).await?;
+    let mods = mods::list(&launcher.game_dir(instance_id)?, ContentKind::Mod).await?;
     let enabled = mods.iter().filter(|file| file.enabled).count();
     Ok(memory::recommended_mb(launcher.total_memory_mb, enabled))
 }
@@ -275,7 +275,7 @@ pub async fn open_instance_folder(
     launcher: State<'_, Launcher>,
     id: String,
 ) -> CommandResult<()> {
-    let dir = launcher.instances.game_dir(&id);
+    let dir = launcher.game_dir(&id)?;
     tokio::fs::create_dir_all(&dir).await?;
     saves::open_path(&app, &dir)
 }
@@ -381,7 +381,7 @@ pub fn stop_instance(launcher: State<'_, Launcher>, id: String) -> bool {
 async fn start_game(
     app: &AppHandle,
     launcher: &Launcher,
-    mut instance: Instance,
+    instance: Instance,
     account: LaunchAccount,
     target: Option<LaunchTarget>,
 ) -> CommandResult<()> {
@@ -443,8 +443,14 @@ async fn start_game(
     .spawn()
     .map_err(CommandError::Spawn)?;
 
-    instance.last_played = Some(Utc::now());
-    launcher.instances.save(&instance).await?;
+    let mut latest = launcher
+        .instances
+        .get(&instance.id)
+        .await
+        .unwrap_or(instance);
+    latest.last_played = Some(Utc::now());
+    launcher.instances.save(&latest).await?;
+    let instance = latest;
     launcher.clear_log(&instance.id);
     let _ = app.emit("game-started", &instance.id);
 
@@ -565,16 +571,27 @@ async fn watch_game(
 
 /// Sends each line the game prints to the UI, with the session token blanked out in case
 /// an old version prints it.
+///
+/// Lines are read as bytes: Java on Windows prints in the system code page, and stopping at
+/// the first non-UTF-8 line would leave the pipe full and freeze the game.
 async fn forward_log(
     app: AppHandle,
     instance_id: String,
     token: String,
     output: Box<dyn AsyncRead + Send + Unpin>,
 ) {
-    let mut lines = BufReader::new(output).lines();
-    while let Ok(Some(line)) = lines.next_line().await {
+    let mut reader = BufReader::new(output);
+    let mut buffer = Vec::new();
+    loop {
+        buffer.clear();
+        match reader.read_until(b'\n', &mut buffer).await {
+            Ok(0) | Err(_) => break,
+            Ok(_) => {}
+        }
+        let line = String::from_utf8_lossy(&buffer);
+        let line = line.trim_end_matches(['\r', '\n']);
         let line = if token.is_empty() {
-            line
+            line.to_owned()
         } else {
             line.replace(&token, "<hidden>")
         };

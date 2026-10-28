@@ -37,8 +37,8 @@ impl ConfigFile {
         self.lock().clone()
     }
 
-    pub fn set(&self, config: Config) -> std::io::Result<()> {
-        std::fs::write(&self.path, serde_json::to_vec_pretty(&config)?)?;
+    pub fn set(&self, config: Config) -> selene_core::Result<()> {
+        selene_core::fs::write_atomic_blocking(&self.path, &serde_json::to_vec_pretty(&config)?)?;
         apply(&config);
         *self.lock() = config;
         Ok(())

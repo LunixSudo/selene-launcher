@@ -75,5 +75,16 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A game log line that is not UTF-8 (the Windows console code page) no longer stops the log
+  from being read, which could freeze the game once its output pipe filled up.
+- Two downloads of the same file in one batch no longer write over each other.
+- Instance ids and file names coming from the interface can no longer point outside the
+  launcher's folders.
+- Starting a game no longer undoes settings changed while it was installing.
+- An expired or revoked sign-in now says to sign in again instead of blaming the server.
+- A launcher update waits until no game is running or installing, and its errors are shown.
+- Accounts and settings are written to a temporary file first, so a crash cannot leave them
+  half-written.
+- Loader libraries with natives for several platforms no longer replace one another.
 - Dragging a link out of the window no longer drops a web shortcut on the desktop.
 - The focus ring of search fields is no longer cut off at the edge of a scrolling area.

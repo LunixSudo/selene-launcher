@@ -194,11 +194,8 @@ impl Accounts {
 }
 
 fn write_list(path: &Path, list: &AccountList) -> CommandResult<()> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
     let bytes = serde_json::to_vec_pretty(list).map_err(selene_core::Error::from)?;
-    std::fs::write(path, bytes)?;
+    selene_core::fs::write_atomic_blocking(path, &bytes)?;
     Ok(())
 }
 
