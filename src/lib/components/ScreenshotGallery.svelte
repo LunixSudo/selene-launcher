@@ -65,7 +65,7 @@
           {@attach tooltip(t("screenshots.open"))}
           onclick={() => api.openScreenshot(instanceId, shot.name)}
         >
-          <img src={convertFileSrc(shot.path)} alt={shot.name} loading="lazy">
+          <img src={convertFileSrc(shot.path)} alt={shot.name} loading="lazy" decoding="async">
         </button>
         <div class="bar">
           <span>{shot.takenAt ? relativeTime(shot.takenAt) : shot.name}</span>
