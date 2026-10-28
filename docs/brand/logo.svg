@@ -222,18 +222,4 @@
     stroke-linecap="round"
   />
   <polyline points="126,131.5 43.13,83" stroke="url(#g1)" stroke-width="4" stroke-linecap="round" />
-  <polygon
-    points="214,18 219.6,32.4 234,38 219.6,43.6 214,58 208.4,43.6 194,38 208.4,32.4"
-    fill="#ffd866"
-    stroke="#241a3d"
-    stroke-width="4"
-    stroke-linejoin="round"
-  />
-  <polygon
-    points="34,29 38.2,37.8 47,42 38.2,46.2 34,55 29.8,46.2 21,42 29.8,37.8"
-    fill="#ffe591"
-    stroke="#241a3d"
-    stroke-width="3"
-    stroke-linejoin="round"
-  />
 </svg>
