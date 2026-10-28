@@ -5,6 +5,7 @@
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
   import Select from "$lib/components/Select.svelte";
+  import { describeError } from "$lib/errors";
   import { type Locale, locale, setLocale, t } from "$lib/i18n/index.svelte";
   import { scrollFade } from "$lib/scroll-fade";
   import {
@@ -31,6 +32,7 @@
   let language = $state(locale());
   let version = $state("");
   let config = $state<LauncherConfig | null>(null);
+  let saveError = $state<string | null>(null);
   let canUninstall = $state(false);
   let confirmingUninstall = $state(false);
 
@@ -64,7 +66,10 @@
       return;
     }
     config = { ...config, ...changes };
-    void api.setConfig(config);
+    api
+      .setConfig(config)
+      .then(() => (saveError = null))
+      .catch((err) => (saveError = describeError(err)));
   }
 
   const themes = $derived(THEMES.map((value) => ({ value, label: t(`settings.themes.${value}`) })));
@@ -104,6 +109,10 @@
     </a>
     <h1 class="page-title">{t("settings.title")}</h1>
   </header>
+
+  {#if saveError}
+    <p class="save-error" role="alert">{saveError}</p>
+  {/if}
 
   <div class="content" {@attach scrollFade}>
     <section class="panel">
@@ -454,6 +463,12 @@
 
   .row p.error {
     color: var(--danger);
+  }
+
+  .save-error {
+    margin: 0;
+    color: var(--danger);
+    font-size: 13px;
   }
 
   input[type="radio"] {
