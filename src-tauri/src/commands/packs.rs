@@ -148,7 +148,7 @@ pub async fn export_pack(
         loader: instance.loader,
         folders,
     };
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = launcher.game_dir(&instance_id)?;
     match format {
         PackFormat::Mrpack => mrpack::export(&launcher.client, &game_dir, &options, &path).await?,
         PackFormat::Curseforge => {

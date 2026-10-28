@@ -182,7 +182,7 @@ pub async fn set_enabled(
     enabled: bool,
 ) -> Result<()> {
     let dir = kind.dir(game_dir);
-    let base = file_name.trim_end_matches(DISABLED_SUFFIX);
+    let base = safe_file_name(file_name)?.trim_end_matches(DISABLED_SUFFIX);
     let disabled = format!("{base}{DISABLED_SUFFIX}");
     let (from, to) = if enabled {
         (dir.join(disabled), dir.join(base))
@@ -265,6 +265,16 @@ mod tests {
         assert_eq!(
             ContentKind::ShaderPack.state(Path::new("BSL.zip.disabled")),
             Some(false)
+        );
+    }
+
+    #[tokio::test]
+    async fn refuses_to_rename_outside_the_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(
+            set_enabled(dir.path(), ContentKind::Mod, "../x.jar", false)
+                .await
+                .is_err()
         );
     }
 

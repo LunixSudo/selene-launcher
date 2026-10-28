@@ -26,7 +26,7 @@ pub async fn worlds(
         .get(&instance_id)
         .await
         .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = launcher.game_dir(&instance_id)?;
     let worlds = blocking(move || saves::worlds(&game_dir)).await?;
     // An offline launch has no manifest; the server list still works without Quick Play.
     let quick_play = launcher
@@ -43,7 +43,7 @@ pub async fn open_world_folder(
     instance_id: String,
     folder: String,
 ) -> CommandResult<()> {
-    let dir = saves::world_dir(&launcher.instances.game_dir(&instance_id), &folder)?;
+    let dir = saves::world_dir(&launcher.game_dir(&instance_id)?, &folder)?;
     open_path(&app, &dir)
 }
 
@@ -55,7 +55,7 @@ pub async fn back_up_world(
     instance_id: String,
     folder: String,
 ) -> CommandResult<PathBuf> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = launcher.game_dir(&instance_id)?;
     let backup = blocking(move || saves::back_up_world(&game_dir, &folder)).await?;
     app.opener()
         .reveal_item_in_dir(&backup)
@@ -73,7 +73,7 @@ pub async fn delete_world(
     if launcher.is_running(&instance_id) {
         return Err(CommandError::AlreadyRunning(instance_id));
     }
-    let dir = saves::world_dir(&launcher.instances.game_dir(&instance_id), &folder)?;
+    let dir = saves::world_dir(&launcher.game_dir(&instance_id)?, &folder)?;
     move_to_trash(dir).await
 }
 
@@ -82,7 +82,7 @@ pub async fn servers(
     launcher: State<'_, Launcher>,
     instance_id: String,
 ) -> CommandResult<Vec<Server>> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = launcher.game_dir(&instance_id)?;
     blocking(move || saves::servers(&game_dir)).await
 }
 
@@ -92,7 +92,7 @@ pub async fn save_servers(
     instance_id: String,
     servers: Vec<Server>,
 ) -> CommandResult<()> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = launcher.game_dir(&instance_id)?;
     tokio::fs::create_dir_all(&game_dir).await?;
     blocking(move || saves::save_servers(&game_dir, &servers)).await
 }
@@ -102,7 +102,7 @@ pub async fn screenshots(
     launcher: State<'_, Launcher>,
     instance_id: String,
 ) -> CommandResult<Vec<Screenshot>> {
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = launcher.game_dir(&instance_id)?;
     blocking(move || saves::screenshots(&game_dir)).await
 }
 
@@ -113,7 +113,7 @@ pub async fn open_screenshot(
     instance_id: String,
     name: String,
 ) -> CommandResult<()> {
-    let path = saves::screenshot_path(&launcher.instances.game_dir(&instance_id), &name)?;
+    let path = saves::screenshot_path(&launcher.game_dir(&instance_id)?, &name)?;
     open_path(&app, &path)
 }
 
@@ -123,7 +123,7 @@ pub async fn delete_screenshot(
     instance_id: String,
     name: String,
 ) -> CommandResult<()> {
-    let path = saves::screenshot_path(&launcher.instances.game_dir(&instance_id), &name)?;
+    let path = saves::screenshot_path(&launcher.game_dir(&instance_id)?, &name)?;
     move_to_trash(path).await
 }
 

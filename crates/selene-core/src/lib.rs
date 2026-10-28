@@ -5,6 +5,7 @@ pub mod curseforge;
 pub mod download;
 pub mod error;
 pub mod forge;
+pub mod fs;
 pub mod game;
 pub mod http;
 pub mod instance;

@@ -14,7 +14,7 @@ use tokio::sync::{OnceCell, oneshot};
 use crate::account::Accounts;
 use crate::config::ConfigFile;
 use crate::discord::Discord;
-use crate::error::CommandResult;
+use crate::error::{CommandError, CommandResult};
 
 pub struct Launcher {
     pub data_dir: PathBuf,
@@ -68,6 +68,15 @@ impl Launcher {
             .get_or_try_init(|| VersionManifest::fetch(&self.client))
             .await?;
         Ok(manifest)
+    }
+
+    /// The game folder of an existing instance. Ids come from the UI, so they are checked here.
+    pub fn game_dir(&self, id: &str) -> CommandResult<PathBuf> {
+        if self.instances.exists(id) {
+            Ok(self.instances.game_dir(id))
+        } else {
+            Err(CommandError::UnknownInstance(id.to_owned()))
+        }
     }
 
     /// Marks an instance as running; returns `false` if it already was.

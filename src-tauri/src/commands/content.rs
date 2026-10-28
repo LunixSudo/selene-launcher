@@ -910,7 +910,7 @@ pub async fn change_version(
         return Err(CommandError::UnknownVersion(version));
     }
     let plan = change_plan(&launcher, &instance_id, &version, loader.as_ref()).await?;
-    let game_dir = launcher.instances.game_dir(&instance_id);
+    let game_dir = launcher.game_dir(&instance_id)?;
     for (file, remote, _) in &plan.updates {
         mods::replace(&launcher.client, &game_dir, ContentKind::Mod, file, remote).await?;
     }
@@ -1147,7 +1147,7 @@ fn content_dir(
     kind: ContentKind,
     world: Option<&str>,
 ) -> CommandResult<PathBuf> {
-    let game_dir = launcher.instances.game_dir(instance_id);
+    let game_dir = launcher.game_dir(instance_id)?;
     match (kind, world) {
         (ContentKind::DataPack, Some(world)) => Ok(saves::world_dir(&game_dir, world)?),
         (ContentKind::DataPack, None) => Err(CommandError::NoWorld),

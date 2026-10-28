@@ -39,7 +39,7 @@ pub async fn update_shortcut(
     id: String,
     icon: Vec<Vec<u8>>,
 ) -> CommandResult<()> {
-    let record_path = instance_dir(&launcher, &id).join(RECORD_FILE);
+    let record_path = instance_dir(&launcher, &id)?.join(RECORD_FILE);
     let Ok(bytes) = tokio::fs::read(&record_path).await else {
         return Ok(());
     };
@@ -72,7 +72,7 @@ async fn write_instance_shortcut(
         .map(|ch| if r#"<>:"/\|?*"#.contains(ch) { '_' } else { ch })
         .collect();
     let link = desktop.join(format!("{}.lnk", file_name.trim()));
-    let dir = instance_dir(launcher, id);
+    let dir = instance_dir(launcher, id)?;
     let ico = pngs_to_ico(icon);
     // A new file name for every look, because Explorer caches icons by path.
     let icon_path = dir.join(format!(
@@ -90,11 +90,11 @@ async fn write_instance_shortcut(
     Ok(())
 }
 
-fn instance_dir(launcher: &Launcher, id: &str) -> PathBuf {
-    let game_dir = launcher.instances.game_dir(id);
-    game_dir
+fn instance_dir(launcher: &Launcher, id: &str) -> CommandResult<PathBuf> {
+    let game_dir = launcher.game_dir(id)?;
+    Ok(game_dir
         .parent()
-        .map_or(game_dir.clone(), Path::to_path_buf)
+        .map_or(game_dir.clone(), Path::to_path_buf))
 }
 
 async fn remove_old_icons(dir: &Path, keep: &Path) {

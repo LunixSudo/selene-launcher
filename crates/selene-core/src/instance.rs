@@ -70,6 +70,12 @@ impl Instances {
         self.root.join(id).join(GAME_DIR)
     }
 
+    /// Whether `id` names an existing instance. Ids come from the UI, so anything that is not a
+    /// plain folder name is refused before it reaches a path.
+    pub fn exists(&self, id: &str) -> bool {
+        is_valid_id(id) && self.root.join(id).join(CONFIG_FILE).is_file()
+    }
+
     /// Every readable instance, most recently played first. Broken configs are skipped.
     pub async fn list(&self) -> Result<Vec<Instance>> {
         let mut entries = match fs::read_dir(&self.root).await {
@@ -97,6 +103,9 @@ impl Instances {
     }
 
     pub async fn get(&self, id: &str) -> Option<Instance> {
+        if !is_valid_id(id) {
+            return None;
+        }
         read_config(&self.root.join(id)).await
     }
 
@@ -133,15 +142,13 @@ impl Instances {
     }
 
     pub async fn save(&self, instance: &Instance) -> Result<()> {
-        let path = self.root.join(&instance.id).join(CONFIG_FILE);
-        fs::write(&path, serde_json::to_vec_pretty(instance)?)
-            .await
-            .map_err(|err| Error::io(&path, err))
+        let path = self.root.join(checked_id(&instance.id)?).join(CONFIG_FILE);
+        crate::fs::write_atomic(&path, &serde_json::to_vec_pretty(instance)?).await
     }
 
     /// Copies an instance with its mods, worlds and settings under a new name.
     pub async fn duplicate(&self, id: &str, name: &str) -> Result<Instance> {
-        let source = self.root.join(id);
+        let source = self.root.join(checked_id(id)?);
         let mut instance = read_config(&source).await.ok_or_else(|| {
             Error::io(&source, std::io::Error::from(std::io::ErrorKind::NotFound))
         })?;
@@ -165,7 +172,7 @@ impl Instances {
     }
 
     pub async fn delete(&self, id: &str) -> Result<()> {
-        let path = self.root.join(id);
+        let path = self.root.join(checked_id(id)?);
         fs::remove_dir_all(&path)
             .await
             .map_err(|err| Error::io(&path, err))
@@ -175,11 +182,27 @@ impl Instances {
         let base = slug(name);
         let mut id = base.clone();
         let mut suffix = 2;
-        while fs::try_exists(self.root.join(&id)).await.unwrap_or(true) {
+        while fs::try_exists(self.root.join(&id)).await.unwrap_or(false) {
             id = format!("{base}-{suffix}");
             suffix += 1;
         }
         id
+    }
+}
+
+/// Instance ids are folder names made by [`slug`], so a valid one is a single plain component.
+fn is_valid_id(id: &str) -> bool {
+    !id.is_empty() && id != "." && id != ".." && !id.contains(['/', '\\', ':'])
+}
+
+fn checked_id(id: &str) -> Result<&str> {
+    if is_valid_id(id) {
+        Ok(id)
+    } else {
+        Err(Error::io(
+            id,
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "not an instance id"),
+        ))
     }
 }
 
@@ -280,6 +303,19 @@ mod tests {
                 .join("mods/sodium.jar")
                 .is_file()
         );
+    }
+
+    #[tokio::test]
+    async fn refuses_ids_outside_the_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let instances = Instances::new(dir.path().join("instances"));
+        instances.create("Survival", "1.21.10", None).await.unwrap();
+
+        assert!(instances.exists("survival"));
+        assert!(!instances.exists(".."));
+        assert!(instances.get("../instances/survival").await.is_none());
+        assert!(instances.delete("..").await.is_err());
+        assert!(dir.path().join("instances").is_dir());
     }
 
     #[tokio::test]
