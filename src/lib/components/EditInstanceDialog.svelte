@@ -77,7 +77,7 @@
     <legend>{t("edit.icon")}</legend>
     <div class="icons">
       {#each Object.entries(ICONS) as [key, path] (key)}
-        <label class="choice" title={key}>
+        <label class="choice">
           <input type="radio" name="icon" value={key} bind:group={icon} aria-label={key}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d={path} /></svg>
         </label>
@@ -89,7 +89,7 @@
     <legend>{t("edit.cover")}</legend>
     <div class="covers">
       {#each Object.entries(COVERS) as [key, gradient] (key)}
-        <label class="choice swatch" style:background={gradient} title={key}>
+        <label class="choice swatch" style:background={gradient}>
           <input type="radio" name="cover" value={key} bind:group={cover} aria-label={key}>
         </label>
       {/each}

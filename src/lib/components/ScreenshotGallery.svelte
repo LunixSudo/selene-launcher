@@ -6,6 +6,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
   import { library } from "$lib/state/instances.svelte";
+  import { tooltip } from "$lib/tooltip";
 
   let { instanceId }: { instanceId: string } = $props();
 
@@ -61,7 +62,7 @@
         <button
           type="button"
           class="preview"
-          title={t("screenshots.open")}
+          {@attach tooltip(t("screenshots.open"))}
           onclick={() => api.openScreenshot(instanceId, shot.name)}
         >
           <img src={convertFileSrc(shot.path)} alt={shot.name} loading="lazy">
@@ -71,7 +72,9 @@
           <button
             type="button"
             class="icon-button"
-            title={copied === shot.name ? t("screenshots.copied") : t("screenshots.copy")}
+            {@attach tooltip(
+              copied === shot.name ? t("screenshots.copied") : t("screenshots.copy"),
+            )}
             aria-label={t("screenshots.copy")}
             onclick={() => copy(shot)}
           >
@@ -80,7 +83,7 @@
           <button
             type="button"
             class="icon-button danger"
-            title={t("screenshots.delete")}
+            {@attach tooltip(t("screenshots.delete"))}
             aria-label={t("screenshots.delete")}
             onclick={() => remove(shot)}
           >

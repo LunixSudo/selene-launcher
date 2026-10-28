@@ -15,6 +15,7 @@
   import TextureCrop from "$lib/components/TextureCrop.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { activeAccount, loadAccounts } from "$lib/state/accounts.svelte";
+  import { tooltip } from "$lib/tooltip";
 
   let profile = $state<SkinProfile | null>(null);
   let profileError = $state<CommandError | null>(null);
@@ -189,7 +190,7 @@
                   type="button"
                   class="icon-button danger remove"
                   aria-label={t("skins.remove")}
-                  title={t("skins.remove")}
+                  {@attach tooltip(t("skins.remove"))}
                   onclick={() => removeSkin(skin)}
                 >
                   <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>

@@ -6,6 +6,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
   import { library, play } from "$lib/state/instances.svelte";
+  import { tooltip } from "$lib/tooltip";
   import ConfirmDialog from "./ConfirmDialog.svelte";
 
   let { instanceId }: { instanceId: string } = $props();
@@ -96,7 +97,7 @@
         <button
           type="button"
           class="icon-button"
-          title={t("worlds.openFolder")}
+          {@attach tooltip(t("worlds.openFolder"))}
           aria-label={t("worlds.openFolder")}
           onclick={() => api.openWorldFolder(instanceId, world.folder)}
         >
@@ -105,7 +106,7 @@
         <button
           type="button"
           class="icon-button"
-          title={backingUp === world.folder ? t("worlds.backingUp") : t("worlds.backup")}
+          {@attach tooltip(backingUp === world.folder ? t("worlds.backingUp") : t("worlds.backup"))}
           aria-label={t("worlds.backup")}
           disabled={backingUp !== null}
           onclick={() => backUp(world)}
@@ -115,7 +116,7 @@
         <button
           type="button"
           class="icon-button danger"
-          title={t("worlds.delete")}
+          {@attach tooltip(t("worlds.delete"))}
           aria-label={t("worlds.delete")}
           disabled={busy}
           onclick={() => askDelete(world)}

@@ -4,6 +4,7 @@
   import AccountMenu from "$lib/components/AccountMenu.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { installUpdate, launcherUpdate } from "$lib/state/update.svelte";
+  import { tooltip } from "$lib/tooltip";
 
   const appWindow = getCurrentWindow();
 </script>
@@ -20,7 +21,7 @@
         type="button"
         class="update"
         disabled={launcherUpdate.installing}
-        title={launcherUpdate.available.notes}
+        {@attach tooltip(launcherUpdate.available.notes)}
         onclick={installUpdate}
       >
         {launcherUpdate.installing
@@ -29,7 +30,7 @@
       </button>
     {/if}
     <AccountMenu />
-    <a class="settings" href="/settings" title={t("settings.title")}>
+    <a class="settings" href="/settings" {@attach tooltip(t("settings.title"))}>
       <span class="label">{t("settings.title")}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
@@ -119,13 +120,20 @@
     transition: background 120ms var(--ease);
   }
 
-  .controls > button:hover,
-  .settings:hover {
+  .controls > button:hover {
     background: var(--surface-hover);
   }
 
   .settings {
+    width: 32px;
+    height: 32px;
+    margin: 0 6px 0 4px;
+    border-radius: 999px;
     color: inherit;
+  }
+
+  .settings:hover {
+    background: var(--surface-hover);
   }
 
   .settings .label {

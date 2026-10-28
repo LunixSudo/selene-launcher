@@ -15,6 +15,7 @@
     THEMES,
   } from "$lib/state/settings.svelte";
   import { checkForUpdate, installUpdate, launcherUpdate } from "$lib/state/update.svelte";
+  import { tooltip } from "$lib/tooltip";
 
   const LANGUAGES: { value: Locale; label: string }[] = [
     { value: "ru", label: "Русский" },
@@ -135,7 +136,7 @@
             <label
               class="accent"
               style:--swatch={color}
-              title={t(`settings.accents.${name as Accent}`)}
+              {@attach tooltip(t(`settings.accents.${name as Accent}`))}
             >
               <input
                 type="radio"

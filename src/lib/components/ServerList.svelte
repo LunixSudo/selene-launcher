@@ -4,6 +4,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
   import { library, play } from "$lib/state/instances.svelte";
+  import { tooltip } from "$lib/tooltip";
   import Dialog from "./Dialog.svelte";
 
   let { instanceId }: { instanceId: string } = $props();
@@ -98,7 +99,7 @@
         <button
           type="button"
           class="icon-button"
-          title={t("servers.edit")}
+          {@attach tooltip(t("servers.edit"))}
           aria-label={t("servers.edit")}
           disabled={busy}
           onclick={() => edit(index)}
@@ -108,7 +109,7 @@
         <button
           type="button"
           class="icon-button danger"
-          title={t("servers.remove")}
+          {@attach tooltip(t("servers.remove"))}
           aria-label={t("servers.remove")}
           disabled={busy}
           onclick={() => save(servers?.filter((_, other) => other !== index) ?? [])}
