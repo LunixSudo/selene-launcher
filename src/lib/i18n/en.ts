@@ -189,6 +189,7 @@ export const en: Messages = {
     notificationsHint: "While the launcher is minimized: game ready, mods updated, pack imported.",
     legal:
       "Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.",
+    privacy: "Privacy policy",
     discordStatus: "Discord status",
     discordStatusHint:
       "Shows friends “Playing Selene Launcher”, the instance name and time in game.",

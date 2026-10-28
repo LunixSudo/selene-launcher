@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getVersion } from "@tauri-apps/api/app";
+  import { openUrl } from "@tauri-apps/plugin-opener";
   import { api, type LauncherConfig } from "$lib/api";
   import Segmented from "$lib/components/Segmented.svelte";
   import Select from "$lib/components/Select.svelte";
@@ -20,6 +21,7 @@
     { value: "en", label: "English" },
   ];
 
+  const REPOSITORY_URL = "https://github.com/LunixSudo/selene-launcher/blob/main";
   const PARALLEL = ["auto", "2", "4", "8", "16"];
   const SPEEDS_MB = ["unlimited", "1", "2", "5", "10", "25"];
 
@@ -323,7 +325,17 @@
       </div>
     </section>
 
-    <p class="legal">{t("settings.legal")}</p>
+    <p class="legal">
+      {t("settings.legal")}
+      <button
+        type="button"
+        class="link"
+        onclick={() =>
+          openUrl(`${REPOSITORY_URL}/${locale() === "ru" ? "PRIVACY.ru.md" : "PRIVACY.md"}`)}
+      >
+        {t("settings.privacy")}
+      </button>
+    </p>
   </div>
 </section>
 
@@ -339,6 +351,15 @@
     padding: 0 18px;
     color: var(--text-muted);
     font-size: 12px;
+  }
+
+  .link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: inherit;
+    cursor: pointer;
   }
 
   .content {
