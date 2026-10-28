@@ -49,6 +49,8 @@ pub enum AuthError {
     ChildAccount,
     #[error("this account does not own Minecraft: Java Edition")]
     GameNotOwned,
+    #[error("the saved sign-in has expired or was revoked")]
+    SessionExpired,
     #[error("{service} returned {status}")]
     Service {
         service: &'static str,
@@ -300,6 +302,14 @@ pub async fn refresh(client: &Client, refresh_token: &str) -> Result<MicrosoftTo
         ],
     )
     .await
+    .map_err(|err| match err {
+        // Microsoft answers 400 `invalid_grant` once a refresh token has expired or been revoked.
+        Error::Auth(AuthError::Service {
+            status: StatusCode::BAD_REQUEST,
+            ..
+        }) => AuthError::SessionExpired.into(),
+        other => other,
+    })
 }
 
 /// Trades a Microsoft access token for a Minecraft session and checks that the game is owned.

@@ -21,7 +21,7 @@
         type="button"
         class="update"
         disabled={launcherUpdate.installing}
-        {@attach tooltip(launcherUpdate.available.notes)}
+        {@attach tooltip(launcherUpdate.error ?? launcherUpdate.available.notes)}
         onclick={installUpdate}
       >
         {launcherUpdate.installing

@@ -311,7 +311,9 @@
       <div class="row">
         <div>
           <h3>Selene Launcher {version}</h3>
-          {#if launcherUpdate.checked && !launcherUpdate.available}
+          {#if launcherUpdate.error}
+            <p class="error">{launcherUpdate.error}</p>
+          {:else if launcherUpdate.checked && !launcherUpdate.available}
             <p>{t("update.upToDate")}</p>
           {/if}
         </div>
@@ -446,6 +448,10 @@
     margin: 2px 0 0;
     color: var(--text-muted);
     font-size: 12px;
+  }
+
+  .row p.error {
+    color: var(--danger);
   }
 
   input[type="radio"] {

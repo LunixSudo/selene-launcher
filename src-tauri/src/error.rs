@@ -32,6 +32,9 @@ pub enum CommandError {
     #[error("instance {0} is already running")]
     AlreadyRunning(String),
 
+    #[error("a game is running or installing")]
+    GameRunning,
+
     #[error("java not found at {}", .0.display())]
     JavaNotFound(std::path::PathBuf),
 
@@ -60,6 +63,7 @@ impl CommandError {
             Self::NoCompatibleVersion => "noCompatibleVersion",
             Self::AlreadyRunning(_) => "alreadyRunning",
             Self::JavaNotFound(_) => "javaNotFound",
+            Self::GameRunning => "gameRunning",
             Self::Spawn(_) => "spawn",
             Self::Io(_) => "io",
             Self::Core(selene_core::Error::Http(_)) => "network",
@@ -73,6 +77,7 @@ impl CommandError {
                 AuthError::RegionBlocked => "regionBlocked",
                 AuthError::ChildAccount => "childAccount",
                 AuthError::GameNotOwned => "gameNotOwned",
+                AuthError::SessionExpired => "sessionExpired",
                 // Mojang answers 403 until it has approved the app's Azure client ID.
                 AuthError::Service {
                     service: "Minecraft Services",

@@ -413,6 +413,7 @@ export const en: Messages = {
     regionBlocked: "Xbox Live is not available in this account's country.",
     childAccount: "A child account must be added to a Microsoft family first.",
     gameNotOwned: "This account does not own Minecraft: Java Edition.",
+    sessionExpired: "The saved sign-in has expired. Sign in to this account again.",
     authService: "The sign-in service returned an error. Try again later.",
     appNotApproved:
       "Mojang has not approved Selene Launcher for sign-in yet. The request is under review; sign-in will work once it is approved.",
@@ -429,6 +430,7 @@ export const en: Messages = {
       "This instance has no worlds yet. Create one in the game, then add the data pack to it.",
     noCompatibleVersion: "This mod has no version for this instance.",
     alreadyRunning: "This instance is already running.",
+    gameRunning: "Close the game and wait for downloads to finish first.",
     javaNotFound: "The chosen Java was not found. Check the path in the instance settings.",
     spawn: "Could not start the game.",
     network: "Can't reach the servers. Check your connection.",

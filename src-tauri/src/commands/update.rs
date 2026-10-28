@@ -28,6 +28,10 @@ pub async fn install_update(app: AppHandle, launcher: State<'_, Launcher>) -> Co
             .open_url(RELEASES_URL, None::<&str>)
             .map_err(|err| CommandError::Io(std::io::Error::other(err)));
     }
+    // The installer closes the launcher, which would cut off downloads and the game's log.
+    if launcher.any_running() {
+        return Err(CommandError::GameRunning);
+    }
     let Some(update) = check_update(app.clone(), launcher.clone()).await? else {
         return Ok(());
     };
