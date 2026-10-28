@@ -15,7 +15,7 @@ What the launcher connects to
 
 - Microsoft and Xbox Live: signing in. Sent: sign-in tokens.
 - Mojang and Minecraft Services: checking you own the game, downloading the game and Java, skins and capes. Sent: your Minecraft token, the skin you choose.
-- Fabric, Quilt, Forge and NeoForge: mod loaders, the list of builds and the loader itself, which Forge and NeoForge download with their own installer. Sent: the game version.
+- Fabric, Quilt, Forge and NeoForge: mod loaders, the list of builds and the loader itself, which Forge and NeoForge download with their own installer. When a site cannot be reached, the same files come from the official mirrors the project lists, for Forge that is CreeperHost. Sent: the game version.
 - Modrinth and CurseForge: the catalog, installing and updating mods. Sent: search queries, and checksums of installed files to recognise them and find updates.
 - GitHub: checking for launcher updates. Sent: nothing beyond the request itself.
 - Discord (the app on your computer): the "Playing Selene Launcher" status. Sent: the game version and instance name. Can be turned off in settings.

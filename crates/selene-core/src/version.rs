@@ -7,7 +7,7 @@ use serde::Deserialize;
 use crate::download::Download;
 use crate::manifest::{VersionEntry, VersionKind};
 use crate::rules::{self, Environment, Rule};
-use crate::{Error, Result, download};
+use crate::{Error, Result, download, http};
 
 const ASSETS_BASE_URL: &str = "https://resources.download.minecraft.net";
 
@@ -123,9 +123,7 @@ pub struct AssetObject {
 impl VersionInfo {
     /// Fetches the version JSON and checks it against the hash from the manifest.
     pub async fn fetch(client: &Client, entry: &VersionEntry) -> Result<Self> {
-        let bytes = client
-            .get(&entry.url)
-            .send()
+        let bytes = http::get(client, &entry.url)
             .await?
             .error_for_status()?
             .bytes()

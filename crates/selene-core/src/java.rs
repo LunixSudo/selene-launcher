@@ -170,9 +170,7 @@ where
 }
 
 async fn fetch_manifest(client: &Client, manifest: &FileRef) -> Result<RuntimeManifest> {
-    let bytes = client
-        .get(&manifest.url)
-        .send()
+    let bytes = http::get(client, &manifest.url)
         .await?
         .error_for_status()?
         .bytes()

@@ -9,7 +9,7 @@ use sha1::{Digest, Sha1};
 use tokio::fs::{self, File};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-use crate::{Error, Result};
+use crate::{Error, Result, http};
 
 const MAX_ATTEMPTS: u32 = 3;
 const READ_BUFFER_SIZE: usize = 64 * 1024;
@@ -151,9 +151,7 @@ async fn fetch(client: &Client, download: &Download) -> Result<()> {
         .await
         .map_err(|err| Error::io(&partial, err))?;
     let mut hasher = Sha1::new();
-    let mut body = client
-        .get(&download.url)
-        .send()
+    let mut body = http::get(client, &download.url)
         .await?
         .error_for_status()?
         .bytes_stream();

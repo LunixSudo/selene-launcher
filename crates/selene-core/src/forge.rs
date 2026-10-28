@@ -15,7 +15,8 @@ use tokio::process::Command;
 use crate::download::{self, Download, Progress};
 use crate::game::GameDirs;
 use crate::loader::{Loader, LoaderRelease, LoaderVersion, ResolvedPatch, fetch_sha1};
-use crate::version::{Arguments, Library};
+use crate::rules::{Environment, Features};
+use crate::version::{self, Arguments, Library};
 use crate::{Error, Result, http};
 
 const FORGE_MAVEN_URL: &str = "https://maven.minecraftforge.net/net/minecraftforge/forge";
@@ -69,6 +70,16 @@ struct Processor {
 struct LibraryList {
     #[serde(default)]
     libraries: Vec<serde_json::Value>,
+}
+
+/// What the launcher needs from an installer before running it.
+struct Profile {
+    /// The version id the installer will write.
+    id: String,
+    /// How many steps it reports along the way: one per library it checks and one per
+    /// processor it runs for the client.
+    steps: u64,
+    libraries: Vec<Library>,
 }
 
 /// The version an installer writes, inheriting from the game version.
@@ -260,7 +271,14 @@ where
     )
     .await?;
 
-    let result = run_installer(dirs, &installer, java, &on_progress).await;
+    let profile = read_profile(&installer)?;
+    // The installer only downloads what is missing, so libraries fetched here through the
+    // official mirrors spare it a host that may be unreachable. It retries the rest itself.
+    let env = Environment::current(Features::default());
+    let libraries = version::library_downloads(&profile.libraries, &env, &dirs.libraries());
+    let _ = download::download_all(client, libraries, 8, |_| {}).await;
+
+    let result = run_installer(dirs, &installer, &profile, java, &on_progress).await;
     let _ = tokio::fs::remove_file(&installer).await;
     let _ = tokio::fs::remove_file(installer.with_extension("jar.log")).await;
     let _ = tokio::fs::remove_dir(&work_dir).await;
@@ -290,13 +308,13 @@ async fn read_installed(dirs: &GameDirs, id: &str) -> Option<InstalledVersion> {
 async fn run_installer<F>(
     dirs: &GameDirs,
     installer: &Path,
+    profile: &Profile,
     java: &Path,
     on_progress: &F,
 ) -> Result<String>
 where
     F: Fn(Progress),
 {
-    let (id, total_steps) = read_profile(installer)?;
     let profiles = dirs.root.join(LAUNCHER_PROFILES);
     if !profiles.exists() {
         tokio::fs::write(&profiles, r#"{"profiles":{}}"#)
@@ -339,8 +357,8 @@ where
         if line.starts_with("Considering library") || line.trim_start().starts_with("MainClass:") {
             steps += 1;
             on_progress(Progress {
-                bytes_done: steps.min(total_steps),
-                bytes_total: total_steps,
+                bytes_done: steps.min(profile.steps),
+                bytes_total: profile.steps,
             });
         }
         if tail.len() == OUTPUT_TAIL_LINES {
@@ -352,7 +370,7 @@ where
     let status = child.wait().await.map_err(|err| Error::io(java, err))?;
     let errors = errors.await.unwrap_or_default();
     if status.success() {
-        Ok(id)
+        Ok(profile.id.clone())
     } else {
         let mut output = tail.join("\n");
         output.push('\n');
@@ -361,9 +379,7 @@ where
     }
 }
 
-/// The version id the installer will write and how many steps it reports along the way: one
-/// per library it checks and one per processor it runs for the client.
-fn read_profile(installer: &Path) -> Result<(String, u64)> {
+fn read_profile(installer: &Path) -> Result<Profile> {
     let file = std::fs::File::open(installer).map_err(|err| Error::io(installer, err))?;
     let mut archive = zip::ZipArchive::new(file).map_err(|err| Error::io(installer, err.into()))?;
     let profile: InstallProfile = serde_json::from_str(&read_entry(
@@ -385,7 +401,17 @@ fn read_profile(installer: &Path) -> Result<(String, u64)> {
         })
         .count();
     let steps = profile.libraries.len() + version.libraries.len() + processors;
-    Ok((profile.version, steps as u64))
+    let libraries = profile
+        .libraries
+        .into_iter()
+        .chain(version.libraries)
+        .filter_map(|library| serde_json::from_value(library).ok())
+        .collect();
+    Ok(Profile {
+        id: profile.version,
+        steps: steps as u64,
+        libraries,
+    })
 }
 
 fn read_entry(

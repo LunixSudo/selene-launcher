@@ -48,6 +48,9 @@ All notable changes to this project are documented here. The format follows
 - Required dependencies of another kind are installed too, for example a mod that a resource
   pack or shader needs goes into `mods`.
 - A "Show beta builds" switch under the mod loader build list; betas are hidden by default.
+- When Mojang, Fabric or Forge cannot be reached, downloads move on to the official mirrors
+  those projects list. Forge and NeoForge libraries are fetched this way before their
+  installer runs.
 
 ### Changed
 

@@ -101,7 +101,7 @@ async fn profile_releases(
     game_version: &str,
 ) -> Result<Vec<LoaderRelease>> {
     let url = format!("{}/versions/loader/{game_version}", loader.meta_url());
-    let response = client.get(&url).send().await?;
+    let response = http::get(client, &url).await?;
     // Both sites answer versions they do not support (anything before 1.14) with an error.
     if matches!(
         response.status(),
@@ -227,9 +227,7 @@ impl MavenLibrary {
 }
 
 pub(crate) async fn fetch_sha1(client: &Client, jar_url: &str) -> Result<String> {
-    let text = client
-        .get(format!("{jar_url}.sha1"))
-        .send()
+    let text = http::get(client, &format!("{jar_url}.sha1"))
         .await?
         .error_for_status()?
         .text()
