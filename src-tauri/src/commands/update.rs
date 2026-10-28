@@ -1,8 +1,11 @@
 use selene_core::update::{self, Update};
 use tauri::{AppHandle, Manager, State};
+use tauri_plugin_opener::OpenerExt;
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
+
+const RELEASES_URL: &str = "https://github.com/LunixSudo/selene-launcher/releases/latest";
 
 #[tauri::command]
 pub async fn check_update(
@@ -17,6 +20,14 @@ pub async fn check_update(
 /// The release is looked up again here rather than taken from the UI.
 #[tauri::command]
 pub async fn install_update(app: AppHandle, launcher: State<'_, Launcher>) -> CommandResult<()> {
+    if crate::portable_data_dir().is_some() {
+        // The installer would put a second copy in Program Files; the portable zip is on
+        // the release page.
+        return app
+            .opener()
+            .open_url(RELEASES_URL, None::<&str>)
+            .map_err(|err| CommandError::Io(std::io::Error::other(err)));
+    }
     let Some(update) = check_update(app.clone(), launcher.clone()).await? else {
         return Ok(());
     };

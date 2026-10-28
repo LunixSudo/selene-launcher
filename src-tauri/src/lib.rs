@@ -15,7 +15,7 @@ use crate::state::Launcher;
 
 /// A `portable.txt` next to the executable keeps everything in a `data` folder beside it,
 /// so the launcher can live on a USB stick. Prism Launcher uses the same marker.
-fn portable_data_dir() -> Option<PathBuf> {
+pub(crate) fn portable_data_dir() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let dir = exe.parent()?;
     dir.join("portable.txt").is_file().then(|| dir.join("data"))
