@@ -342,8 +342,8 @@ export const api = {
   privacyStatus: () =>
     invoke<{ version: string; accepted: boolean; updated: boolean }>("privacy_status"),
   acceptPrivacy: () => invoke<void>("accept_privacy"),
-  createShortcut: (id: string, icon: number[]) => invoke<void>("create_shortcut", { id, icon }),
-  updateShortcut: (id: string, icon: number[]) => invoke<void>("update_shortcut", { id, icon }),
+  createShortcut: (id: string, icon: number[][]) => invoke<void>("create_shortcut", { id, icon }),
+  updateShortcut: (id: string, icon: number[][]) => invoke<void>("update_shortcut", { id, icon }),
   takeStartupLaunch: () => invoke<string | null>("take_startup_launch"),
   takeMissedCrashes: () => invoke<Record<string, CrashReport>>("take_missed_crashes"),
   checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),
@@ -366,6 +366,7 @@ export const api = {
   memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),
   setInstanceMemory: (instanceId: string, maxMemoryMb: number | null) =>
     invoke<Instance>("set_instance_memory", { instanceId, maxMemoryMb }),
+  prepareInstance: (id: string) => invoke<void>("prepare_instance", { id }),
   launchInstance: (id: string, target: LaunchTarget | null = null) =>
     invoke<void>("launch_instance", { id, target }),
   stopInstance: (id: string) => invoke<boolean>("stop_instance", { id }),

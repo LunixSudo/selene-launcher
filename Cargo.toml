@@ -10,7 +10,7 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/LunixSudo/selene-launcher"
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+unsafe_code = "deny"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }

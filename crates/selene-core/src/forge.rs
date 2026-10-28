@@ -26,6 +26,10 @@ const FORGE_PROMOTIONS_URL: &str =
 const NEOFORGE_MAVEN_URL: &str = "https://maven.neoforged.net/releases/net/neoforged/neoforge";
 const NEOFORGE_VERSIONS_URL: &str =
     "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge";
+/// NeoForge for 1.20.1 still carried Forge's name and numbering.
+const NEOFORGE_1_20_1_MAVEN_URL: &str = "https://maven.neoforged.net/releases/net/neoforged/forge";
+const NEOFORGE_1_20_1_VERSIONS_URL: &str =
+    "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/forge";
 /// Forge 1.12.2 builds before this one ship the old installer, which only works with a window.
 const FIRST_HEADLESS_1_12_2_BUILD: u32 = 2851;
 /// The installers refuse to install a client without the official launcher's profile list.
@@ -85,6 +89,7 @@ pub async fn releases(
     game_version: &str,
 ) -> Result<Vec<LoaderRelease>> {
     match loader {
+        Loader::NeoForge if game_version == "1.20.1" => neoforge_1_20_1_releases(client).await,
         Loader::NeoForge => {
             let list: NeoForgeVersions = http::get_json(client, NEOFORGE_VERSIONS_URL).await?;
             Ok(list
@@ -101,6 +106,27 @@ pub async fn releases(
         }
         _ => forge_releases(client, game_version).await,
     }
+}
+
+/// Builds that share a number with a Forge build are left out: both would install into the
+/// same `versions/1.20.1-forge-<build>` folder.
+async fn neoforge_1_20_1_releases(client: &Client) -> Result<Vec<LoaderRelease>> {
+    let list: NeoForgeVersions = http::get_json(client, NEOFORGE_1_20_1_VERSIONS_URL).await?;
+    let mut forge: HashMap<String, Vec<String>> =
+        http::get_json(client, FORGE_METADATA_URL).await?;
+    let forge = forge.remove("1.20.1").unwrap_or_default();
+    Ok(list
+        .versions
+        .into_iter()
+        .rev()
+        .filter(|version| version.starts_with("1.20.1-") && !forge.contains(version))
+        .filter_map(|version| version.strip_prefix("1.20.1-").map(str::to_owned))
+        .map(|version| LoaderRelease {
+            stable: !version.contains('-'),
+            recommended: false,
+            version,
+        })
+        .collect())
 }
 
 async fn forge_releases(client: &Client, game_version: &str) -> Result<Vec<LoaderRelease>> {
@@ -177,6 +203,11 @@ fn has_headless_installer(game_version: &str, build: &str) -> bool {
 fn installer_url(loader: &LoaderVersion, game_version: &str) -> String {
     let version = &loader.version;
     match loader.loader {
+        Loader::NeoForge if game_version == "1.20.1" => {
+            format!(
+                "{NEOFORGE_1_20_1_MAVEN_URL}/1.20.1-{version}/forge-1.20.1-{version}-installer.jar"
+            )
+        }
         Loader::NeoForge => {
             format!("{NEOFORGE_MAVEN_URL}/{version}/neoforge-{version}-installer.jar")
         }
@@ -189,7 +220,7 @@ fn installer_url(loader: &LoaderVersion, game_version: &str) -> String {
 /// The folder name the installer gives its version.
 fn version_id(loader: &LoaderVersion, game_version: &str) -> String {
     match loader.loader {
-        Loader::NeoForge => format!("neoforge-{}", loader.version),
+        Loader::NeoForge if game_version != "1.20.1" => format!("neoforge-{}", loader.version),
         _ => format!("{game_version}-forge-{}", loader.version),
     }
 }
@@ -436,5 +467,15 @@ mod tests {
         );
         assert_eq!(version_id(&forge, "1.20.1"), "1.20.1-forge-47.4.10");
         assert_eq!(version_id(&neoforge, "1.21.1"), "neoforge-21.1.265");
+
+        let old_neoforge = LoaderVersion {
+            loader: Loader::NeoForge,
+            version: "47.1.106".into(),
+        };
+        assert_eq!(
+            installer_url(&old_neoforge, "1.20.1"),
+            "https://maven.neoforged.net/releases/net/neoforged/forge/1.20.1-47.1.106/forge-1.20.1-47.1.106-installer.jar"
+        );
+        assert_eq!(version_id(&old_neoforge, "1.20.1"), "1.20.1-forge-47.1.106");
     }
 }

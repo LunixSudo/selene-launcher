@@ -26,7 +26,8 @@ CI runs the same commands.
   and their `impl` blocks, free functions, then `#[cfg(test)] mod tests` at the bottom.
 - Return errors with `?` instead of panicking. `unwrap` and `expect` are fine in tests and for
   invariants that truly cannot fail.
-- `unsafe` is forbidden across the workspace.
+- `unsafe` is denied across the workspace. The one exception is `src-tauri/src/backdrop.rs`,
+  which subclasses the window through Win32; every block there has a `SAFETY` comment.
 
 ## TypeScript and Svelte
 

@@ -44,6 +44,25 @@ export async function loadInstances() {
 export async function createInstance(name: string, version: string, loader: LoaderVersion | null) {
   const instance = await api.createInstance(name, version, loader);
   library.instances = [instance, ...library.instances];
+  prepare(instance.id);
+}
+
+/** Background downloads of new instances, which a start has to wait for. */
+const preparing = new Map<string, Promise<void>>();
+
+/** Downloads a new instance's game right away, so the first start is quick. */
+function prepare(id: string) {
+  const task = api
+    .prepareInstance(id)
+    // A failed download is retried, and reported, when the instance starts.
+    .catch(() => {})
+    .finally(() => {
+      preparing.delete(id);
+      if (library.launches[id]?.status === "preparing") {
+        delete library.launches[id];
+      }
+    });
+  preparing.set(id, task);
 }
 
 export async function importPack(path: string) {
@@ -53,6 +72,7 @@ export async function importPack(path: string) {
   try {
     const result = await api.importPack(path);
     delete library.launches[result.instance.id];
+    prepare(result.instance.id);
     library.importManual = result.manual;
     void notify(t("notify.imported"), t("notify.importedBody", { name: result.instance.name }));
   } catch (error) {
@@ -77,6 +97,7 @@ export async function deleteInstance(id: string) {
 }
 
 export async function play(id: string, target: LaunchTarget | null = null) {
+  await preparing.get(id);
   library.launches[id] = { status: "preparing", stage: null, percent: 0 };
   delete library.crashes[id];
   try {

@@ -38,7 +38,9 @@ All notable changes to this project are documented here. The format follows
 - Rounded tooltips in place of the system ones.
 - Forge and NeoForge instances, including Forge and NeoForge modpacks. Their official installer
   runs in the background without windows, with its progress on the instance card; Forge
-  suggests its recommended build. Forge goes back to 1.12.2.
+  suggests its recommended build. Forge goes back to 1.12.2 and NeoForge to 1.20.1.
+- A new or imported instance downloads its game, Java and mod loader right away when an
+  account is signed in, so the first start is quick.
 
 ### Changed
 
@@ -47,3 +49,6 @@ All notable changes to this project are documented here. The format follows
 - Fabric and Quilt say when they have no build for an old game version instead of reporting
   a connection error.
 - The catalog no longer has a separate select mode.
+- Desktop shortcut icons carry an image for every size Explorer shows, so their rounded corners
+  stay smooth.
+- Mica and glass stay on while the launcher window is inactive, for example under a file dialog.

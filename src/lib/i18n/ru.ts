@@ -240,7 +240,7 @@ export const ru = {
     },
     allCategories: "Все категории",
     sorts: {
-      relevance: "Сначала подходящие",
+      relevance: "По совпадению с поиском",
       downloads: "По загрузкам",
       newest: "Новые",
       updated: "Недавно обновлённые",

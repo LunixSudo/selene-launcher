@@ -20,7 +20,7 @@ use std::time::Instant;
 use chrono::{DateTime, Utc};
 use selene_core::crash::{self, CrashReport};
 use selene_core::download::Progress;
-use selene_core::game::{self, Stage};
+use selene_core::game::{self, Installed, Stage};
 use selene_core::instance::{Instance, WindowSize};
 use selene_core::launch::{self, LaunchAccount, LaunchOptions, QuickPlay};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
@@ -348,6 +348,30 @@ pub async fn launch_instance(
     result
 }
 
+/// Downloads a new instance's game right away, so the first start is quick. Skipped without
+/// an account, since the game cannot be played then anyway.
+#[tauri::command]
+pub async fn prepare_instance(
+    app: AppHandle,
+    launcher: State<'_, Launcher>,
+    id: String,
+) -> CommandResult<()> {
+    if launcher.accounts.list().active.is_none() {
+        return Ok(());
+    }
+    let instance = launcher
+        .instances
+        .get(&id)
+        .await
+        .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
+    if !launcher.start_running(&id) {
+        return Ok(());
+    }
+    let result = install_game(&app, &launcher, &instance).await;
+    launcher.stop_running(&id);
+    result.map(drop)
+}
+
 /// Kills a game that hangs or will not close.
 #[tauri::command]
 pub fn stop_instance(launcher: State<'_, Launcher>, id: String) -> bool {
@@ -361,12 +385,6 @@ async fn start_game(
     account: LaunchAccount,
     target: Option<LaunchTarget>,
 ) -> CommandResult<()> {
-    let entry = launcher
-        .manifest()
-        .await?
-        .get(&instance.version)
-        .ok_or_else(|| CommandError::UnknownVersion(instance.version.clone()))?;
-
     if launcher.config.get().auto_update_mods && instance.loader.is_some() {
         let _ = app.emit(
             "launch-progress",
@@ -381,43 +399,7 @@ async fn start_game(
         let _ = content::update_all(launcher, &instance.id, ContentKind::Mod, None).await;
     }
 
-    let last_percent = AtomicU32::new(u32::MAX);
-    let installed = game::install(
-        &launcher.client,
-        &launcher.dirs,
-        entry,
-        instance.loader.as_ref(),
-        |stage, progress| {
-            // One event per percent is plenty for a progress bar; thousands of small files would
-            // otherwise flood the UI.
-            let percent = percent(progress);
-            if last_percent.swap(percent, Ordering::Relaxed) != percent {
-                let _ = app.emit(
-                    "launch-progress",
-                    LaunchProgress {
-                        instance_id: &instance.id,
-                        stage: match stage {
-                            Stage::Files => "files",
-                            Stage::Java => "java",
-                            Stage::Loader => "loader",
-                        },
-                        bytes_done: progress.bytes_done,
-                        bytes_total: progress.bytes_total,
-                    },
-                );
-            }
-        },
-    )
-    .await
-    .inspect_err(|err| {
-        // The console tab is the only place the installer's own explanation can be read.
-        if let selene_core::Error::LoaderInstaller(output) = err {
-            launcher.clear_log(&instance.id);
-            for line in output.lines() {
-                launcher.push_log(&instance.id, line.to_owned());
-            }
-        }
-    })?;
+    let installed = install_game(app, launcher, &instance).await?;
 
     let dirs = &launcher.dirs;
     let token = account.access_token.clone();
@@ -467,6 +449,58 @@ async fn start_game(
     launcher.set_stopper(&instance.id, stop);
     tauri::async_runtime::spawn(watch_game(app.clone(), instance.id, token, child, stopped));
     Ok(())
+}
+
+/// Downloads the game, Java and mod loader for an instance, reporting progress on its card.
+async fn install_game(
+    app: &AppHandle,
+    launcher: &Launcher,
+    instance: &Instance,
+) -> CommandResult<Installed> {
+    let entry = launcher
+        .manifest()
+        .await?
+        .get(&instance.version)
+        .ok_or_else(|| CommandError::UnknownVersion(instance.version.clone()))?;
+
+    let last_percent = AtomicU32::new(u32::MAX);
+    game::install(
+        &launcher.client,
+        &launcher.dirs,
+        entry,
+        instance.loader.as_ref(),
+        |stage, progress| {
+            // One event per percent is plenty for a progress bar; thousands of small files would
+            // otherwise flood the UI.
+            let percent = percent(progress);
+            if last_percent.swap(percent, Ordering::Relaxed) != percent {
+                let _ = app.emit(
+                    "launch-progress",
+                    LaunchProgress {
+                        instance_id: &instance.id,
+                        stage: match stage {
+                            Stage::Files => "files",
+                            Stage::Java => "java",
+                            Stage::Loader => "loader",
+                        },
+                        bytes_done: progress.bytes_done,
+                        bytes_total: progress.bytes_total,
+                    },
+                );
+            }
+        },
+    )
+    .await
+    .inspect_err(|err| {
+        // The console tab is the only place the installer's own explanation can be read.
+        if let selene_core::Error::LoaderInstaller(output) = err {
+            launcher.clear_log(&instance.id);
+            for line in output.lines() {
+                launcher.push_log(&instance.id, line.to_owned());
+            }
+        }
+    })
+    .map_err(Into::into)
 }
 
 /// Streams the game's output until it exits or the player stops it, then reports how it went.

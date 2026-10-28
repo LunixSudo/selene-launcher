@@ -1,4 +1,5 @@
 mod account;
+mod backdrop;
 mod commands;
 mod config;
 mod discord;
@@ -40,6 +41,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
+        .on_page_load(|webview, _| backdrop::keep_backdrop(&webview.window()))
         .setup(|app| {
             let data_dir = match portable_data_dir() {
                 Some(dir) => dir,
@@ -62,6 +64,7 @@ pub fn run() {
             commands::loader_versions,
             commands::instances,
             commands::create_instance,
+            commands::prepare_instance,
             commands::update_instance,
             commands::duplicate_instance,
             commands::delete_instance,
@@ -122,17 +125,19 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("failed to build tauri application")
-        .run(|app, event| {
-            // Closing the window while a game runs keeps the launcher alive in the
-            // background, so play time is counted and the window comes back afterwards.
-            if let RunEvent::ExitRequested {
-                code: None, api, ..
-            } = event
-                && app.state::<Launcher>().any_running()
-            {
-                api.prevent_exit();
-            }
-        });
+        .run(keep_alive_while_playing);
+}
+
+/// Closing the window while a game runs keeps the launcher alive in the background, so play
+/// time is counted and the window comes back afterwards.
+fn keep_alive_while_playing(app: &AppHandle, event: RunEvent) {
+    if let RunEvent::ExitRequested {
+        code: None, api, ..
+    } = event
+        && app.state::<Launcher>().any_running()
+    {
+        api.prevent_exit();
+    }
 }
 
 /// Brings the main window to the front, opening it again if it was closed.

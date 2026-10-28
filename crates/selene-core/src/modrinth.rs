@@ -37,6 +37,10 @@ impl<'a> Target<'a> {
             // Quilt also loads Fabric mods.
             (ContentKind::Mod, Some(Loader::Quilt)) => &["quilt", "fabric"],
             (ContentKind::Mod, Some(Loader::Forge)) => &["forge"],
+            // NeoForge for 1.20.1 still loads Forge mods.
+            (ContentKind::Mod, Some(Loader::NeoForge)) if game_version == "1.20.1" => {
+                &["neoforge", "forge"]
+            }
             (ContentKind::Mod, Some(Loader::NeoForge)) => &["neoforge"],
             (ContentKind::Mod, None) => &[],
             (ContentKind::ResourcePack, _) => &["minecraft"],

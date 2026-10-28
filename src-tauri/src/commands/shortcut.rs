@@ -19,13 +19,13 @@ struct ShortcutRecord {
 }
 
 /// Puts a shortcut on the desktop that opens the launcher and starts the instance. `icon`
-/// is the instance's cover and icon drawn as a PNG.
+/// is the instance's cover and icon drawn as PNGs, one for each size Explorer shows.
 #[tauri::command]
 pub async fn create_shortcut(
     app: AppHandle,
     launcher: State<'_, Launcher>,
     id: String,
-    icon: Vec<u8>,
+    icon: Vec<Vec<u8>>,
 ) -> CommandResult<()> {
     write_instance_shortcut(&app, &launcher, &id, &icon).await
 }
@@ -37,7 +37,7 @@ pub async fn update_shortcut(
     app: AppHandle,
     launcher: State<'_, Launcher>,
     id: String,
-    icon: Vec<u8>,
+    icon: Vec<Vec<u8>>,
 ) -> CommandResult<()> {
     let record_path = instance_dir(&launcher, &id).join(RECORD_FILE);
     let Ok(bytes) = tokio::fs::read(&record_path).await else {
@@ -55,7 +55,7 @@ async fn write_instance_shortcut(
     app: &AppHandle,
     launcher: &Launcher,
     id: &str,
-    icon: &[u8],
+    icon: &[Vec<u8>],
 ) -> CommandResult<()> {
     let instance = launcher
         .instances
@@ -73,13 +73,14 @@ async fn write_instance_shortcut(
         .collect();
     let link = desktop.join(format!("{}.lnk", file_name.trim()));
     let dir = instance_dir(launcher, id);
+    let ico = pngs_to_ico(icon);
     // A new file name for every look, because Explorer caches icons by path.
     let icon_path = dir.join(format!(
         "{ICON_PREFIX}{}.ico",
-        &download::sha1_bytes(icon)[..8]
+        &download::sha1_bytes(&ico)[..8]
     ));
     remove_old_icons(&dir, &icon_path).await;
-    tokio::fs::write(&icon_path, png_to_ico(icon)).await?;
+    tokio::fs::write(&icon_path, ico).await?;
 
     let exe = std::env::current_exe()?;
     write_shortcut(&exe, &format!("{LAUNCH_FLAG} {id}"), &icon_path, &link)?;
@@ -111,16 +112,31 @@ async fn remove_old_icons(dir: &Path, keep: &Path) {
     }
 }
 
-/// An `.ico` holding one PNG image, which Windows scales down for smaller sizes.
-fn png_to_ico(png: &[u8]) -> Vec<u8> {
-    let size = u32::try_from(png.len()).unwrap_or(u32::MAX);
-    let mut ico = Vec::with_capacity(png.len() + 22);
-    ico.extend_from_slice(&[0, 0, 1, 0, 1, 0]);
-    // Width and height 0 mean 256.
-    ico.extend_from_slice(&[0, 0, 0, 0, 1, 0, 32, 0]);
-    ico.extend_from_slice(&size.to_le_bytes());
-    ico.extend_from_slice(&22u32.to_le_bytes());
-    ico.extend_from_slice(png);
+/// An `.ico` holding PNG images. Windows picks the closest size instead of scaling the
+/// largest one down, which leaves jagged rounded corners.
+fn pngs_to_ico(pngs: &[Vec<u8>]) -> Vec<u8> {
+    const HEADER: usize = 6;
+    const ENTRY: usize = 16;
+    let count = u16::try_from(pngs.len()).unwrap_or(u16::MAX);
+    let mut ico = vec![0, 0, 1, 0];
+    ico.extend_from_slice(&count.to_le_bytes());
+
+    let mut offset = HEADER + ENTRY * pngs.len();
+    for png in pngs {
+        // Width and height sit in the PNG header; 0 in an icon entry means 256.
+        let side = png
+            .get(16..20)
+            .and_then(|bytes| bytes.try_into().ok())
+            .map_or(0, u32::from_be_bytes);
+        let side = u8::try_from(side).unwrap_or(0);
+        ico.extend_from_slice(&[side, side, 0, 0, 1, 0, 32, 0]);
+        ico.extend_from_slice(&u32::try_from(png.len()).unwrap_or(u32::MAX).to_le_bytes());
+        ico.extend_from_slice(&u32::try_from(offset).unwrap_or(u32::MAX).to_le_bytes());
+        offset += png.len();
+    }
+    for png in pngs {
+        ico.extend_from_slice(png);
+    }
     ico
 }
 
@@ -167,10 +183,19 @@ mod tests {
     }
 
     #[test]
-    fn wraps_a_png_in_an_icon_file() {
-        let ico = png_to_ico(b"png");
-        assert_eq!(&ico[..6], &[0, 0, 1, 0, 1, 0]);
-        assert_eq!(u32::from_le_bytes(ico[14..18].try_into().unwrap()), 3);
-        assert_eq!(&ico[22..], b"png");
+    fn packs_pngs_into_an_icon_file() {
+        let png = |side: u32| {
+            let mut bytes = vec![0; 16];
+            bytes.extend_from_slice(&side.to_be_bytes());
+            bytes
+        };
+        let ico = pngs_to_ico(&[png(16), png(256)]);
+
+        assert_eq!(&ico[..6], &[0, 0, 1, 0, 2, 0]);
+        assert_eq!(ico[6], 16);
+        assert_eq!(ico[22], 0);
+        assert_eq!(u32::from_le_bytes(ico[18..22].try_into().unwrap()), 38);
+        assert_eq!(u32::from_le_bytes(ico[34..38].try_into().unwrap()), 58);
+        assert_eq!(ico.len(), 38 + 40);
     }
 }
