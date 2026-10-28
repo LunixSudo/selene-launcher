@@ -211,6 +211,15 @@ export const ru = {
     changeVersion: "Сменить версию",
     requires: "Нужен {title}",
     conflictsWith: "Конфликтует с {title}",
+    notForVersion: "Не для {version}",
+    enableAnyway: {
+      title: "Включить «{name}»?",
+      mod: "Этот мод не выпускался для {version}. Скорее всего, игра с ним вылетит или не запустится.",
+      resourcePack:
+        "Этот ресурспак сделан для других версий игры. Часть текстур может отображаться неправильно.",
+      shaderPack: "Этот шейдер сделан для других версий игры и может не заработать.",
+      confirm: "Всё равно включить",
+    },
     allCategories: "Все категории",
     sorts: {
       relevance: "Сначала подходящие",

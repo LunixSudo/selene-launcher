@@ -199,6 +199,7 @@ export interface InstalledFile {
   versionNumber: string | null;
   project: ProjectRef | null;
   issues: Issue[];
+  fitsVersion: boolean | null;
 }
 
 export interface ContentUpdate {

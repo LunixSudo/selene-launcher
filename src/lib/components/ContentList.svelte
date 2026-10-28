@@ -11,6 +11,7 @@
   import { UI_ICONS } from "$lib/icons";
   import { notify } from "$lib/notify";
   import { library } from "$lib/state/instances.svelte";
+  import ConfirmDialog from "./ConfirmDialog.svelte";
   import ContextMenu, { type MenuItem } from "./ContextMenu.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
 
@@ -27,6 +28,12 @@
   let shown = $state<{ file: InstalledFile; project: ProjectRef } | null>(null);
   let showing = $state(false);
   let startOn = $state<"about" | "versions">("about");
+  let enabling = $state<InstalledFile | null>(null);
+  let warning = $state(false);
+
+  const gameVersion = $derived(
+    library.instances.find((instance) => instance.id === instanceId)?.version ?? "",
+  );
 
   $effect(() => {
     void refresh;
@@ -43,8 +50,18 @@
     }
   }
 
-  async function toggle(file: InstalledFile) {
-    await api.setContentEnabled(instanceId, kind, file.fileName, !file.enabled);
+  async function toggle(file: InstalledFile, input: HTMLInputElement) {
+    if (!file.enabled && file.fitsVersion === false) {
+      input.checked = false;
+      enabling = file;
+      warning = true;
+      return;
+    }
+    await setEnabled(file, !file.enabled);
+  }
+
+  async function setEnabled(file: InstalledFile, enabled: boolean) {
+    await api.setContentEnabled(instanceId, kind, file.fileName, enabled);
     await load();
   }
 
@@ -178,8 +195,13 @@
               → <span class="update">{update.to}</span>
             {/if}
           </span>
-          {#if file.issues.length > 0}
+          {#if file.issues.length > 0 || (!file.enabled && file.fitsVersion === false)}
             <span class="issues">
+              {#if !file.enabled && file.fitsVersion === false}
+                <span class="issue requires">
+                  {t("content.notForVersion", { version: gameVersion })}
+                </span>
+              {/if}
               {#each file.issues as issue (issue.kind + issue.title)}
                 <span class="issue {issue.kind}"
                   >{t(`content.${issue.kind}`, { title: issue.title })}</span
@@ -193,7 +215,7 @@
           type="checkbox"
           checked={file.enabled}
           aria-label={t("instance.enabled")}
-          onchange={() => toggle(file)}
+          onchange={(event) => toggle(file, event.currentTarget)}
         >
         <button
           type="button"
@@ -209,6 +231,17 @@
 {/if}
 
 <ContextMenu items={menu} bind:position={menuAt} />
+
+{#if enabling}
+  {@const file = enabling}
+  <ConfirmDialog
+    bind:open={warning}
+    title={t("content.enableAnyway.title", { name: file.title ?? file.fileName })}
+    message={t(`content.enableAnyway.${kind}`, { version: gameVersion })}
+    confirmLabel={t("content.enableAnyway.confirm")}
+    onconfirm={() => setEnabled(file, true)}
+  />
+{/if}
 
 {#if shown}
   <ProjectDialog

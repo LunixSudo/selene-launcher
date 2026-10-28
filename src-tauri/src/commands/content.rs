@@ -6,7 +6,7 @@ use std::path::Path;
 use selene_core::curseforge::{self, CurseForge};
 use selene_core::instance::Instance;
 use selene_core::loader::{Loader, LoaderVersion};
-use selene_core::modrinth::{self, DependencyType, Project, SearchQuery, Target};
+use selene_core::modrinth::{self, DependencyType, Project, SearchQuery, Target, Version};
 use selene_core::mods::{self, CatalogSort, ContentKind, ModFile, RemoteFile};
 use serde::{Deserialize, Serialize};
 use tauri::State;
@@ -77,6 +77,8 @@ pub struct InstalledFile {
     version_number: Option<String>,
     project: Option<ProjectRef>,
     issues: Vec<Issue>,
+    /// `None` when neither site knows the file.
+    fits_version: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -399,6 +401,11 @@ async fn list_installed(
                 && instance.loader.as_ref().map(|loader| loader.loader) == Some(Loader::Quilt)
                 && installed_ids.contains(QUILTED_FABRIC_API))
     };
+    let loader = instance.loader.as_ref().map(|loader| loader.loader);
+    let target = Target::new(kind, &instance.version, loader);
+    let fits = |version: &Version| {
+        (kind != ContentKind::Mod || loader.is_some()) && target.accepts(version)
+    };
     let title_of = |project_id: &str| {
         projects
             .get(project_id)
@@ -424,6 +431,7 @@ async fn list_installed(
                         id: version.project_id.clone(),
                     }),
                     issues,
+                    fits_version: Some(fits(version)),
                     file,
                 };
             }
@@ -438,6 +446,7 @@ async fn list_installed(
                     id: found.id.to_string(),
                 }),
                 issues: Vec::new(),
+                fits_version: None,
                 file,
             }
         })

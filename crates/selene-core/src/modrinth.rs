@@ -46,6 +46,19 @@ impl<'a> Target<'a> {
             loaders,
         }
     }
+
+    /// Whether `version` was published for this game version and loader.
+    pub fn accepts(&self, version: &Version) -> bool {
+        version
+            .game_versions
+            .iter()
+            .any(|game_version| game_version == self.game_version)
+            && (self.loaders.is_empty()
+                || version
+                    .loaders
+                    .iter()
+                    .any(|loader| self.loaders.contains(&loader.as_str())))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -129,6 +142,10 @@ pub struct Version {
     pub files: Vec<VersionFile>,
     #[serde(default)]
     pub dependencies: Vec<Dependency>,
+    #[serde(default)]
+    pub game_versions: Vec<String>,
+    #[serde(default)]
+    pub loaders: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -473,7 +490,8 @@ mod tests {
                 ],
                 "dependencies": [
                     { "project_id": "P7dR8mSH", "version_id": null, "dependency_type": "required" }
-                ]
+                ],
+                "game_versions": ["1.21.9", "1.21.10"], "loaders": ["fabric"]
             }"#,
         )
         .unwrap();
@@ -483,6 +501,9 @@ mod tests {
             version.dependencies[0].dependency_type,
             DependencyType::Required
         );
+        let target = |game_version, loader| Target::new(ContentKind::Mod, game_version, loader);
+        assert!(target("1.21.10", Some(Loader::Quilt)).accepts(&version));
+        assert!(!target("1.21.11", Some(Loader::Fabric)).accepts(&version));
     }
 
     #[test]

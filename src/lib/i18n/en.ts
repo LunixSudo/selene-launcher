@@ -209,6 +209,15 @@ export const en: Messages = {
     changeVersion: "Change version",
     requires: "Needs {title}",
     conflictsWith: "Conflicts with {title}",
+    notForVersion: "Not for {version}",
+    enableAnyway: {
+      title: "Turn on {name}?",
+      mod: "This mod has no release for {version}. The game will most likely crash or fail to start with it.",
+      resourcePack:
+        "This resource pack was made for other game versions. Some textures may look wrong.",
+      shaderPack: "This shader pack was made for other game versions and may not work.",
+      confirm: "Turn on anyway",
+    },
     allCategories: "All categories",
     sorts: {
       relevance: "Best match",
