@@ -1,12 +1,14 @@
 <script lang="ts">
   import type { SkinViewer } from "skinview3d";
   import type { SkinVariant } from "$lib/api";
+  import { t } from "$lib/i18n/index.svelte";
 
   let { skin, variant, cape }: { skin: string | null; variant: SkinVariant; cape: string | null } =
     $props();
 
   let canvas: HTMLCanvasElement;
   let viewer = $state<SkinViewer>();
+  let unsupported = $state(false);
 
   $effect(() => {
     let disposed = false;
@@ -16,11 +18,19 @@
       if (disposed) {
         return;
       }
-      created = new SkinViewer({ canvas, width: 260, height: 360, zoom: 0.85 });
-      const walking = new WalkingAnimation();
-      walking.speed = 0.6;
-      created.animation = walking;
+      try {
+        created = new SkinViewer({ canvas, width: 260, height: 360, zoom: 0.85 });
+      } catch {
+        // Old or blocklisted graphics drivers give no WebGL context.
+        unsupported = true;
+        return;
+      }
       created.controls.enableZoom = false;
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        const walking = new WalkingAnimation();
+        walking.speed = 0.6;
+        created.animation = walking;
+      }
       viewer = created;
     });
     return () => {
@@ -52,7 +62,10 @@
   });
 </script>
 
-<canvas bind:this={canvas} class:hidden={!skin}></canvas>
+{#if unsupported}
+  <p class="unsupported">{t("skins.noPreview")}</p>
+{/if}
+<canvas bind:this={canvas} class:hidden={!skin || unsupported}></canvas>
 
 <style>
   canvas {
@@ -65,5 +78,13 @@
 
   .hidden {
     visibility: hidden;
+  }
+
+  .unsupported {
+    max-width: 260px;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
   }
 </style>
