@@ -55,6 +55,10 @@
           "English"
         ],
         "displayLanguageSelector": false,
+        "customLanguageFiles": {
+          "Russian": "nsis/Russian.nsh",
+          "English": "nsis/English.nsh"
+        },
         "installerIcon": "icons/icon.ico",
         "headerImage": "icons/installer-header.bmp",
         "sidebarImage": "icons/installer-sidebar.bmp"
