@@ -17,8 +17,6 @@ const KEYRING_SERVICE: &str = "io.github.lunixsudo.selene";
 const SIGN_IN_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 /// Sessions this close to expiring are renewed before launch so the game never gets a stale one.
 const EXPIRY_MARGIN: Duration = Duration::from_secs(5 * 60);
-/// Off until Mojang approves the app: the application to Mojang says there is no offline mode.
-const OFFLINE_PLAY: bool = false;
 
 /// What the launcher remembers about an account on disk. Tokens never go here: the
 /// Microsoft refresh token lives in the credential store and game sessions only in memory.
@@ -140,9 +138,7 @@ impl Accounts {
             Ok(session) => session,
             // Like the official launcher, a signed-in account can still play single player
             // without a connection.
-            Err(CommandError::Core(selene_core::Error::Http(_))) if OFFLINE_PLAY => {
-                return self.offline_account();
-            }
+            Err(CommandError::Core(selene_core::Error::Http(_))) => return self.offline_account(),
             Err(err) => return Err(err),
         };
         Ok(LaunchAccount {
