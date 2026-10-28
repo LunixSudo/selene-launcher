@@ -1,11 +1,11 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { api } from "$lib/api";
+  import { api, type ContentKind } from "$lib/api";
+  import ContentCatalog from "$lib/components/ContentCatalog.svelte";
+  import ContentList from "$lib/components/ContentList.svelte";
   import CrashNotice from "$lib/components/CrashNotice.svelte";
   import GameConsole from "$lib/components/GameConsole.svelte";
   import InstanceSettings from "$lib/components/InstanceSettings.svelte";
-  import ModCatalog from "$lib/components/ModCatalog.svelte";
-  import ModList from "$lib/components/ModList.svelte";
   import ScreenshotGallery from "$lib/components/ScreenshotGallery.svelte";
   import ServerList from "$lib/components/ServerList.svelte";
   import ShareDialog from "$lib/components/ShareDialog.svelte";
@@ -15,7 +15,16 @@
   import { LOADER_NAMES } from "$lib/loaders";
   import { library, loadInstances, play } from "$lib/state/instances.svelte";
 
-  type Tab = "mods" | "catalog" | "worlds" | "servers" | "screenshots" | "settings" | "logs";
+  type Tab =
+    | "mods"
+    | "resourcePacks"
+    | "shaderPacks"
+    | "catalog"
+    | "worlds"
+    | "servers"
+    | "screenshots"
+    | "settings"
+    | "logs";
 
   let chosenTab = $state<Tab | null>(null);
   let refresh = $state(0);
@@ -27,7 +36,12 @@
   const COMMON_TABS: Tab[] = ["worlds", "servers", "screenshots", "settings", "logs"];
 
   const tabs = $derived<Tab[]>(
-    instance?.loader ? ["mods", "catalog", ...COMMON_TABS] : COMMON_TABS,
+    instance?.loader
+      ? ["mods", "resourcePacks", "shaderPacks", "catalog", ...COMMON_TABS]
+      : ["resourcePacks", "catalog", ...COMMON_TABS],
+  );
+  const kinds = $derived<ContentKind[]>(
+    instance?.loader ? ["mod", "resourcePack", "shaderPack"] : ["resourcePack"],
   );
   const crash = $derived(instance ? library.crashes[instance.id] : undefined);
   const tab = $derived(chosenTab ?? tabs[0]);
@@ -101,9 +115,13 @@
 
     <div class="content" role="tabpanel">
       {#if tab === "mods"}
-        <ModList instanceId={instance.id} {refresh} />
+        <ContentList instanceId={instance.id} kind="mod" {refresh} />
+      {:else if tab === "resourcePacks"}
+        <ContentList instanceId={instance.id} kind="resourcePack" {refresh} />
+      {:else if tab === "shaderPacks"}
+        <ContentList instanceId={instance.id} kind="shaderPack" {refresh} />
       {:else if tab === "catalog"}
-        <ModCatalog instanceId={instance.id} oninstall={() => refresh++} />
+        <ContentCatalog instanceId={instance.id} {kinds} oninstall={() => refresh++} />
       {:else if tab === "worlds"}
         <WorldList instanceId={instance.id} />
       {:else if tab === "servers"}

@@ -5,12 +5,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::Result;
 use crate::loader::Loader;
-use crate::mods::RemoteFile;
+use crate::mods::{CatalogSort, ContentKind, RemoteFile};
 
 const API_URL: &str = "https://api.curseforge.com/v1";
 const MINECRAFT_GAME_ID: u32 = 432;
-const MODS_CLASS_ID: u32 = 6;
-const SORT_BY_POPULARITY: u32 = 2;
 const SHA1_ALGORITHM: u32 = 1;
 const REQUIRED_DEPENDENCY: u32 = 3;
 
@@ -45,6 +43,15 @@ pub struct Mod {
     #[serde(default)]
     pub authors: Vec<Author>,
     pub links: Links,
+    #[serde(default)]
+    pub screenshots: Vec<Screenshot>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Screenshot {
+    pub url: String,
+    pub title: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,10 +73,27 @@ pub struct Links {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Category {
+    pub id: u32,
+    pub name: String,
+    pub slug: String,
+    #[serde(default)]
+    pub parent_category_id: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct File {
     pub id: u32,
     pub mod_id: u32,
+    #[serde(default)]
+    pub display_name: String,
     pub file_name: String,
+    #[serde(default)]
+    pub file_date: Option<String>,
+    /// 1 is a release, 2 a beta, 3 an alpha.
+    #[serde(default)]
+    pub release_type: u8,
     /// Missing when the author does not allow other apps to download the file.
     pub download_url: Option<String>,
     pub file_length: u64,
@@ -119,6 +143,18 @@ pub struct KnownFile {
 }
 
 #[derive(Debug, Clone)]
+pub struct SearchQuery<'a> {
+    pub text: &'a str,
+    pub kind: ContentKind,
+    pub game_version: &'a str,
+    pub loader: Option<Loader>,
+    pub category: Option<u32>,
+    pub sort: CatalogSort,
+    pub offset: u32,
+    pub limit: u32,
+}
+
+#[derive(Debug, Clone)]
 pub struct SearchResults {
     pub mods: Vec<Mod>,
     pub total: u32,
@@ -131,6 +167,14 @@ pub struct InstallPlan {
     /// Mod id and the file to download for it.
     pub files: Vec<(u32, RemoteFile)>,
     pub manual: Vec<u32>,
+}
+
+fn class_id(kind: ContentKind) -> u32 {
+    match kind {
+        ContentKind::Mod => 6,
+        ContentKind::ResourcePack => 12,
+        ContentKind::ShaderPack => 6552,
+    }
 }
 
 fn loader_type(loader: Loader) -> u32 {
@@ -175,27 +219,32 @@ impl CurseForge {
         }
     }
 
-    pub async fn search(
-        &self,
-        text: &str,
-        game_version: &str,
-        loader: Loader,
-        offset: u32,
-        limit: u32,
-    ) -> Result<SearchResults> {
+    pub async fn search(&self, query: &SearchQuery<'_>) -> Result<SearchResults> {
+        let sort_field = match query.sort {
+            CatalogSort::Relevance => 2,
+            CatalogSort::Downloads => 6,
+            CatalogSort::Newest => 11,
+            CatalogSort::Updated => 3,
+        };
+        let mut params = vec![
+            ("gameId", MINECRAFT_GAME_ID.to_string()),
+            ("classId", class_id(query.kind).to_string()),
+            ("gameVersion", query.game_version.to_owned()),
+            ("searchFilter", query.text.to_owned()),
+            ("sortField", sort_field.to_string()),
+            ("sortOrder", "desc".to_owned()),
+            ("index", query.offset.to_string()),
+            ("pageSize", query.limit.to_string()),
+        ];
+        if let Some(loader) = query.loader.filter(|_| query.kind == ContentKind::Mod) {
+            params.push(("modLoaderType", loader_type(loader).to_string()));
+        }
+        if let Some(category) = query.category {
+            params.push(("categoryId", category.to_string()));
+        }
         let response: Response<Vec<Mod>> = self
             .get("/mods/search")
-            .query(&[
-                ("gameId", MINECRAFT_GAME_ID.to_string()),
-                ("classId", MODS_CLASS_ID.to_string()),
-                ("gameVersion", game_version.to_owned()),
-                ("modLoaderType", loader_type(loader).to_string()),
-                ("searchFilter", text.to_owned()),
-                ("sortField", SORT_BY_POPULARITY.to_string()),
-                ("sortOrder", "desc".to_owned()),
-                ("index", offset.to_string()),
-                ("pageSize", limit.to_string()),
-            ])
+            .query(&params)
             .send()
             .await?
             .error_for_status()?
@@ -209,19 +258,20 @@ impl CurseForge {
         })
     }
 
-    /// Files of a mod for this game version and loader, newest first.
+    /// Files of a project for this game version and, for mods, this loader. Newest first.
     pub async fn compatible_files(
         &self,
         mod_id: u32,
         game_version: &str,
-        loader: Loader,
+        loader: Option<Loader>,
     ) -> Result<Vec<File>> {
+        let mut params = vec![("gameVersion", game_version.to_owned())];
+        if let Some(loader) = loader {
+            params.push(("modLoaderType", loader_type(loader).to_string()));
+        }
         let response: Response<Vec<File>> = self
             .get(&format!("/mods/{mod_id}/files"))
-            .query(&[
-                ("gameVersion", game_version.to_owned()),
-                ("modLoaderType", loader_type(loader).to_string()),
-            ])
+            .query(&params)
             .send()
             .await?
             .error_for_status()?
@@ -233,6 +283,48 @@ impl CurseForge {
     pub async fn mod_info(&self, mod_id: u32) -> Result<Mod> {
         let response: Response<Mod> = self
             .get(&format!("/mods/{mod_id}"))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        Ok(response.data)
+    }
+
+    /// Top-level category tags for one kind of project.
+    pub async fn categories(&self, kind: ContentKind) -> Result<Vec<Category>> {
+        let response: Response<Vec<Category>> = self
+            .get("/categories")
+            .query(&[("gameId", MINECRAFT_GAME_ID), ("classId", class_id(kind))])
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        Ok(response
+            .data
+            .into_iter()
+            // Sub-categories such as add-ons for one mod make the list too long to scan.
+            .filter(|category| category.parent_category_id == Some(class_id(kind)))
+            .collect())
+    }
+
+    /// The project's description as HTML.
+    pub async fn description(&self, mod_id: u32) -> Result<String> {
+        let response: Response<String> = self
+            .get(&format!("/mods/{mod_id}/description"))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        Ok(response.data)
+    }
+
+    /// A file's changelog as HTML.
+    pub async fn changelog(&self, mod_id: u32, file_id: u32) -> Result<String> {
+        let response: Response<String> = self
+            .get(&format!("/mods/{mod_id}/files/{file_id}/changelog"))
             .send()
             .await?
             .error_for_status()?
@@ -310,7 +402,7 @@ impl CurseForge {
         &self,
         mod_ids: &[u32],
         game_version: &str,
-        loader: Loader,
+        loader: Option<Loader>,
         installed: impl IntoIterator<Item = u32>,
     ) -> Result<InstallPlan> {
         let mut seen: HashSet<u32> = installed.into_iter().collect();

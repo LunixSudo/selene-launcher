@@ -3,7 +3,7 @@
     reason = "Tauri hands command arguments over by value"
 )]
 
-pub mod mods;
+pub mod content;
 pub mod packs;
 pub mod saves;
 
@@ -20,6 +20,7 @@ use selene_core::launch::{self, LaunchAccount, LaunchOptions, QuickPlay};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
 use selene_core::memory;
+use selene_core::mods::{self, ContentKind};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
@@ -253,7 +254,7 @@ pub async fn set_launch_options(
 }
 
 async fn recommended_memory(launcher: &Launcher, instance_id: &str) -> CommandResult<u32> {
-    let mods = selene_core::mods::list(&launcher.instances.game_dir(instance_id)).await?;
+    let mods = mods::list(&launcher.instances.game_dir(instance_id), ContentKind::Mod).await?;
     let enabled = mods.iter().filter(|file| file.enabled).count();
     Ok(memory::recommended_mb(launcher.total_memory_mb, enabled))
 }

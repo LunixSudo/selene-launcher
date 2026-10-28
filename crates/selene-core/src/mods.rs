@@ -1,17 +1,71 @@
 use std::path::{Path, PathBuf};
 
 use reqwest::Client;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::download::{self, Download};
 use crate::{Error, Result};
 
-const MODS_DIR: &str = "mods";
 const DISABLED_SUFFIX: &str = ".disabled";
 const DOWNLOAD_CONCURRENCY: usize = 8;
 
-/// A jar in the instance's `mods` folder. Disabled mods keep their file with a `.disabled`
+/// What a catalog file is, which decides the folder it goes to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ContentKind {
+    Mod,
+    ResourcePack,
+    ShaderPack,
+}
+
+impl ContentKind {
+    pub fn folder(self) -> &'static str {
+        match self {
+            Self::Mod => "mods",
+            Self::ResourcePack => "resourcepacks",
+            Self::ShaderPack => "shaderpacks",
+        }
+    }
+
+    pub fn dir(self, game_dir: &Path) -> PathBuf {
+        game_dir.join(self.folder())
+    }
+
+    /// `Some(enabled)` for files of this kind, `None` for anything else in the folder.
+    fn state(self, path: &Path) -> Option<bool> {
+        let has_extension = |path: &Path, wanted: &str| {
+            path.extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case(wanted))
+        };
+        let extension = match self {
+            Self::Mod => "jar",
+            Self::ResourcePack | Self::ShaderPack => "zip",
+        };
+        if has_extension(path, extension) {
+            Some(true)
+        } else if has_extension(path, "disabled")
+            && has_extension(&path.with_extension(""), extension)
+        {
+            Some(false)
+        } else {
+            None
+        }
+    }
+}
+
+/// Order of catalog results. Each site calls these a little differently.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CatalogSort {
+    #[default]
+    Relevance,
+    Downloads,
+    Newest,
+    Updated,
+}
+
+/// A file in one of the instance's content folders. Disabled files keep a `.disabled`
 /// suffix, which is what every other launcher does too.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,12 +86,12 @@ pub struct RemoteFile {
 }
 
 pub fn mods_dir(game_dir: &Path) -> PathBuf {
-    game_dir.join(MODS_DIR)
+    ContentKind::Mod.dir(game_dir)
 }
 
-/// Every mod jar, enabled or not, sorted by file name.
-pub async fn list(game_dir: &Path) -> Result<Vec<ModFile>> {
-    let dir = mods_dir(game_dir);
+/// Every file of this kind, enabled or not, sorted by file name.
+pub async fn list(game_dir: &Path, kind: ContentKind) -> Result<Vec<ModFile>> {
+    let dir = kind.dir(game_dir);
     let mut entries = match fs::read_dir(&dir).await {
         Ok(entries) => entries,
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -51,7 +105,7 @@ pub async fn list(game_dir: &Path) -> Result<Vec<ModFile>> {
         .map_err(|err| Error::io(&dir, err))?
     {
         let file_name = entry.file_name().to_string_lossy().into_owned();
-        let Some(enabled) = mod_state(Path::new(&file_name)) else {
+        let Some(enabled) = kind.state(Path::new(&file_name)) else {
             continue;
         };
         let path = entry.path();
@@ -71,8 +125,13 @@ pub async fn list(game_dir: &Path) -> Result<Vec<ModFile>> {
     Ok(mods)
 }
 
-pub async fn install(client: &Client, game_dir: &Path, files: &[RemoteFile]) -> Result<()> {
-    let dir = mods_dir(game_dir);
+pub async fn install(
+    client: &Client,
+    game_dir: &Path,
+    kind: ContentKind,
+    files: &[RemoteFile],
+) -> Result<()> {
+    let dir = kind.dir(game_dir);
     let downloads = files
         .iter()
         .map(|file| {
@@ -91,22 +150,28 @@ pub async fn install(client: &Client, game_dir: &Path, files: &[RemoteFile]) -> 
 pub async fn replace(
     client: &Client,
     game_dir: &Path,
+    kind: ContentKind,
     old: &ModFile,
     update: &RemoteFile,
 ) -> Result<()> {
-    install(client, game_dir, std::slice::from_ref(update)).await?;
+    install(client, game_dir, kind, std::slice::from_ref(update)).await?;
     if update.file_name != old.file_name.trim_end_matches(DISABLED_SUFFIX) {
-        remove(game_dir, &old.file_name).await?;
+        remove(game_dir, kind, &old.file_name).await?;
     }
     if !old.enabled {
-        set_enabled(game_dir, &update.file_name, false).await?;
+        set_enabled(game_dir, kind, &update.file_name, false).await?;
     }
     Ok(())
 }
 
 /// Renames `name.jar` to `name.jar.disabled` or back. Takes either file name.
-pub async fn set_enabled(game_dir: &Path, file_name: &str, enabled: bool) -> Result<()> {
-    let dir = mods_dir(game_dir);
+pub async fn set_enabled(
+    game_dir: &Path,
+    kind: ContentKind,
+    file_name: &str,
+    enabled: bool,
+) -> Result<()> {
+    let dir = kind.dir(game_dir);
     let base = file_name.trim_end_matches(DISABLED_SUFFIX);
     let disabled = format!("{base}{DISABLED_SUFFIX}");
     let (from, to) = if enabled {
@@ -122,29 +187,14 @@ pub async fn set_enabled(game_dir: &Path, file_name: &str, enabled: bool) -> Res
     Ok(())
 }
 
-pub async fn remove(game_dir: &Path, file_name: &str) -> Result<()> {
-    let path = mods_dir(game_dir).join(safe_file_name(file_name)?);
+pub async fn remove(game_dir: &Path, kind: ContentKind, file_name: &str) -> Result<()> {
+    let path = kind.dir(game_dir).join(safe_file_name(file_name)?);
     fs::remove_file(&path)
         .await
         .map_err(|err| Error::io(&path, err))
 }
 
-/// `Some(true)` for `*.jar`, `Some(false)` for `*.jar.disabled`, `None` for anything else.
-fn mod_state(path: &Path) -> Option<bool> {
-    let has_extension = |path: &Path, wanted: &str| {
-        path.extension()
-            .is_some_and(|extension| extension.eq_ignore_ascii_case(wanted))
-    };
-    if has_extension(path, "jar") {
-        Some(true)
-    } else if has_extension(path, "disabled") && has_extension(&path.with_extension(""), "jar") {
-        Some(false)
-    } else {
-        None
-    }
-}
-
-/// File names come from the UI; anything that could leave the `mods` folder is refused.
+/// File names come from the UI; anything that could leave the content folder is refused.
 fn safe_file_name(file_name: &str) -> Result<&str> {
     let path = Path::new(file_name);
     if path.components().count() == 1 && path.file_name().is_some() {
@@ -170,7 +220,7 @@ mod tests {
         std::fs::write(mods.join("lithium.jar.disabled"), b"b").unwrap();
         std::fs::write(mods.join("notes.txt"), b"c").unwrap();
 
-        let listed = list(dir.path()).await.unwrap();
+        let listed = list(dir.path(), ContentKind::Mod).await.unwrap();
         let names: Vec<_> = listed
             .iter()
             .map(|m| (m.file_name.as_str(), m.enabled))
@@ -180,15 +230,32 @@ mod tests {
             [("lithium.jar.disabled", false), ("sodium.jar", true)]
         );
 
-        set_enabled(dir.path(), "sodium.jar", false).await.unwrap();
-        set_enabled(dir.path(), "lithium.jar.disabled", true)
+        set_enabled(dir.path(), ContentKind::Mod, "sodium.jar", false)
+            .await
+            .unwrap();
+        set_enabled(dir.path(), ContentKind::Mod, "lithium.jar.disabled", true)
             .await
             .unwrap();
         assert!(mods.join("sodium.jar.disabled").exists());
         assert!(mods.join("lithium.jar").exists());
 
-        remove(dir.path(), "lithium.jar").await.unwrap();
+        remove(dir.path(), ContentKind::Mod, "lithium.jar")
+            .await
+            .unwrap();
         assert!(!mods.join("lithium.jar").exists());
+    }
+
+    #[test]
+    fn packs_are_zips() {
+        assert_eq!(
+            ContentKind::ResourcePack.state(Path::new("Faithful.zip")),
+            Some(true)
+        );
+        assert_eq!(ContentKind::ShaderPack.state(Path::new("sodium.jar")), None);
+        assert_eq!(
+            ContentKind::ShaderPack.state(Path::new("BSL.zip.disabled")),
+            Some(false)
+        );
     }
 
     #[test]

@@ -13,6 +13,7 @@ use zip::{ZipArchive, ZipWriter};
 
 use crate::download::{self, Download};
 use crate::loader::{Loader, LoaderVersion};
+use crate::mods::ContentKind;
 use crate::{Error, Result, modrinth, mods};
 
 const INDEX_FILE: &str = "modrinth.index.json";
@@ -158,7 +159,7 @@ pub async fn export(
     options: &ExportOptions,
     out: &Path,
 ) -> Result<()> {
-    let enabled: Vec<mods::ModFile> = mods::list(game_dir)
+    let enabled: Vec<mods::ModFile> = mods::list(game_dir, ContentKind::Mod)
         .await?
         .into_iter()
         .filter(|file| file.enabled)

@@ -6,7 +6,7 @@ use serde_json::json;
 
 use crate::Result;
 use crate::loader::Loader;
-use crate::mods::RemoteFile;
+use crate::mods::{CatalogSort, ContentKind, RemoteFile};
 
 const API_URL: &str = "https://api.modrinth.com/v2";
 
@@ -20,14 +20,68 @@ pub enum ProjectType {
     Modpack,
 }
 
+/// What a file has to run on: the game version, and the loader tags Modrinth puts on
+/// compatible files.
+#[derive(Debug, Clone, Copy)]
+pub struct Target<'a> {
+    pub game_version: &'a str,
+    pub loaders: &'static [&'static str],
+}
+
+impl<'a> Target<'a> {
+    pub fn new(kind: ContentKind, game_version: &'a str, loader: Option<Loader>) -> Self {
+        let loaders: &'static [&'static str] = match (kind, loader) {
+            (ContentKind::Mod, Some(Loader::Fabric)) => &["fabric"],
+            // Quilt also loads Fabric mods.
+            (ContentKind::Mod, Some(Loader::Quilt)) => &["quilt", "fabric"],
+            (ContentKind::Mod, None) => &[],
+            (ContentKind::ResourcePack, _) => &["minecraft"],
+            // Iris runs nearly every pack made for OptiFine.
+            (ContentKind::ShaderPack, _) => &["iris", "optifine"],
+        };
+        Self {
+            game_version,
+            loaders,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SearchQuery<'a> {
     pub text: &'a str,
-    pub project_type: ProjectType,
-    pub game_version: &'a str,
-    pub loader: Option<Loader>,
+    pub kind: ContentKind,
+    pub target: Target<'a>,
+    pub category: Option<&'a str>,
+    pub sort: CatalogSort,
     pub offset: u32,
     pub limit: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Category {
+    pub name: String,
+    pub project_type: String,
+    pub header: String,
+}
+
+/// The project page: description in Markdown and the screenshot gallery.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectDetails {
+    pub id: String,
+    pub slug: String,
+    pub title: String,
+    pub description: String,
+    pub body: String,
+    pub icon_url: Option<String>,
+    pub downloads: u64,
+    #[serde(default)]
+    pub gallery: Vec<GalleryImage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GalleryImage {
+    pub url: String,
+    pub title: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,6 +119,10 @@ pub struct Version {
     pub name: String,
     pub version_number: String,
     pub version_type: String,
+    #[serde(default)]
+    pub changelog: Option<String>,
+    #[serde(default)]
+    pub date_published: Option<String>,
     pub files: Vec<VersionFile>,
     #[serde(default)]
     pub dependencies: Vec<Dependency>,
@@ -113,6 +171,16 @@ impl ProjectType {
     }
 }
 
+impl From<ContentKind> for ProjectType {
+    fn from(kind: ContentKind) -> Self {
+        match kind {
+            ContentKind::Mod => Self::Mod,
+            ContentKind::ResourcePack => Self::Resourcepack,
+            ContentKind::ShaderPack => Self::Shader,
+        }
+    }
+}
+
 impl Version {
     /// The file the author marked as the main download, or the first one.
     pub fn primary_file(&self) -> Option<&VersionFile> {
@@ -132,33 +200,39 @@ impl Version {
     }
 }
 
-/// Loaders whose mods run on `loader`: Quilt also loads Fabric mods.
-fn compatible_loaders(loader: Loader) -> &'static [&'static str] {
-    match loader {
-        Loader::Fabric => &["fabric"],
-        Loader::Quilt => &["quilt", "fabric"],
-    }
-}
-
 pub async fn search(client: &Client, query: &SearchQuery<'_>) -> Result<SearchResults> {
+    let project_type = ProjectType::from(query.kind);
     let mut facets = vec![
-        vec![format!("project_type:{}", query.project_type.as_str())],
-        vec![format!("versions:{}", query.game_version)],
+        vec![format!("project_type:{}", project_type.as_str())],
+        vec![format!("versions:{}", query.target.game_version)],
     ];
-    if let Some(loader) = query.loader {
+    // Resource packs are all tagged `minecraft`, so filtering by it would change nothing.
+    if query.kind != ContentKind::ResourcePack && !query.target.loaders.is_empty() {
         facets.push(
-            compatible_loaders(loader)
+            query
+                .target
+                .loaders
                 .iter()
                 .map(|name| format!("categories:{name}"))
                 .collect(),
         );
     }
+    if let Some(category) = query.category {
+        facets.push(vec![format!("categories:{category}")]);
+    }
+    let index = match query.sort {
+        CatalogSort::Relevance => "relevance",
+        CatalogSort::Downloads => "downloads",
+        CatalogSort::Newest => "newest",
+        CatalogSort::Updated => "updated",
+    };
 
     let results = client
         .get(format!("{API_URL}/search"))
         .query(&[
             ("query", query.text),
             ("facets", &serde_json::to_string(&facets)?),
+            ("index", index),
             ("offset", &query.offset.to_string()),
             ("limit", &query.limit.to_string()),
         ])
@@ -170,19 +244,18 @@ pub async fn search(client: &Client, query: &SearchQuery<'_>) -> Result<SearchRe
     Ok(results)
 }
 
-/// Versions of a project that run on this game version and loader, newest first.
+/// Versions of a project that run on the target, newest first.
 pub async fn compatible_versions(
     client: &Client,
     project_id: &str,
-    game_version: &str,
-    loader: Option<Loader>,
+    target: Target<'_>,
 ) -> Result<Vec<Version>> {
-    let mut query = vec![("game_versions", serde_json::to_string(&[game_version])?)];
-    if let Some(loader) = loader {
-        query.push((
-            "loaders",
-            serde_json::to_string(compatible_loaders(loader))?,
-        ));
+    let mut query = vec![(
+        "game_versions",
+        serde_json::to_string(&[target.game_version])?,
+    )];
+    if !target.loaders.is_empty() {
+        query.push(("loaders", serde_json::to_string(target.loaders)?));
     }
     let versions = client
         .get(format!("{API_URL}/project/{project_id}/version"))
@@ -193,6 +266,46 @@ pub async fn compatible_versions(
         .json()
         .await?;
     Ok(versions)
+}
+
+/// Every version of a project, newest first, for picking an older one.
+pub async fn all_versions(client: &Client, project_id: &str) -> Result<Vec<Version>> {
+    let versions = client
+        .get(format!("{API_URL}/project/{project_id}/version"))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    Ok(versions)
+}
+
+pub async fn project(client: &Client, id: &str) -> Result<ProjectDetails> {
+    let project = client
+        .get(format!("{API_URL}/project/{id}"))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    Ok(project)
+}
+
+/// Category tags for one kind of project, without the ones that describe resolution or
+/// performance impact.
+pub async fn categories(client: &Client, kind: ContentKind) -> Result<Vec<Category>> {
+    let project_type = ProjectType::from(kind).as_str();
+    let categories: Vec<Category> = client
+        .get(format!("{API_URL}/tag/category"))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    Ok(categories
+        .into_iter()
+        .filter(|category| category.project_type == project_type && category.header == "categories")
+        .collect())
 }
 
 pub async fn version(client: &Client, version_id: &str) -> Result<Version> {
@@ -244,8 +357,7 @@ pub async fn versions_by_hash(
 pub async fn updates_by_hash(
     client: &Client,
     sha1s: &[String],
-    game_version: &str,
-    loader: Loader,
+    target: Target<'_>,
 ) -> Result<HashMap<String, Version>> {
     if sha1s.is_empty() {
         return Ok(HashMap::new());
@@ -255,8 +367,8 @@ pub async fn updates_by_hash(
         .json(&json!({
             "hashes": sha1s,
             "algorithm": "sha1",
-            "loaders": compatible_loaders(loader),
-            "game_versions": [game_version],
+            "loaders": target.loaders,
+            "game_versions": [target.game_version],
         }))
         .send()
         .await?
@@ -274,8 +386,7 @@ pub async fn updates_by_hash(
 pub async fn resolve_install(
     client: &Client,
     project_ids: &[String],
-    game_version: &str,
-    loader: Option<Loader>,
+    target: Target<'_>,
     installed_projects: impl IntoIterator<Item = String>,
 ) -> Result<Vec<Version>> {
     let mut seen: HashSet<String> = installed_projects.into_iter().collect();
@@ -292,7 +403,7 @@ pub async fn resolve_install(
         }
         let version = match pinned {
             Some(version_id) => Some(version(client, &version_id).await?),
-            None => compatible_versions(client, &project, game_version, loader)
+            None => compatible_versions(client, &project, target)
                 .await?
                 .into_iter()
                 .next(),
@@ -346,6 +457,7 @@ mod tests {
 
     #[test]
     fn quilt_accepts_fabric_mods() {
-        assert_eq!(compatible_loaders(Loader::Quilt), ["quilt", "fabric"]);
+        let target = Target::new(ContentKind::Mod, "1.21.10", Some(Loader::Quilt));
+        assert_eq!(target.loaders, ["quilt", "fabric"]);
     }
 }

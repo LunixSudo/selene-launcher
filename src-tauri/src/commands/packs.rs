@@ -7,7 +7,7 @@ use selene_core::mrpack::{self, ExportOptions};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use super::mods::{ManualDownload, manual_downloads};
+use super::content::{ManualDownload, manual_downloads};
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 

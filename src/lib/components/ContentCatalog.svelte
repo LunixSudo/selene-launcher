@@ -4,16 +4,26 @@
     api,
     type CatalogHit,
     type CatalogItem,
+    type CatalogSort,
+    type CategoryTag,
+    type ContentKind,
     type InstallPreview,
     type ManualDownload,
     type Source,
   } from "$lib/api";
+  import { categoryName } from "$lib/categories";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
   import InstallPreviewDialog from "./InstallPreviewDialog.svelte";
+  import ProjectDialog from "./ProjectDialog.svelte";
   import Segmented from "./Segmented.svelte";
+  import Select from "./Select.svelte";
 
-  let { instanceId, oninstall }: { instanceId: string; oninstall: () => void } = $props();
+  let {
+    instanceId,
+    kinds,
+    oninstall,
+  }: { instanceId: string; kinds: ContentKind[]; oninstall: () => void } = $props();
 
   const SEARCH_DELAY_MS = 300;
   const SOURCE_NAMES: Record<Source, string> = { modrinth: "Modrinth", curseforge: "CurseForge" };
@@ -21,8 +31,26 @@
     value,
     label: SOURCE_NAMES[value],
   }));
+  const SORTS: CatalogSort[] = ["relevance", "downloads", "newest", "updated"];
+  const IRIS: CatalogHit = {
+    source: "modrinth",
+    id: "YL57xq9U",
+    title: "Iris Shaders",
+    description: "",
+    author: "",
+    iconUrl: null,
+    downloads: 0,
+    pageUrl: "",
+  };
 
   let source = $state<Source>(loadSource());
+  let chosenKind = $state<ContentKind>("mod");
+  let category = $state("");
+  let sort = $state<CatalogSort>("relevance");
+  let categories = $state<CategoryTag[]>([]);
+  let shownHit = $state<CatalogHit | null>(null);
+  let showing = $state(false);
+  let hasIris = $state(true);
   let query = $state("");
   let hits = $state<CatalogHit[]>([]);
   let page = $state(0);
@@ -35,25 +63,45 @@
   let selecting = $state(false);
   let selected = $state<Record<string, CatalogHit>>({});
   let pending = $state<CatalogHit[]>([]);
+  let pendingKind: ContentKind = "mod";
   let preview = $state<InstallPreview | null>(null);
   let confirming = $state(false);
 
+  const kind = $derived(kinds.includes(chosenKind) ? chosenKind : kinds[0]);
   const selectedCount = $derived(Object.keys(selected).length);
+  const kindOptions = $derived(
+    kinds.map((value) => ({ value, label: t(`content.kinds.${value}`) })),
+  );
+  const sortOptions = $derived(
+    SORTS.map((value) => ({ value, label: t(`content.sorts.${value}`) })),
+  );
+  const categoryOptions = $derived([
+    { value: "", label: t("content.allCategories") },
+    ...categories.map((tag) => ({ value: tag.id, label: categoryName(tag.name) })),
+  ]);
 
   $effect(() => {
-    source;
+    void source;
+    void kind;
     selected = {};
+    category = "";
+    categories = [];
+    api
+      .catalogCategories(kind, source)
+      .then((tags) => {
+        categories = tags;
+      })
+      .catch(() => {});
   });
 
   $effect(() => {
-    const text = query;
-    const from = source;
-    const timer = setTimeout(() => void search(from, text, 0), SEARCH_DELAY_MS);
+    const request = { text: query, from: source, kind, category, sort };
+    const timer = setTimeout(() => void search(request, 0), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
   });
 
   $effect(() => {
-    void loadInstalled(instanceId);
+    void loadInstalled(instanceId, kind);
   });
 
   $effect(() => {
@@ -76,9 +124,12 @@
     return "modrinth";
   }
 
-  async function loadInstalled(id: string) {
+  async function loadInstalled(id: string, current: ContentKind) {
     try {
-      installed = new Set(await api.installedProjects(id));
+      installed = new Set(await api.installedProjects(id, current));
+      if (current === "shaderPack") {
+        hasIris = (await api.installedProjects(id, "mod")).includes(`modrinth:${IRIS.id}`);
+      }
     } catch {
       // Without it every entry just offers to install.
     }
@@ -92,12 +143,31 @@
     return `${hit.source}:${hit.id}`;
   }
 
-  async function search(from: Source, text: string, next: number) {
+  interface Request {
+    text: string;
+    from: Source;
+    kind: ContentKind;
+    category: string;
+    sort: CatalogSort;
+  }
+
+  let lastRequest: Request | null = null;
+
+  async function search(request: Request, next: number) {
+    lastRequest = request;
     loading = true;
     error = null;
     try {
-      const results = await api.searchMods(instanceId, from, text, next);
-      if (from !== source) {
+      const results = await api.searchCatalog(
+        instanceId,
+        request.kind,
+        request.from,
+        request.text,
+        request.category || null,
+        request.sort,
+        next,
+      );
+      if (request !== lastRequest) {
         return;
       }
       hits = next === 0 ? results.hits : [...hits, ...results.hits];
@@ -133,15 +203,16 @@
 
   // Shows what will be downloaded when dependencies or manual downloads come along,
   // otherwise installs straight away.
-  async function requestInstall(picked: CatalogHit[]) {
+  async function requestInstall(picked: CatalogHit[], target = kind) {
     if (picked.length === 0) {
       return;
     }
     pending = picked;
+    pendingKind = target;
     setStatus(picked, "busy");
     error = null;
     try {
-      const plan = await api.previewInstall(instanceId, items(picked));
+      const plan = await api.previewInstall(instanceId, target, items(picked));
       const onlyPicked = plan.mods.every((planned) => planned.requested);
       if (onlyPicked && plan.manual.length === 0) {
         await install();
@@ -159,12 +230,12 @@
     const picked = pending;
     setStatus(picked, "busy");
     try {
-      const result = await api.installMods(instanceId, items(picked));
+      const result = await api.installContent(instanceId, pendingKind, items(picked));
       manual = result.manual;
       setStatus(picked, "done");
       stopSelecting();
       oninstall();
-      void loadInstalled(instanceId);
+      void loadInstalled(instanceId, kind);
     } catch (err) {
       setStatus(picked, undefined);
       error = describeError(err);
@@ -190,10 +261,26 @@
     }
   }
 
+  function showProject(hit: CatalogHit) {
+    shownHit = hit;
+    showing = true;
+  }
+
   function compact(count: number): string {
     return new Intl.NumberFormat(locale(), { notation: "compact" }).format(count);
   }
 </script>
+
+{#if kinds.length > 1}
+  <div class="kinds">
+    <Segmented
+      bind:value={chosenKind}
+      options={kindOptions}
+      name="catalog-kind"
+      label={t("instance.catalog")}
+    />
+  </div>
+{/if}
 
 <div class="toolbar">
   <input
@@ -201,7 +288,7 @@
     type="search"
     data-search
     bind:value={query}
-    placeholder={t("instance.search")}
+    placeholder={t("catalog.search")}
   >
   <Segmented
     bind:value={source}
@@ -219,6 +306,29 @@
     {selecting ? t("catalog.done") : t("catalog.select")}
   </button>
 </div>
+
+<div class="filters">
+  <div class="filter">
+    <Select bind:value={category} options={categoryOptions} />
+  </div>
+  <div class="filter">
+    <Select bind:value={sort} options={sortOptions} />
+  </div>
+</div>
+
+{#if kind === "shaderPack" && !hasIris}
+  <div class="manual iris" role="alert">
+    <p>{t("content.needIris")}</p>
+    <button
+      type="button"
+      class="add"
+      disabled={status(IRIS) !== undefined}
+      onclick={() => requestInstall([IRIS], "mod").then(() => loadInstalled(instanceId, kind))}
+    >
+      {t("content.addIris")}
+    </button>
+  </div>
+{/if}
 
 {#if error}
   <p class="error" role="alert">{error}</p>
@@ -260,7 +370,12 @@
         <span class="icon-placeholder" aria-hidden="true"></span>
       {/if}
       <div class="info">
-        <span class="title">{hit.title} <span class="muted">· {hit.author}</span></span>
+        <span class="title">
+          <button type="button" class="link name" onclick={() => showProject(hit)}>
+            {hit.title}
+          </button>
+          <span class="muted">· {hit.author}</span>
+        </span>
         <span class="description">{hit.description}</span>
         <span class="muted">
           {t("instance.downloads", { count: compact(hit.downloads) })}
@@ -294,7 +409,7 @@
     type="button"
     class="more"
     disabled={loading}
-    onclick={() => search(source, query, page + 1)}
+    onclick={() => lastRequest && search(lastRequest, page + 1)}
   >
     {t("instance.more")}
   </button>
@@ -310,6 +425,15 @@
       {t("catalog.addSelected", { count: selectedCount })}
     </button>
   </div>
+{/if}
+
+{#if shownHit}
+  <ProjectDialog
+    bind:open={showing}
+    {instanceId}
+    {kind}
+    project={{ source: shownHit.source, id: shownHit.id }}
+  />
 {/if}
 
 {#if preview}
@@ -420,7 +544,43 @@
   .toolbar {
     display: flex;
     gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .kinds {
+    display: flex;
+    margin-bottom: 10px;
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
     margin-bottom: 12px;
+  }
+
+  .filter {
+    width: 220px;
+  }
+
+  .iris {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .iris p {
+    flex: 1;
+    margin: 0;
+  }
+
+  .link.name {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .link.name:hover {
+    color: var(--accent);
+    text-decoration: none;
   }
 
   .search {

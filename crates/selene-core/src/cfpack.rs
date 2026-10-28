@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::curseforge::{self, CurseForge};
 use crate::loader::{Loader, LoaderVersion};
+use crate::mods::ContentKind;
 use crate::mrpack::{self, ExportOptions};
 use crate::{Error, Result, mods};
 
@@ -134,7 +135,7 @@ pub async fn install(
             None => manual.push(file.mod_id),
         }
     }
-    mods::install(client, game_dir, &remote).await?;
+    mods::install(client, game_dir, ContentKind::Mod, &remote).await?;
 
     let pack = pack.to_owned();
     let target = game_dir.to_owned();
@@ -152,7 +153,7 @@ pub async fn export(
     out: &Path,
 ) -> Result<()> {
     let mut fingerprinted = Vec::new();
-    for file in mods::list(game_dir)
+    for file in mods::list(game_dir, ContentKind::Mod)
         .await?
         .into_iter()
         .filter(|file| file.enabled)

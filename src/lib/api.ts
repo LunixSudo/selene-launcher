@@ -115,13 +115,13 @@ export interface CatalogItem {
   id: string;
 }
 
-export interface PlannedMod {
+export interface PlannedFile {
   title: string;
   requested: boolean;
 }
 
 export interface InstallPreview {
-  mods: PlannedMod[];
+  mods: PlannedFile[];
   manual: ManualDownload[];
 }
 
@@ -130,28 +130,58 @@ export interface InstallResult {
   manual: ManualDownload[];
 }
 
-export interface Project {
+export type ContentKind = "mod" | "resourcePack" | "shaderPack";
+export type CatalogSort = "relevance" | "downloads" | "newest" | "updated";
+
+export interface CategoryTag {
   id: string;
-  slug: string;
-  title: string;
-  description: string;
-  icon_url: string | null;
+  name: string;
 }
 
-export interface InstalledMod {
+export interface ProjectRef {
+  source: Source;
+  id: string;
+}
+
+export type Issue = { kind: "requires"; title: string } | { kind: "conflictsWith"; title: string };
+
+export interface InstalledFile {
   fileName: string;
   enabled: boolean;
   sha1: string;
   size: number;
-  project: Project | null;
+  title: string | null;
+  iconUrl: string | null;
   versionNumber: string | null;
+  project: ProjectRef | null;
+  issues: Issue[];
 }
 
-export interface ModUpdate {
+export interface ContentUpdate {
   fileName: string;
   title: string;
   from: string | null;
   to: string;
+}
+
+export interface ProjectVersion {
+  id: string;
+  name: string;
+  versionNumber: string;
+  published: string | null;
+  channel: "release" | "beta" | "alpha";
+  changelog: string | null;
+}
+
+export interface ProjectPage {
+  title: string;
+  description: string;
+  format: "markdown" | "html";
+  body: string;
+  iconUrl: string | null;
+  gallery: string[];
+  pageUrl: string;
+  downloads: number;
 }
 
 export interface MemoryInfo {
@@ -275,20 +305,55 @@ export const api = {
     invoke<void>("open_screenshot", { instanceId, name }),
   deleteScreenshot: (instanceId: string, name: string) =>
     invoke<void>("delete_screenshot", { instanceId, name }),
-  searchMods: (instanceId: string, source: Source, query: string, page: number) =>
-    invoke<CatalogPage>("search_mods", { instanceId, source, query, page }),
-  installedProjects: (instanceId: string) => invoke<string[]>("installed_projects", { instanceId }),
-  installedMods: (instanceId: string) => invoke<InstalledMod[]>("installed_mods", { instanceId }),
-  previewInstall: (instanceId: string, items: CatalogItem[]) =>
-    invoke<InstallPreview>("preview_install", { instanceId, items }),
-  installMods: (instanceId: string, items: CatalogItem[]) =>
-    invoke<InstallResult>("install_mods", { instanceId, items }),
-  setModEnabled: (instanceId: string, fileName: string, enabled: boolean) =>
-    invoke<void>("set_mod_enabled", { instanceId, fileName, enabled }),
-  removeMod: (instanceId: string, fileName: string) =>
-    invoke<void>("remove_mod", { instanceId, fileName }),
-  checkModUpdates: (instanceId: string) => invoke<ModUpdate[]>("check_mod_updates", { instanceId }),
-  updateMods: (instanceId: string) => invoke<number>("update_mods", { instanceId }),
+  searchCatalog: (
+    instanceId: string,
+    kind: ContentKind,
+    source: Source,
+    query: string,
+    category: string | null,
+    sort: CatalogSort,
+    page: number,
+  ) =>
+    invoke<CatalogPage>("search_catalog", {
+      instanceId,
+      kind,
+      source,
+      query,
+      category,
+      sort,
+      page,
+    }),
+  catalogCategories: (kind: ContentKind, source: Source) =>
+    invoke<CategoryTag[]>("catalog_categories", { kind, source }),
+  installedProjects: (instanceId: string, kind: ContentKind) =>
+    invoke<string[]>("installed_projects", { instanceId, kind }),
+  installedContent: (instanceId: string, kind: ContentKind) =>
+    invoke<InstalledFile[]>("installed_content", { instanceId, kind }),
+  previewInstall: (instanceId: string, kind: ContentKind, items: CatalogItem[]) =>
+    invoke<InstallPreview>("preview_install", { instanceId, kind, items }),
+  installContent: (instanceId: string, kind: ContentKind, items: CatalogItem[]) =>
+    invoke<InstallResult>("install_content", { instanceId, kind, items }),
+  setContentEnabled: (instanceId: string, kind: ContentKind, fileName: string, enabled: boolean) =>
+    invoke<void>("set_content_enabled", { instanceId, kind, fileName, enabled }),
+  removeContent: (instanceId: string, kind: ContentKind, fileName: string) =>
+    invoke<void>("remove_content", { instanceId, kind, fileName }),
+  checkUpdates: (instanceId: string, kind: ContentKind) =>
+    invoke<ContentUpdate[]>("check_updates", { instanceId, kind }),
+  updateContent: (instanceId: string, kind: ContentKind) =>
+    invoke<number>("update_content", { instanceId, kind }),
+  projectVersions: (instanceId: string, kind: ContentKind, project: ProjectRef) =>
+    invoke<ProjectVersion[]>("project_versions", { instanceId, kind, project }),
+  curseforgeChangelog: (projectId: string, fileId: string) =>
+    invoke<string>("curseforge_changelog", { projectId, fileId }),
+  installVersion: (
+    instanceId: string,
+    kind: ContentKind,
+    project: ProjectRef,
+    versionId: string,
+    fileName: string,
+  ) => invoke<void>("install_version", { instanceId, kind, project, versionId, fileName }),
+  projectPage: (kind: ContentKind, project: ProjectRef) =>
+    invoke<ProjectPage>("project_page", { kind, project }),
   importPack: (path: string) => invoke<ImportResult>("import_pack", { path }),
   exportPack: (instanceId: string, path: string, folders: string[], format: PackFormat) =>
     invoke<void>("export_pack", { instanceId, path, folders, format }),
