@@ -203,7 +203,9 @@
     </div>
   {/if}
 
-  {#if library.loaded && library.instances.length === 0}
+  {#if library.loadError}
+    <p class="status" role="alert">{t(`errors.${library.loadError.kind}`)}</p>
+  {:else if library.loaded && library.instances.length === 0}
     <div class="empty">
       <h2>{t("instances.empty")}</h2>
       <p>{t("instances.emptyHint")}</p>
@@ -224,7 +226,7 @@
     </div>
 
     <div class="scroll" {@attach scrollFade}>
-      {#if visible.length === 0}
+      {#if library.loaded && visible.length === 0}
         <p class="status">{t("instances.nothingFound")}</p>
       {/if}
       {#each groups as [name, instances] (name)}
