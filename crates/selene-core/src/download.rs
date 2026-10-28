@@ -71,6 +71,42 @@ pub async fn download_all<F>(
 where
     F: Fn(Progress) + Sync,
 {
+    run(client, downloads, concurrency, Check::Hash, on_progress).await
+}
+
+/// Like [`download_all`], but trusts a file whose size matches without hashing it.
+///
+/// Only for paths that change whenever their content does, like assets named by their hash
+/// and versioned libraries. Every file is written under a temporary name and renamed once
+/// its checksum passed, so a file of the right size is a whole one.
+pub async fn download_missing<F>(
+    client: &Client,
+    downloads: Vec<Download>,
+    concurrency: usize,
+    on_progress: F,
+) -> Result<()>
+where
+    F: Fn(Progress) + Sync,
+{
+    run(client, downloads, concurrency, Check::Size, on_progress).await
+}
+
+#[derive(Clone, Copy)]
+enum Check {
+    Hash,
+    Size,
+}
+
+async fn run<F>(
+    client: &Client,
+    downloads: Vec<Download>,
+    concurrency: usize,
+    check: Check,
+    on_progress: F,
+) -> Result<()>
+where
+    F: Fn(Progress) + Sync,
+{
     // Two entries for one file would write the same `.part` at once.
     let mut seen = HashSet::new();
     let downloads: Vec<Download> = downloads
@@ -83,7 +119,11 @@ where
 
     stream::iter(downloads)
         .map(|download| async move {
-            if !is_valid(&download.path, &download.sha1).await {
+            let present = match check {
+                Check::Size if download.size > 0 => has_size(&download.path, download.size).await,
+                _ => is_valid(&download.path, &download.sha1).await,
+            };
+            if !present {
                 fetch_with_retry(client, &download).await?;
             }
             let done = bytes_done.fetch_add(download.size, Ordering::Relaxed) + download.size;
@@ -99,6 +139,12 @@ where
         })
         .try_collect()
         .await
+}
+
+async fn has_size(path: &Path, size: u64) -> bool {
+    fs::metadata(path)
+        .await
+        .is_ok_and(|metadata| metadata.is_file() && metadata.len() == size)
 }
 
 pub async fn is_valid(path: &Path, expected_sha1: &str) -> bool {
@@ -263,6 +309,29 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(last.into_inner().unwrap().bytes_total, 3);
+    }
+
+    #[tokio::test]
+    async fn trusts_files_of_the_right_size() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("abc.txt");
+        fs::write(&path, b"xyz").await.unwrap();
+        let download = Download {
+            url: "https://example.invalid/abc.txt".into(),
+            path: path.clone(),
+            sha1: ABC_SHA1.into(),
+            size: 3,
+        };
+        let client = Client::new();
+
+        download_missing(&client, vec![download.clone()], 1, |_| {})
+            .await
+            .unwrap();
+        assert!(
+            download_all(&client, vec![download], 1, |_| {})
+                .await
+                .is_err()
+        );
     }
 
     #[test]

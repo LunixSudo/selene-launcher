@@ -73,17 +73,18 @@ pub async fn install<F>(
 where
     F: Fn(Stage, Progress) + Sync,
 {
-    let mut version = VersionInfo::fetch(client, entry).await?;
+    let mut version = VersionInfo::fetch(client, entry, &dirs.versions()).await?;
     if let Some(loader) = loader.filter(|loader| !loader.loader.uses_installer()) {
-        let patch = loader::fetch_patch(client, loader, &entry.id).await?;
-        version = version.with_patch(patch.resolve(client).await?);
+        let patch = loader::resolved_patch(client, loader, &entry.id, &dirs.versions()).await?;
+        version = version.with_patch(patch);
     }
     let env = Environment::current(Features::default());
 
     let index = fetch_asset_index(client, &version, &dirs.assets()).await?;
     let mut downloads = version.downloads(&env, &dirs.versions(), &dirs.libraries());
     downloads.extend(index.downloads(&dirs.assets()));
-    download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, |progress| {
+    // Starting the game should not hash a gigabyte of assets each time.
+    download::download_missing(client, downloads, DOWNLOAD_CONCURRENCY, |progress| {
         on_progress(Stage::Files, progress);
     })
     .await?;
@@ -92,7 +93,7 @@ where
         .java_version
         .as_ref()
         .map_or(LEGACY_JAVA, |java| java.component.as_str());
-    let runtimes = java::fetch_index(client).await?;
+    let runtimes = java::fetch_index(client, &dirs.runtimes()).await?;
     let java = java::install(client, &runtimes, component, &dirs.runtimes(), |progress| {
         on_progress(Stage::Java, progress);
     })
@@ -113,7 +114,7 @@ where
             .iter()
             .filter(|library| rules::allowed(&library.rules, &env));
         let downloads = version::library_downloads(libraries, &env, &dirs.libraries());
-        download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, |progress| {
+        download::download_missing(client, downloads, DOWNLOAD_CONCURRENCY, |progress| {
             on_progress(Stage::Files, progress);
         })
         .await?;

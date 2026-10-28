@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
+use std::path::Path;
 
 use futures_util::{StreamExt, TryStreamExt, stream};
 use reqwest::{Client, StatusCode};
@@ -69,6 +70,15 @@ impl Loader {
     /// Forge and NeoForge have to run their installer; the others only add a profile.
     pub fn uses_installer(self) -> bool {
         matches!(self, Self::Forge | Self::NeoForge)
+    }
+
+    fn id(self) -> &'static str {
+        match self {
+            Self::Fabric => "fabric",
+            Self::Quilt => "quilt",
+            Self::Forge => "forge",
+            Self::NeoForge => "neoforge",
+        }
     }
 
     fn meta_url(self) -> &'static str {
@@ -161,17 +171,72 @@ fn compare_parts(a: &str, b: &str) -> Ordering {
     }
 }
 
-pub async fn fetch_patch(
+/// The loader's profile with every library hash filled in. A published profile never
+/// changes, so it is saved under `versions_dir` and read from there on later launches.
+pub async fn resolved_patch(
     client: &Client,
     loader: &LoaderVersion,
     game_version: &str,
-) -> Result<VersionPatch> {
-    let url = format!(
+    versions_dir: &Path,
+) -> Result<ResolvedPatch> {
+    let path = versions_dir.join(game_version).join(format!(
+        "{}-{}.json",
+        loader.loader.id(),
+        loader.version
+    ));
+    if let Ok(bytes) = tokio::fs::read(&path).await
+        && let Ok(patch) = serde_json::from_slice::<VersionPatch>(&bytes)
+        && patch.libraries.iter().all(|library| library.sha1.is_some())
+    {
+        return patch.resolve(client).await;
+    }
+
+    let mut profile: serde_json::Value =
+        http::get_json(client, &profile_url(loader, game_version)).await?;
+    if let Some(libraries) = profile
+        .get_mut("libraries")
+        .and_then(serde_json::Value::as_array_mut)
+    {
+        fill_hashes(client, libraries).await?;
+    }
+    let bytes = serde_json::to_vec(&profile)?;
+    let _ = crate::fs::write_atomic(&path, &bytes).await;
+    serde_json::from_value::<VersionPatch>(profile)?
+        .resolve(client)
+        .await
+}
+
+fn profile_url(loader: &LoaderVersion, game_version: &str) -> String {
+    format!(
         "{}/versions/loader/{game_version}/{}/profile/json",
         loader.loader.meta_url(),
         loader.version
-    );
-    http::get_json(client, &url).await
+    )
+}
+
+async fn fill_hashes(client: &Client, libraries: &mut [serde_json::Value]) -> Result<()> {
+    let missing: Vec<(usize, String)> = libraries
+        .iter()
+        .enumerate()
+        .filter(|(_, library)| library.get("sha1").is_none_or(serde_json::Value::is_null))
+        .filter_map(|(index, library)| {
+            let name = library.get("name")?.as_str()?;
+            let url = library.get("url")?.as_str()?;
+            let path = maven_path(name)?;
+            Some((index, format!("{}/{path}", url.trim_end_matches('/'))))
+        })
+        .collect();
+    let hashes: Vec<(usize, String)> = stream::iter(missing)
+        .map(|(index, url)| async move {
+            Ok::<_, crate::Error>((index, fetch_sha1(client, &url).await?))
+        })
+        .buffer_unordered(HASH_CONCURRENCY)
+        .try_collect()
+        .await?;
+    for (index, sha1) in hashes {
+        libraries[index]["sha1"] = sha1.into();
+    }
+    Ok(())
 }
 
 impl VersionPatch {

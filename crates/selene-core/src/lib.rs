@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod cache;
 pub mod cfpack;
 pub mod crash;
 pub mod curseforge;

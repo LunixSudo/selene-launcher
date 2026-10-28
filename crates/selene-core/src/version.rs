@@ -7,7 +7,7 @@ use serde::Deserialize;
 use crate::download::Download;
 use crate::manifest::{VersionEntry, VersionKind};
 use crate::rules::{self, Environment, Rule};
-use crate::{Error, Result, download, http};
+use crate::{Error, Result, cache, download};
 
 const ASSETS_BASE_URL: &str = "https://resources.download.minecraft.net";
 
@@ -122,13 +122,19 @@ pub struct AssetObject {
 
 impl VersionInfo {
     /// Fetches the version JSON and checks it against the hash from the manifest.
-    pub async fn fetch(client: &Client, entry: &VersionEntry) -> Result<Self> {
-        let bytes = http::get(client, &entry.url)
-            .await?
-            .error_for_status()?
-            .bytes()
-            .await?;
+    /// Reads the version from `versions_dir` if its checksum still matches the manifest, and
+    /// downloads it otherwise.
+    pub async fn fetch(client: &Client, entry: &VersionEntry, versions_dir: &Path) -> Result<Self> {
+        let path = versions_dir
+            .join(&entry.id)
+            .join(format!("{}.json", entry.id));
+        if let Ok(bytes) = tokio::fs::read(&path).await
+            && download::sha1_bytes(&bytes).eq_ignore_ascii_case(&entry.sha1)
+        {
+            return Ok(serde_json::from_slice(&bytes)?);
+        }
 
+        let bytes = cache::fetch(client, &entry.url).await?;
         let actual = download::sha1_bytes(&bytes);
         if !actual.eq_ignore_ascii_case(&entry.sha1) {
             return Err(Error::ChecksumMismatch {
@@ -138,7 +144,9 @@ impl VersionInfo {
             });
         }
 
-        Ok(serde_json::from_slice(&bytes)?)
+        let version = serde_json::from_slice(&bytes)?;
+        let _ = crate::fs::write_atomic(&path, &bytes).await;
+        Ok(version)
     }
 
     pub fn libraries<'a>(&'a self, env: &'a Environment) -> impl Iterator<Item = &'a Library> {

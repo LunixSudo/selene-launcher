@@ -1,8 +1,10 @@
+use std::path::Path;
+
 use chrono::{DateTime, Utc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::{Result, http};
+use crate::{Result, cache, http};
 
 pub const VERSION_MANIFEST_URL: &str =
     "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
@@ -58,6 +60,11 @@ impl VersionKind {
 impl VersionManifest {
     pub async fn fetch(client: &Client) -> Result<Self> {
         http::get_json(client, VERSION_MANIFEST_URL).await
+    }
+
+    /// Like [`Self::fetch`], falling back to the copy saved at `path` when offline.
+    pub async fn fetch_cached(client: &Client, path: &Path) -> Result<Self> {
+        cache::get_json(client, VERSION_MANIFEST_URL, path).await
     }
 
     pub fn get(&self, id: &str) -> Option<&VersionEntry> {

@@ -63,9 +63,10 @@ impl Launcher {
 
     /// The version list is fetched once per session; Mojang updates it a few times a week.
     pub async fn manifest(&self) -> CommandResult<&VersionManifest> {
+        let cache = self.dirs.versions().join("manifest.json");
         let manifest = self
             .manifest
-            .get_or_try_init(|| VersionManifest::fetch(&self.client))
+            .get_or_try_init(|| VersionManifest::fetch_cached(&self.client, &cache))
             .await?;
         Ok(manifest)
     }

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::download::{self, Download, Progress};
-use crate::{Error, Result, http};
+use crate::{Error, Result, cache, http};
 
 /// Index of every Java runtime Mojang ships, the same one the official launcher reads.
 pub const RUNTIME_INDEX_URL: &str = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
@@ -113,8 +113,9 @@ fn platform_key(os: &str, arch: &str) -> Option<&'static str> {
     Some(key)
 }
 
-pub async fn fetch_index(client: &Client) -> Result<RuntimeIndex> {
-    http::get_json(client, RUNTIME_INDEX_URL).await
+/// The list of Java runtimes, from the copy in `runtimes_dir` when offline.
+pub async fn fetch_index(client: &Client, runtimes_dir: &Path) -> Result<RuntimeIndex> {
+    cache::get_json(client, RUNTIME_INDEX_URL, &runtimes_dir.join("index.json")).await
 }
 
 pub fn find_release<'a>(
