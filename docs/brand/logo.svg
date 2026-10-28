@@ -25,6 +25,25 @@
       <stop offset="0" stop-color="#241a3d" stop-opacity=".4" />
       <stop offset="1" stop-color="#241a3d" stop-opacity="0" />
     </radialGradient>
+    <linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="126" y1="131.5" x2="43.13" y2="83">
+      <stop offset="0" stop-color="#f1ecff" stop-opacity=".8" />
+      <stop offset=".22" stop-color="#fff" stop-opacity="1" />
+    </linearGradient>
+    <linearGradient
+      id="g2"
+      gradientUnits="userSpaceOnUse"
+      x1="126"
+      y1="131.5"
+      x2="213.04"
+      y2="81.75"
+    >
+      <stop offset="0" stop-color="#f1ecff" stop-opacity=".8" />
+      <stop offset=".22" stop-color="#fff" stop-opacity="0.5" />
+    </linearGradient>
+    <linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="126" y1="131.5" x2="125" y2="225">
+      <stop offset="0" stop-color="#f1ecff" stop-opacity=".8" />
+      <stop offset=".22" stop-color="#d6ccff" stop-opacity="0.8" />
+    </linearGradient>
   </defs>
   <polygon
     points="37.93,76 128,128 128,232 37.93,180"
@@ -48,49 +67,73 @@
     stroke-linejoin="round"
   />
   <g transform="matrix(0.87 0.5 -0.87 0.5 128 24)">
-    <clipPath id="ct0"><circle cx="26" cy="30" r="12" /></clipPath>
-    <circle cx="26" cy="30" r="12" fill="#8a76e0" />
-    <circle cx="31.09" cy="35.09" r="12" fill="#cdbffd" clip-path="url(#ct0)" />
+    <clipPath id="ct0"><circle cx="34" cy="56" r="16" /></clipPath>
+    <circle cx="34" cy="56" r="16" fill="#8a76e0" />
+    <circle cx="40.79" cy="62.79" r="16" fill="#cdbffd" clip-path="url(#ct0)" />
     <circle
-      cx="26"
-      cy="30"
-      r="12"
+      cx="34"
+      cy="56"
+      r="16"
       fill="none"
       stroke="#241a3d"
       stroke-width="3.5"
       vector-effect="non-scaling-stroke"
     />
-    <clipPath id="ct1"><circle cx="70" cy="60" r="9" /></clipPath>
-    <circle cx="70" cy="60" r="9" fill="#8a76e0" />
-    <circle cx="73.82" cy="63.82" r="9" fill="#cdbffd" clip-path="url(#ct1)" />
+    <clipPath id="ct1"><circle cx="76" cy="30" r="9" /></clipPath>
+    <circle cx="76" cy="30" r="9" fill="#8a76e0" />
+    <circle cx="79.82" cy="33.82" r="9" fill="#cdbffd" clip-path="url(#ct1)" />
     <circle
-      cx="70"
-      cy="60"
+      cx="76"
+      cy="30"
       r="9"
       fill="none"
       stroke="#241a3d"
       stroke-width="3.5"
       vector-effect="non-scaling-stroke"
     />
-    <clipPath id="ct2"><circle cx="74" cy="22" r="6" /></clipPath>
-    <circle cx="74" cy="22" r="6" fill="#8a76e0" />
-    <circle cx="76.55" cy="24.55" r="6" fill="#cdbffd" clip-path="url(#ct2)" />
+    <clipPath id="ct2"><circle cx="74" cy="80" r="8" /></clipPath>
+    <circle cx="74" cy="80" r="8" fill="#8a76e0" />
+    <circle cx="77.39" cy="83.39" r="8" fill="#cdbffd" clip-path="url(#ct2)" />
     <circle
       cx="74"
-      cy="22"
+      cy="80"
+      r="8"
+      fill="none"
+      stroke="#241a3d"
+      stroke-width="3.5"
+      vector-effect="non-scaling-stroke"
+    />
+    <clipPath id="ct3"><circle cx="20" cy="20" r="6" /></clipPath>
+    <circle cx="20" cy="20" r="6" fill="#8a76e0" />
+    <circle cx="22.55" cy="22.55" r="6" fill="#cdbffd" clip-path="url(#ct3)" />
+    <circle
+      cx="20"
+      cy="20"
       r="6"
       fill="none"
       stroke="#241a3d"
       stroke-width="3.5"
       vector-effect="non-scaling-stroke"
     />
-    <clipPath id="ct3"><circle cx="34" cy="78" r="7" /></clipPath>
-    <circle cx="34" cy="78" r="7" fill="#8a76e0" />
-    <circle cx="36.97" cy="80.97" r="7" fill="#cdbffd" clip-path="url(#ct3)" />
+    <clipPath id="ct4"><circle cx="56" cy="14" r="5" /></clipPath>
+    <circle cx="56" cy="14" r="5" fill="#8a76e0" />
+    <circle cx="58.12" cy="16.12" r="5" fill="#cdbffd" clip-path="url(#ct4)" />
     <circle
-      cx="34"
-      cy="78"
-      r="7"
+      cx="56"
+      cy="14"
+      r="5"
+      fill="none"
+      stroke="#241a3d"
+      stroke-width="3.5"
+      vector-effect="non-scaling-stroke"
+    />
+    <clipPath id="ct5"><circle cx="92" cy="56" r="5" /></clipPath>
+    <circle cx="92" cy="56" r="5" fill="#8a76e0" />
+    <circle cx="94.12" cy="58.12" r="5" fill="#cdbffd" clip-path="url(#ct5)" />
+    <circle
+      cx="92"
+      cy="56"
+      r="5"
       fill="none"
       stroke="#241a3d"
       stroke-width="3.5"
@@ -122,13 +165,25 @@
       stroke-width="3.5"
       vector-effect="non-scaling-stroke"
     />
-    <clipPath id="cr2"><circle cx="80" cy="20" r="5" /></clipPath>
-    <circle cx="80" cy="20" r="5" fill="#221862" />
-    <circle cx="80" cy="23" r="5" fill="#4b3bb0" clip-path="url(#cr2)" />
+    <clipPath id="cr2"><circle cx="80" cy="20" r="6" /></clipPath>
+    <circle cx="80" cy="20" r="6" fill="#221862" />
+    <circle cx="80" cy="23.6" r="6" fill="#4b3bb0" clip-path="url(#cr2)" />
     <circle
       cx="80"
       cy="20"
-      r="5"
+      r="6"
+      fill="none"
+      stroke="#241a3d"
+      stroke-width="3.5"
+      vector-effect="non-scaling-stroke"
+    />
+    <clipPath id="cr3"><circle cx="24" cy="80" r="8" /></clipPath>
+    <circle cx="24" cy="80" r="8" fill="#221862" />
+    <circle cx="24" cy="84.8" r="8" fill="#4b3bb0" clip-path="url(#cr3)" />
+    <circle
+      cx="24"
+      cy="80"
+      r="8"
       fill="none"
       stroke="#241a3d"
       stroke-width="3.5"
@@ -155,37 +210,27 @@
     />
   </g>
   <polyline
-    points="43.13,79 122.8,125"
-    stroke="#fff"
-    stroke-width="4"
-    stroke-linecap="round"
-    transform="translate(0 4)"
-  />
-  <polyline
-    points="212.87,79 133.2,125"
-    stroke="#fff"
+    points="126,131.5 213.04,81.75"
+    stroke="url(#g2)"
     stroke-width="3"
     stroke-linecap="round"
-    opacity=".5"
-    transform="translate(-2 4)"
   />
   <polyline
-    points="128,136 128,222"
-    stroke="#d6ccff"
+    points="126,131.5 125,225"
+    stroke="url(#g3)"
     stroke-width="3.5"
     stroke-linecap="round"
-    opacity=".8"
-    transform="translate(-3 0)"
   />
+  <polyline points="126,131.5 43.13,83" stroke="url(#g1)" stroke-width="4" stroke-linecap="round" />
   <polygon
-    points="216,20 221.6,34.4 236,40 221.6,45.6 216,60 210.4,45.6 196,40 210.4,34.4"
+    points="214,18 219.6,32.4 234,38 219.6,43.6 214,58 208.4,43.6 194,38 208.4,32.4"
     fill="#ffd866"
     stroke="#241a3d"
     stroke-width="4"
     stroke-linejoin="round"
   />
   <polygon
-    points="40,51 43.08,58.92 51,62 43.08,65.08 40,73 36.92,65.08 29,62 36.92,58.92"
+    points="36,36 38.8,43.2 46,46 38.8,48.8 36,56 33.2,48.8 26,46 33.2,43.2"
     fill="#fff4c2"
     stroke="#241a3d"
     stroke-width="4"
