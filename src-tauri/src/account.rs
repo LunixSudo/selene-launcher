@@ -17,6 +17,8 @@ const KEYRING_SERVICE: &str = "io.github.lunixsudo.selene";
 const SIGN_IN_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 /// Sessions this close to expiring are renewed before launch so the game never gets a stale one.
 const EXPIRY_MARGIN: Duration = Duration::from_secs(5 * 60);
+/// Off until Mojang approves the app: the application to Mojang says there is no offline mode.
+const OFFLINE_PLAY: bool = false;
 
 /// What the launcher remembers about an account on disk. Tokens never go here: the
 /// Microsoft refresh token lives in the credential store and game sessions only in memory.
@@ -134,11 +136,34 @@ impl Accounts {
         if self.list().active.is_none() {
             return dev_account().ok_or(CommandError::NotSignedIn);
         }
-        let session = self.session(client).await?;
+        let session = match self.session(client).await {
+            Ok(session) => session,
+            // Like the official launcher, a signed-in account can still play single player
+            // without a connection.
+            Err(CommandError::Core(selene_core::Error::Http(_))) if OFFLINE_PLAY => {
+                return self.offline_account();
+            }
+            Err(err) => return Err(err),
+        };
         Ok(LaunchAccount {
             name: session.profile.name,
             uuid: session.profile.id,
             access_token: session.access_token,
+            xuid: None,
+        })
+    }
+
+    fn offline_account(&self) -> CommandResult<LaunchAccount> {
+        let list = self.list();
+        let account = list
+            .accounts
+            .iter()
+            .find(|account| Some(&account.id) == list.active.as_ref())
+            .ok_or(CommandError::NotSignedIn)?;
+        Ok(LaunchAccount {
+            name: account.name.clone(),
+            uuid: account.id.clone(),
+            access_token: "0".into(),
             xuid: None,
         })
     }
