@@ -1,5 +1,9 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard, OnceLock, PoisonError};
+use std::time::SystemTime;
 
+use futures_util::{StreamExt, TryStreamExt, stream};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
@@ -9,6 +13,7 @@ use crate::{Error, Result};
 
 const DISABLED_SUFFIX: &str = ".disabled";
 const DOWNLOAD_CONCURRENCY: usize = 8;
+const HASH_CONCURRENCY: usize = 8;
 
 /// What a catalog file is, which decides the folder it goes to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -108,31 +113,61 @@ pub async fn list(game_dir: &Path, kind: ContentKind) -> Result<Vec<ModFile>> {
         Err(err) => return Err(Error::io(&dir, err)),
     };
 
-    let mut mods = Vec::new();
+    let mut found = Vec::new();
     while let Some(entry) = entries
         .next_entry()
         .await
         .map_err(|err| Error::io(&dir, err))?
     {
         let file_name = entry.file_name().to_string_lossy().into_owned();
-        let Some(enabled) = kind.state(Path::new(&file_name)) else {
-            continue;
-        };
-        let path = entry.path();
-        let size = entry
-            .metadata()
-            .await
-            .map_err(|err| Error::io(&path, err))?
-            .len();
-        mods.push(ModFile {
-            sha1: download::sha1_file(&path).await?,
-            file_name,
-            enabled,
-            size,
-        });
+        if let Some(enabled) = kind.state(Path::new(&file_name)) {
+            found.push((entry.path(), file_name, enabled));
+        }
     }
+
+    let mut mods: Vec<ModFile> = stream::iter(found)
+        .map(|(path, file_name, enabled)| async move {
+            let metadata = fs::metadata(&path)
+                .await
+                .map_err(|err| Error::io(&path, err))?;
+            Ok::<_, Error>(ModFile {
+                sha1: cached_sha1(&path, &metadata).await?,
+                file_name,
+                enabled,
+                size: metadata.len(),
+            })
+        })
+        .buffer_unordered(HASH_CONCURRENCY)
+        .try_collect()
+        .await?;
     mods.sort_by(|a, b| a.file_name.cmp(&b.file_name));
     Ok(mods)
+}
+
+/// The list is read every time a tab opens, and shader packs run to hundreds of megabytes,
+/// so hashes are kept for as long as a file keeps its size and modification time.
+async fn cached_sha1(path: &Path, metadata: &std::fs::Metadata) -> Result<String> {
+    let stamp = (metadata.len(), metadata.modified().ok());
+    let cached = lock_hashes()
+        .get(path)
+        .filter(|(known, _)| *known == stamp)
+        .map(|(_, sha1)| sha1.clone());
+    if let Some(sha1) = cached {
+        return Ok(sha1);
+    }
+    let sha1 = download::sha1_file(path).await?;
+    lock_hashes().insert(path.to_owned(), (stamp, sha1.clone()));
+    Ok(sha1)
+}
+
+type HashCache = HashMap<PathBuf, ((u64, Option<SystemTime>), String)>;
+
+fn lock_hashes() -> MutexGuard<'static, HashCache> {
+    static HASHES: OnceLock<Mutex<HashCache>> = OnceLock::new();
+    HASHES
+        .get_or_init(Mutex::default)
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
 }
 
 pub async fn install(
