@@ -164,6 +164,12 @@ export const ru = {
     confirm: "Удалить",
   },
   settings: {
+    uninstall: "Удалить Selene Launcher",
+    uninstallHint: "Откроется программа удаления Windows. Сборки и миры можно оставить.",
+    uninstallButton: "Удалить",
+    uninstallTitle: "Удалить Selene Launcher?",
+    uninstallMessage:
+      "Лаунчер закроется и откроется программа удаления. Чтобы удалить и сборки с мирами, отметьте это в ней.",
     title: "Настройки",
     appearance: "Внешний вид",
     general: "Общие",
@@ -322,9 +328,10 @@ export const ru = {
     },
   },
   changeVersion: {
-    title: "Сменить версию игры",
+    title: "Версия игры и загрузчика",
     check: "Проверить моды",
-    apply: "Сменить версию",
+    apply: "Применить",
+    loaderVersion: "Версия {loader}",
     working: "Проверка…",
     updated: "Обновятся под новую версию ({count})",
     incompatible: "Нет версии для этой игры ({count})",
@@ -332,7 +339,7 @@ export const ru = {
       "Эти моды отключатся, но останутся в папке: их можно включить, когда выйдет обновление.",
     unknown: "Не удалось проверить ({count})",
     nothing: "С модами всё в порядке, можно менять.",
-    current: "Версия игры",
+    current: "Версия",
     change: "Сменить…",
   },
   launchOptions: {

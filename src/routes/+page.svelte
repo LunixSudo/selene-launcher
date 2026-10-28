@@ -12,6 +12,7 @@
   import ShareDialog from "$lib/components/ShareDialog.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
+  import { scrollFade } from "$lib/scroll-fade";
   import { shortcutIcon } from "$lib/shortcut-icon";
   import {
     deleteInstance,
@@ -222,7 +223,7 @@
       </div>
     </div>
 
-    <div class="scroll">
+    <div class="scroll" {@attach scrollFade}>
       {#if visible.length === 0}
         <p class="status">{t("instances.nothingFound")}</p>
       {/if}

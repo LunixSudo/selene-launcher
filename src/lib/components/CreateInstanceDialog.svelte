@@ -7,7 +7,7 @@
     type VersionSummary,
   } from "$lib/api";
   import { t } from "$lib/i18n/index.svelte";
-  import { LOADER_NAMES, LOADERS, preferredRelease } from "$lib/loaders";
+  import { LOADER_NAMES, LOADERS, preferredRelease, releaseOptions } from "$lib/loaders";
   import { createInstance } from "$lib/state/instances.svelte";
   import Select from "./Select.svelte";
 
@@ -146,14 +146,7 @@
           <Select
             id="loader-version"
             bind:value={loaderVersion}
-            options={loaderReleases.map((release) => ({
-              value: release.version,
-              label: release.recommended
-                ? `${release.version} (${t("create.recommended")})`
-                : release.stable
-                  ? release.version
-                  : `${release.version} (${t("create.unstable")})`,
-            }))}
+            options={releaseOptions(loaderReleases)}
           />
         {/if}
       </div>

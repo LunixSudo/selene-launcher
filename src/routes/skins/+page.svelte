@@ -14,6 +14,7 @@
   import SkinViewer from "$lib/components/SkinViewer.svelte";
   import TextureCrop from "$lib/components/TextureCrop.svelte";
   import { t } from "$lib/i18n/index.svelte";
+  import { scrollFade } from "$lib/scroll-fade";
   import { activeAccount, loadAccounts } from "$lib/state/accounts.svelte";
   import { tooltip } from "$lib/tooltip";
 
@@ -163,7 +164,7 @@
       {/if}
     </aside>
 
-    <div class="content">
+    <div class="content" {@attach scrollFade}>
       {#if !account}
         <p class="notice">{t("skins.signIn")}</p>
       {:else if profileError}

@@ -113,6 +113,8 @@ pub fn run() {
             commands::packs::export_pack,
             commands::update::check_update,
             commands::update::install_update,
+            commands::update::can_uninstall,
+            commands::update::uninstall_launcher,
             commands::saves::worlds,
             commands::saves::open_world_folder,
             commands::saves::back_up_world,

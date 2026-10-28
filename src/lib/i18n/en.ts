@@ -164,6 +164,12 @@ export const en: Messages = {
     confirm: "Delete",
   },
   settings: {
+    uninstall: "Uninstall Selene Launcher",
+    uninstallHint: "Opens the Windows uninstaller. Instances and worlds can be kept.",
+    uninstallButton: "Uninstall",
+    uninstallTitle: "Uninstall Selene Launcher?",
+    uninstallMessage:
+      "The launcher closes and the uninstaller opens. Tick the box there to remove instances and worlds too.",
     title: "Settings",
     appearance: "Appearance",
     general: "General",
@@ -324,9 +330,10 @@ export const en: Messages = {
     },
   },
   changeVersion: {
-    title: "Change game version",
+    title: "Game and loader version",
     check: "Check mods",
-    apply: "Change version",
+    apply: "Apply",
+    loaderVersion: "{loader} version",
     working: "Checking…",
     updated: "Will update for the new version ({count})",
     incompatible: "No build for this version ({count})",
@@ -334,7 +341,7 @@ export const en: Messages = {
       "These mods get disabled but stay in the folder, so you can turn them back on once they update.",
     unknown: "Couldn't check ({count})",
     nothing: "Your mods are fine with it.",
-    current: "Game version",
+    current: "Version",
     change: "Change…",
   },
   launchOptions: {

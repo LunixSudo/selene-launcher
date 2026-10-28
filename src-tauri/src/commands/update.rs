@@ -45,3 +45,33 @@ pub async fn install_update(app: AppHandle, launcher: State<'_, Launcher>) -> Co
     app.exit(0);
     Ok(())
 }
+
+/// Whether this copy was installed and can be removed with its uninstaller. The portable
+/// version has none: deleting its folder is enough.
+#[tauri::command]
+pub fn can_uninstall() -> bool {
+    uninstaller().is_some()
+}
+
+/// Starts the Windows uninstaller and closes the launcher so its files can be removed.
+#[tauri::command]
+pub fn uninstall_launcher(app: AppHandle) -> CommandResult<()> {
+    let uninstaller = uninstaller()
+        .ok_or_else(|| CommandError::Io(std::io::Error::from(std::io::ErrorKind::NotFound)))?;
+    std::process::Command::new(uninstaller)
+        .spawn()
+        .map_err(CommandError::Spawn)?;
+    app.exit(0);
+    Ok(())
+}
+
+fn uninstaller() -> Option<std::path::PathBuf> {
+    if !cfg!(windows) || crate::portable_data_dir().is_some() {
+        return None;
+    }
+    let path = std::env::current_exe()
+        .ok()?
+        .parent()?
+        .join("uninstall.exe");
+    path.is_file().then_some(path)
+}

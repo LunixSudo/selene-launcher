@@ -16,7 +16,8 @@ There is no offline mode. You need a Minecraft: Java Edition license to play.
   instance downloads all of it right away, so the first start is quick.
 - **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts drawn
   with the instance's own icon and cover, and
-  moving an instance to another game version with its mods swapped for matching builds.
+  moving an instance to another game version with its mods swapped for matching builds, and
+  picking a newer or older mod loader build.
 - **Add-ons.** Mods, resource packs, shaders and data packs from Modrinth and CurseForge in
   one tab. Filter the catalog by several categories at once, remove a project right from its
   catalog entry, and get required dependencies added for you. Updates stay on the release channel you

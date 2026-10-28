@@ -366,6 +366,8 @@ export const api = {
   memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),
   setInstanceMemory: (instanceId: string, maxMemoryMb: number | null) =>
     invoke<Instance>("set_instance_memory", { instanceId, maxMemoryMb }),
+  canUninstall: () => invoke<boolean>("can_uninstall"),
+  uninstallLauncher: () => invoke<void>("uninstall_launcher"),
   prepareInstance: (id: string) => invoke<void>("prepare_instance", { id }),
   launchInstance: (id: string, target: LaunchTarget | null = null) =>
     invoke<void>("launch_instance", { id, target }),

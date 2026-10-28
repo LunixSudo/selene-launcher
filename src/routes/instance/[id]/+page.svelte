@@ -15,6 +15,7 @@
   import { playTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
+  import { scrollFade } from "$lib/scroll-fade";
   import { library, loadInstances, play } from "$lib/state/instances.svelte";
 
   type Tab = "content" | "catalog" | "worlds" | "servers" | "screenshots" | "settings" | "logs";
@@ -110,7 +111,7 @@
       {/each}
     </div>
 
-    <div class="content" role="tabpanel">
+    <div class="content" role="tabpanel" {@attach scrollFade}>
       {#if tab === "content"}
         <div class="kinds">
           <Segmented

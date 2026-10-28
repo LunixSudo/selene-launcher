@@ -2,9 +2,11 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { api, type LauncherConfig } from "$lib/api";
+  import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
   import Select from "$lib/components/Select.svelte";
   import { type Locale, locale, setLocale, t } from "$lib/i18n/index.svelte";
+  import { scrollFade } from "$lib/scroll-fade";
   import {
     ACCENTS,
     type Accent,
@@ -29,6 +31,8 @@
   let language = $state(locale());
   let version = $state("");
   let config = $state<LauncherConfig | null>(null);
+  let canUninstall = $state(false);
+  let confirmingUninstall = $state(false);
 
   const parallelOptions = $derived(
     PARALLEL.map((value) => ({
@@ -75,6 +79,15 @@
   });
 
   $effect(() => {
+    api
+      .canUninstall()
+      .then((available) => {
+        canUninstall = available;
+      })
+      .catch(() => {});
+  });
+
+  $effect(() => {
     getVersion()
       .then((current) => {
         version = current;
@@ -92,7 +105,7 @@
     <h1 class="page-title">{t("settings.title")}</h1>
   </header>
 
-  <div class="content">
+  <div class="content" {@attach scrollFade}>
     <section class="panel">
       <h2 class="panel-title">{t("settings.appearance")}</h2>
 
@@ -326,6 +339,20 @@
       </div>
     </section>
 
+    {#if canUninstall}
+      <section class="panel">
+        <div class="row">
+          <div>
+            <h3>{t("settings.uninstall")}</h3>
+            <p>{t("settings.uninstallHint")}</p>
+          </div>
+          <button type="button" class="button danger" onclick={() => (confirmingUninstall = true)}>
+            {t("settings.uninstallButton")}
+          </button>
+        </div>
+      </section>
+    {/if}
+
     <p class="legal">
       {t("settings.legal")}
       <button
@@ -340,11 +367,28 @@
   </div>
 </section>
 
+<ConfirmDialog
+  bind:open={confirmingUninstall}
+  title={t("settings.uninstallTitle")}
+  message={t("settings.uninstallMessage")}
+  confirmLabel={t("settings.uninstallButton")}
+  onconfirm={() => api.uninstallLauncher()}
+/>
+
 <style>
   header {
     display: grid;
     gap: 4px;
     padding-top: 8px;
+  }
+
+  .button.danger {
+    color: var(--danger);
+  }
+
+  .button.danger:hover:enabled {
+    background: var(--danger);
+    color: #ffffff;
   }
 
   .legal {
@@ -368,8 +412,10 @@
     grid-auto-rows: max-content;
     align-content: start;
     gap: 20px;
-    max-width: 720px;
     min-height: 0;
+    margin-right: -12px;
+    padding-right: 12px;
+    padding-bottom: 16px;
     overflow-y: auto;
   }
 

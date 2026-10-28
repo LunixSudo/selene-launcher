@@ -36,6 +36,10 @@ All notable changes to this project are documented here. The format follows
 - Desktop shortcuts of instances use the instance's icon and cover and follow later changes.
 - Removing a project from its catalog entry, with a confirmation.
 - Rounded tooltips in place of the system ones.
+- Changing an instance's mod loader build, newer or older, next to its game version; the
+  recommended build is marked in every list.
+- An "Uninstall Selene Launcher" button at the bottom of the settings, which opens the Windows
+  uninstaller. The portable version does not show it.
 - Forge and NeoForge instances, including Forge and NeoForge modpacks. Their official installer
   runs in the background without windows, with its progress on the instance card; Forge
   suggests its recommended build. Forge goes back to 1.12.2 and NeoForge to 1.20.1.
@@ -52,3 +56,5 @@ All notable changes to this project are documented here. The format follows
 - Desktop shortcut icons carry an image for every size Explorer shows, so their rounded corners
   stay smooth.
 - Mica and glass stay on while the launcher window is inactive, for example under a file dialog.
+- The settings page uses the full window width. Scrolling areas fade out at their edges instead
+  of cutting content off, and scrollbars are thin and rounded instead of the Windows ones.
