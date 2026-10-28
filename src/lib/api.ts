@@ -178,6 +178,7 @@ export const api = {
     invoke<Instance>("create_instance", { name, version, loader }),
   updateInstance: (id: string, name: string, icon: string | null, cover: string | null) =>
     invoke<Instance>("update_instance", { id, name, icon, cover }),
+  openDataFolder: () => invoke<void>("open_data_folder"),
   openInstanceFolder: (id: string) => invoke<void>("open_instance_folder", { id }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
   memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),

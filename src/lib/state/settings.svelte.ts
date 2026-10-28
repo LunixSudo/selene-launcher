@@ -3,9 +3,13 @@ import { Effect, getCurrentWindow } from "@tauri-apps/api/window";
 export type Theme = "system" | "light" | "dark";
 export type Style = "glass" | "mica" | "solid";
 export type Accent = "violet" | "blue" | "green" | "pink" | "orange";
+export type Font = "rounded" | "modern" | "rubik" | "system";
+export type AfterLaunch = "keep" | "minimize" | "close";
 
 export const THEMES: Theme[] = ["system", "light", "dark"];
 export const STYLES: Style[] = ["glass", "mica", "solid"];
+export const FONTS: Font[] = ["rounded", "modern", "rubik", "system"];
+export const AFTER_LAUNCH: AfterLaunch[] = ["keep", "minimize", "close"];
 export const ACCENTS: Record<Accent, string> = {
   violet: "#6b5bff",
   blue: "#0f6cbd",
@@ -20,22 +24,39 @@ interface Settings {
   theme: Theme;
   style: Style;
   accent: Accent;
+  font: Font;
+  afterLaunch: AfterLaunch;
+  restoreAfterGame: boolean;
 }
+
+const DEFAULTS: Settings = {
+  theme: "system",
+  style: "mica",
+  accent: "violet",
+  font: "rounded",
+  afterLaunch: "minimize",
+  restoreAfterGame: true,
+};
 
 export const settings = $state<Settings>(load());
 
 function load(): Settings {
-  const defaults: Settings = { theme: "system", style: "mica", accent: "violet" };
+  let saved: Partial<Settings> = {};
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<Settings>;
-    return {
-      theme: THEMES.includes(saved.theme as Theme) ? (saved.theme as Theme) : defaults.theme,
-      style: STYLES.includes(saved.style as Style) ? (saved.style as Style) : defaults.style,
-      accent: saved.accent && saved.accent in ACCENTS ? saved.accent : defaults.accent,
-    };
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
   } catch {
-    return defaults;
+    // Start from the defaults.
   }
+  const oneOf = <T>(value: unknown, allowed: readonly T[], fallback: T): T =>
+    allowed.includes(value as T) ? (value as T) : fallback;
+  return {
+    theme: oneOf(saved.theme, THEMES, DEFAULTS.theme),
+    style: oneOf(saved.style, STYLES, DEFAULTS.style),
+    accent: oneOf(saved.accent, Object.keys(ACCENTS) as Accent[], DEFAULTS.accent),
+    font: oneOf(saved.font, FONTS, DEFAULTS.font),
+    afterLaunch: oneOf(saved.afterLaunch, AFTER_LAUNCH, DEFAULTS.afterLaunch),
+    restoreAfterGame: oneOf(saved.restoreAfterGame, [true, false], DEFAULTS.restoreAfterGame),
+  };
 }
 
 // Call from an effect so it reruns whenever a setting changes.
@@ -43,6 +64,7 @@ export function applySettings() {
   const root = document.documentElement;
   root.dataset.theme = settings.theme;
   root.dataset.style = settings.style;
+  root.dataset.font = settings.font;
   root.style.setProperty("--accent", ACCENTS[settings.accent]);
 
   try {

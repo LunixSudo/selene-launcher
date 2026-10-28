@@ -72,7 +72,7 @@
   .wordmark {
     font-family: var(--font-display);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: var(--display-weight);
     letter-spacing: 0.02em;
   }
 

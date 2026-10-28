@@ -1,4 +1,5 @@
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   api,
   type CommandError,
@@ -9,6 +10,7 @@ import {
   type LoaderVersion,
   type ManualDownload,
 } from "$lib/api";
+import { settings } from "./settings.svelte";
 
 export type LaunchState =
   | { status: "preparing"; stage: LaunchProgress["stage"] | null; percent: number }
@@ -88,9 +90,19 @@ export async function listenToGames(): Promise<() => void> {
     listen<string>("game-started", ({ payload }) => {
       library.launches[payload] = { status: "running" };
       void loadInstances();
+      const appWindow = getCurrentWindow();
+      if (settings.afterLaunch === "minimize") {
+        void appWindow.minimize();
+      } else if (settings.afterLaunch === "close") {
+        void appWindow.close();
+      }
     }),
     listen<GameExited>("game-exited", ({ payload }) => {
       delete library.launches[payload.instanceId];
+      if (settings.afterLaunch === "minimize" && settings.restoreAfterGame) {
+        const appWindow = getCurrentWindow();
+        void appWindow.unminimize().then(() => appWindow.setFocus());
+      }
     }),
   ]);
   return () => {

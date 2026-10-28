@@ -135,7 +135,7 @@
     overflow: hidden;
     font-family: var(--font-display);
     font-size: 28px;
-    font-weight: 600;
+    font-weight: var(--display-weight);
     letter-spacing: -0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;

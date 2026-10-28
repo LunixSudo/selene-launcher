@@ -1,6 +1,8 @@
 :root {
-  --font-sans: "Onest Variable", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Unbounded Variable", "Onest Variable", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Nunito Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Nunito Variable", "Segoe UI", system-ui, sans-serif;
+  --body-weight: 550;
+  --display-weight: 850;
 
   --text: #1b1b1f;
   --text-muted: #5f5f6b;
@@ -53,6 +55,27 @@
   color-scheme: light;
 }
 
+:root[data-font="modern"] {
+  --font-sans: "Onest Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Unbounded Variable", "Onest Variable", "Segoe UI", system-ui, sans-serif;
+  --body-weight: 400;
+  --display-weight: 600;
+}
+
+:root[data-font="rubik"] {
+  --font-sans: "Rubik Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Rubik Variable", "Segoe UI", system-ui, sans-serif;
+  --body-weight: 420;
+  --display-weight: 700;
+}
+
+:root[data-font="system"] {
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --body-weight: 400;
+  --display-weight: 600;
+}
+
 /* Glass lets more of the desktop through; solid hides it completely. */
 :root[data-style="glass"] {
   --surface: rgb(255 255 255 / 0.4);
@@ -91,6 +114,7 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 14px;
+  font-weight: var(--body-weight);
   -webkit-font-smoothing: antialiased;
   user-select: none;
 }

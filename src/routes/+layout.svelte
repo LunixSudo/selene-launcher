@@ -1,5 +1,7 @@
 <script lang="ts">
+  import "@fontsource-variable/nunito";
   import "@fontsource-variable/onest";
+  import "@fontsource-variable/rubik";
   import "@fontsource-variable/unbounded";
   import "$lib/styles/global.css";
   import type { Snippet } from "svelte";

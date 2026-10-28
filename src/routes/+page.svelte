@@ -152,7 +152,7 @@
     margin: 0;
     font-family: var(--font-display);
     font-size: 28px;
-    font-weight: 600;
+    font-weight: var(--display-weight);
     letter-spacing: -0.02em;
   }
 
@@ -244,7 +244,7 @@
     margin: 0;
     font-family: var(--font-display);
     font-size: 18px;
-    font-weight: 600;
+    font-weight: var(--display-weight);
   }
 
   .empty p {

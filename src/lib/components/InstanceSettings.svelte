@@ -107,7 +107,7 @@
     margin: 0;
     font-family: var(--font-display);
     font-size: 15px;
-    font-weight: 600;
+    font-weight: var(--display-weight);
   }
 
   .row {

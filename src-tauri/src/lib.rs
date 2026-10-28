@@ -35,6 +35,7 @@ pub fn run() {
             commands::update_instance,
             commands::delete_instance,
             commands::open_instance_folder,
+            commands::open_data_folder,
             commands::memory_info,
             commands::set_instance_memory,
             commands::launch_instance,

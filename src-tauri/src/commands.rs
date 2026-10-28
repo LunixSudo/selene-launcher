@@ -204,6 +204,13 @@ pub async fn open_instance_folder(
 }
 
 #[tauri::command]
+pub fn open_data_folder(app: AppHandle, launcher: State<'_, Launcher>) -> CommandResult<()> {
+    app.opener()
+        .open_path(launcher.dirs.root.to_string_lossy(), None::<&str>)
+        .map_err(|err| CommandError::Io(std::io::Error::other(err)))
+}
+
+#[tauri::command]
 pub async fn delete_instance(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
     if launcher.is_running(&id) {
         return Err(CommandError::AlreadyRunning(id));

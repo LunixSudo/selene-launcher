@@ -206,7 +206,7 @@
     margin: 0 0 4px;
     font-family: var(--font-display);
     font-size: 20px;
-    font-weight: 600;
+    font-weight: var(--display-weight);
   }
 
   label,

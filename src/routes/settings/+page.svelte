@@ -1,8 +1,17 @@
 <script lang="ts">
   import { getVersion } from "@tauri-apps/api/app";
+  import { api } from "$lib/api";
   import Segmented from "$lib/components/Segmented.svelte";
   import { type Locale, locale, setLocale, t } from "$lib/i18n/index.svelte";
-  import { ACCENTS, type Accent, STYLES, settings, THEMES } from "$lib/state/settings.svelte";
+  import {
+    ACCENTS,
+    type Accent,
+    AFTER_LAUNCH,
+    FONTS,
+    STYLES,
+    settings,
+    THEMES,
+  } from "$lib/state/settings.svelte";
 
   const LANGUAGES: { value: Locale; label: string }[] = [
     { value: "ru", label: "Русский" },
@@ -13,6 +22,9 @@
   let version = $state("");
 
   const themes = $derived(THEMES.map((value) => ({ value, label: t(`settings.themes.${value}`) })));
+  const afterLaunch = $derived(
+    AFTER_LAUNCH.map((value) => ({ value, label: t(`settings.afterLaunchOptions.${value}`) })),
+  );
 
   $effect(() => {
     if (language !== locale()) {
@@ -98,6 +110,60 @@
     </section>
 
     <section class="group">
+      <h2>{t("settings.fonts")}</h2>
+      <div class="row column">
+        <div class="fonts" role="radiogroup" aria-label={t("settings.fonts")}>
+          {#each FONTS as font (font)}
+            <label class="font" data-font={font}>
+              <input type="radio" name="font" value={font} bind:group={settings.font}>
+              <span class="sample" aria-hidden="true">Аа</span>
+              <span class="font-name">{t(`settings.fontNames.${font}`)}</span>
+            </label>
+          {/each}
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>{t("settings.game")}</h2>
+      <div class="row">
+        <div>
+          <h3>{t("settings.afterLaunch")}</h3>
+          <p>{t("settings.afterLaunchHint")}</p>
+        </div>
+        <Segmented
+          bind:value={settings.afterLaunch}
+          options={afterLaunch}
+          name="after-launch"
+          label={t("settings.afterLaunch")}
+        />
+      </div>
+      {#if settings.afterLaunch === "minimize"}
+        <label class="row switch-row">
+          <div>
+            <h3>{t("settings.restoreAfterGame")}</h3>
+            <p>{t("settings.restoreAfterGameHint")}</p>
+          </div>
+          <input
+            class="switch"
+            type="checkbox"
+            role="switch"
+            bind:checked={settings.restoreAfterGame}
+          >
+        </label>
+      {/if}
+      <div class="row">
+        <div>
+          <h3>{t("settings.dataFolder")}</h3>
+          <p>{t("settings.dataFolderHint")}</p>
+        </div>
+        <button type="button" class="button" onclick={() => api.openDataFolder()}>
+          {t("instances.openFolder")}
+        </button>
+      </div>
+    </section>
+
+    <section class="group">
       <h2>{t("settings.general")}</h2>
       <div class="row">
         <div>
@@ -158,7 +224,7 @@
     margin: 0;
     font-family: var(--font-display);
     font-size: 28px;
-    font-weight: 600;
+    font-weight: var(--display-weight);
     letter-spacing: -0.02em;
   }
 
@@ -326,6 +392,115 @@
   .accent:has(input:focus-visible) {
     outline: 2px solid var(--text);
     outline-offset: 4px;
+  }
+
+  .fonts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .font {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 12px 8px 10px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color 150ms var(--ease);
+  }
+
+  .font:has(input:checked) {
+    border-color: var(--accent);
+  }
+
+  .font:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .sample {
+    font-size: 30px;
+    line-height: 1.1;
+  }
+
+  .font[data-font="rounded"] .sample {
+    font-family: "Nunito Variable", sans-serif;
+    font-weight: 850;
+  }
+
+  .font[data-font="modern"] .sample {
+    font-family: "Unbounded Variable", sans-serif;
+    font-weight: 600;
+  }
+
+  .font[data-font="rubik"] .sample {
+    font-family: "Rubik Variable", sans-serif;
+    font-weight: 700;
+  }
+
+  .font[data-font="system"] .sample {
+    font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    font-weight: 600;
+  }
+
+  .font-name {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .switch-row {
+    cursor: pointer;
+  }
+
+  .switch {
+    position: relative;
+    flex: none;
+    width: 40px;
+    height: 22px;
+    margin: 0;
+    border-radius: 999px;
+    background: var(--field);
+    box-shadow: inset 0 0 0 1px var(--border);
+    appearance: none;
+    cursor: pointer;
+    transition: background 150ms var(--ease);
+  }
+
+  .switch::before {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+    transition: transform 150ms var(--ease);
+    content: "";
+  }
+
+  .switch:checked {
+    background: var(--accent);
+  }
+
+  .switch:checked::before {
+    transform: translateX(18px);
+  }
+
+  .button {
+    flex: none;
+    height: 34px;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--field);
+    font-weight: 600;
+  }
+
+  .button:hover {
+    background: var(--surface-hover);
   }
 
   .about {

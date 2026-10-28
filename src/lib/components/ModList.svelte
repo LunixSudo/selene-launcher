@@ -301,6 +301,7 @@
   .empty h3 {
     margin: 0 0 4px;
     font-family: var(--font-display);
+    font-weight: var(--display-weight);
     font-size: 16px;
   }
 
