@@ -41,7 +41,6 @@ ${StrLoc}
 !define MANUFACTURER "{{manufacturer}}"
 !define PRODUCTNAME "{{product_name}}"
 !define INSTALLDIRNAME "SeleneLauncher"
-!define OLD_INSTALL_DIR "$LOCALAPPDATA\Selene Launcher"
 !define VERSION "{{version}}"
 !define VERSIONWITHBUILD "{{version_with_build}}"
 !define HOMEPAGE "{{homepage}}"
@@ -946,8 +945,6 @@ SectionEnd
 
 Function RestorePreviousInstallLocation
   ReadRegStr $4 SHCTX "${MANUPRODUCTKEY}" ""
-  ; Early builds installed into a folder with a space; move those to the new one.
-  StrCmp $4 "${OLD_INSTALL_DIR}" +3 0
   StrCmp $4 "" +2 0
     StrCpy $INSTDIR $4
 FunctionEnd
