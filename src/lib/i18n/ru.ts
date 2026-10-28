@@ -96,6 +96,7 @@ export const ru = {
     more: "Показать ещё",
   },
   launch: {
+    importing: "Импорт сборки…",
     mods: "Обновление модов…",
     files: "Загрузка игры {percent}%",
     java: "Загрузка Java {percent}%",

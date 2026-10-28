@@ -5,7 +5,7 @@ use selene_core::instance::Instance;
 use selene_core::loader::LoaderVersion;
 use selene_core::mrpack::{self, ExportOptions};
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 use super::content::{ManualDownload, manual_downloads};
 use crate::error::{CommandError, CommandResult};
@@ -30,6 +30,7 @@ pub struct ImportResult {
 /// behind.
 #[tauri::command]
 pub async fn import_pack(
+    app: AppHandle,
     launcher: State<'_, Launcher>,
     path: PathBuf,
 ) -> CommandResult<ImportResult> {
@@ -37,18 +38,23 @@ pub async fn import_pack(
         .extension()
         .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"));
     if is_zip {
-        import_curseforge(&launcher, path).await
+        import_curseforge(&app, &launcher, path).await
     } else {
-        import_mrpack(&launcher, path).await
+        import_mrpack(&app, &launcher, path).await
     }
 }
 
-async fn import_mrpack(launcher: &Launcher, path: PathBuf) -> CommandResult<ImportResult> {
+async fn import_mrpack(
+    app: &AppHandle,
+    launcher: &Launcher,
+    path: PathBuf,
+) -> CommandResult<ImportResult> {
     let pack = path.clone();
     let index = tokio::task::spawn_blocking(move || mrpack::read_index(&pack))
         .await
         .map_err(|err| CommandError::Io(std::io::Error::other(err)))??;
     let instance = create(
+        app,
         launcher,
         &index.name,
         index.game_version()?,
@@ -66,7 +72,11 @@ async fn import_mrpack(launcher: &Launcher, path: PathBuf) -> CommandResult<Impo
     })
 }
 
-async fn import_curseforge(launcher: &Launcher, path: PathBuf) -> CommandResult<ImportResult> {
+async fn import_curseforge(
+    app: &AppHandle,
+    launcher: &Launcher,
+    path: PathBuf,
+) -> CommandResult<ImportResult> {
     let curseforge = launcher
         .curseforge
         .as_ref()
@@ -76,6 +86,7 @@ async fn import_curseforge(launcher: &Launcher, path: PathBuf) -> CommandResult<
         .await
         .map_err(|err| CommandError::Io(std::io::Error::other(err)))??;
     let instance = create(
+        app,
         launcher,
         &manifest.name,
         manifest.game_version(),
@@ -97,7 +108,9 @@ async fn import_curseforge(launcher: &Launcher, path: PathBuf) -> CommandResult<
     }
 }
 
+/// The instance shows up in the list right away, while its files are still downloading.
 async fn create(
+    app: &AppHandle,
     launcher: &Launcher,
     name: &str,
     game_version: &str,
@@ -106,10 +119,12 @@ async fn create(
     if launcher.manifest().await?.get(game_version).is_none() {
         return Err(CommandError::UnknownVersion(game_version.to_owned()));
     }
-    Ok(launcher
+    let instance = launcher
         .instances
         .create(name, game_version, loader)
-        .await?)
+        .await?;
+    let _ = app.emit("instance-importing", &instance);
+    Ok(instance)
 }
 
 /// Writes the instance as a `.mrpack` (Selene, Prism, Modrinth App) or a CurseForge `.zip`

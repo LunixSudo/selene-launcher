@@ -98,6 +98,7 @@ export const en: Messages = {
     more: "Show more",
   },
   launch: {
+    importing: "Importing…",
     mods: "Updating mods…",
     files: "Downloading game {percent}%",
     java: "Downloading Java {percent}%",

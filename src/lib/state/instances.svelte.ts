@@ -20,7 +20,7 @@ import { notify } from "$lib/notify";
 import { settings } from "./settings.svelte";
 
 export type LaunchState =
-  | { status: "preparing"; stage: LaunchProgress["stage"] | null; percent: number }
+  | { status: "preparing"; stage: LaunchProgress["stage"] | "importing" | null; percent: number }
   | { status: "running"; since: number }
   | { status: "failed"; error: CommandError };
 
@@ -52,7 +52,7 @@ export async function importPack(path: string) {
   library.importManual = [];
   try {
     const result = await api.importPack(path);
-    library.instances = [result.instance, ...library.instances];
+    delete library.launches[result.instance.id];
     library.importManual = result.manual;
     void notify(t("notify.imported"), t("notify.importedBody", { name: result.instance.name }));
   } catch (error) {
@@ -122,6 +122,12 @@ export async function listenToGames(): Promise<() => void> {
         stage: payload.stage,
         percent: Math.floor((payload.bytesDone / Math.max(payload.bytesTotal, 1)) * 100),
       };
+    }),
+    listen<Instance>("instance-importing", ({ payload }) => {
+      if (!library.instances.some((instance) => instance.id === payload.id)) {
+        library.instances = [payload, ...library.instances];
+      }
+      library.launches[payload.id] = { status: "preparing", stage: "importing", percent: 0 };
     }),
     listen<string>("game-started", ({ payload }) => {
       library.launches[payload] = { status: "running", since: Date.now() };
