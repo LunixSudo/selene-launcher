@@ -72,6 +72,9 @@ pnpm tauri build
 The CurseForge catalog needs an API key at build time in the `CURSEFORGE_API_KEY`
 environment variable. Release builds without it only search Modrinth.
 
+`pnpm build` also writes `static/third-party-licenses.txt` from `cargo metadata` and the
+installed npm packages; the launcher shows it under Settings → Third-party licenses.
+
 ## Project layout
 
 - `crates/selene-core`: everything that does not need a window: Mojang, Microsoft sign-in,
@@ -85,7 +88,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for code style and commit conventions, an
 
 ## License
 
-[GPL-3.0-or-later](LICENSE)
+[GPL-3.0-or-later](LICENSE). The licenses of bundled libraries and fonts ship with the
+launcher and are listed in its settings.
 
 Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
 Minecraft is a trademark of Mojang AB.

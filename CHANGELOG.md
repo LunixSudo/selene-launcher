@@ -36,6 +36,8 @@ All notable changes to this project are documented here. The format follows
 - Desktop shortcuts of instances use the instance's icon and cover and follow later changes.
 - Removing a project from its catalog entry, with a confirmation.
 - Rounded tooltips in place of the system ones.
+- A third-party licenses page in the settings, generated at build time from the Rust and npm
+  packages the launcher ships.
 - Changing an instance's mod loader build, newer or older, next to its game version; the
   recommended build is marked in every list.
 - An "Uninstall Selene Launcher" button at the bottom of the settings, which opens the Windows
@@ -54,6 +56,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The privacy policy mentions that catalog pages load images from the sites their authors
+  chose.
 - New logo: a moon-rock cube with a golden crescent, with a simpler drawing for
   16–32 px icons. Sources are in `docs/brand`.
 - The solid style is the default, so the launcher stays light on slower PCs.

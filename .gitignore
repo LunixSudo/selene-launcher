@@ -3,6 +3,7 @@ node_modules
 /build
 /.svelte-kit
 /target
+/static/third-party-licenses.txt
 .env
 .env.*
 !.env.example

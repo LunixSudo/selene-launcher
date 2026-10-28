@@ -125,6 +125,10 @@ export const en: Messages = {
     cancel: "Cancel",
     submit: "Create",
   },
+  licenses: {
+    title: "Third-party licenses",
+    missing: "The license list is generated when the installer is built.",
+  },
   privacy: {
     title: "Privacy policy",
     lead: "Read it and accept it to use the launcher.",

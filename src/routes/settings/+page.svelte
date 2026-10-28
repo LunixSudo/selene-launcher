@@ -365,6 +365,8 @@
       >
         {t("settings.privacy")}
       </button>
+      ·
+      <a class="link" href="/licenses">{t("licenses.title")}</a>
     </p>
   </div>
 </section>
