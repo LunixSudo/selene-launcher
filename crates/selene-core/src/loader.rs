@@ -259,13 +259,13 @@ impl VersionInfo {
     /// libraries in place of any the game ships in another version.
     #[must_use]
     pub fn with_patch(mut self, patch: ResolvedPatch) -> Self {
-        let replaced: HashSet<&str> = patch
+        let replaced: HashSet<String> = patch
             .libraries
             .iter()
             .map(|library| library_key(&library.name))
             .collect();
         self.libraries
-            .retain(|library| !replaced.contains(library_key(&library.name)));
+            .retain(|library| !replaced.contains(&library_key(&library.name)));
         let mut libraries = patch.libraries;
         libraries.append(&mut self.libraries);
         self.libraries = libraries;
@@ -287,12 +287,15 @@ impl VersionInfo {
     }
 }
 
-/// `group:artifact` without the version, so two versions of one library compare equal.
-fn library_key(name: &str) -> &str {
-    let mut colons = name.match_indices(':').map(|(index, _)| index);
-    match (colons.next(), colons.next()) {
-        (Some(_), Some(second)) => &name[..second],
-        _ => name,
+/// `group:artifact[:classifier]` without the version, so two versions of one library compare
+/// equal while its natives for other platforms stay apart.
+fn library_key(name: &str) -> String {
+    let name = name.split('@').next().unwrap_or(name);
+    let parts: Vec<&str> = name.split(':').collect();
+    match parts.as_slice() {
+        [group, artifact, _version] => format!("{group}:{artifact}"),
+        [group, artifact, _version, classifier, ..] => format!("{group}:{artifact}:{classifier}"),
+        _ => name.to_owned(),
     }
 }
 
@@ -316,6 +319,10 @@ mod tests {
     #[test]
     fn library_keys_drop_the_version() {
         assert_eq!(library_key("org.ow2.asm:asm:9.9"), "org.ow2.asm:asm");
+        assert_eq!(
+            library_key("org.lwjgl:lwjgl:3.3.3:natives-windows"),
+            "org.lwjgl:lwjgl:natives-windows"
+        );
         assert_eq!(library_key("broken"), "broken");
     }
 
