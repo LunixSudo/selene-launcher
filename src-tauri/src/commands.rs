@@ -32,6 +32,7 @@ use tokio::sync::oneshot;
 
 use crate::account::{Account, AccountList};
 use crate::config::Config;
+use crate::discord::Presence;
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
@@ -274,6 +275,11 @@ pub async fn open_instance_folder(
     let dir = launcher.instances.game_dir(&id);
     tokio::fs::create_dir_all(&dir).await?;
     saves::open_path(&app, &dir)
+}
+
+#[tauri::command]
+pub fn set_discord_presence(launcher: State<'_, Launcher>, presence: Option<Presence>) {
+    launcher.discord.set(presence);
 }
 
 /// The instance a desktop shortcut asked to start, handed out once.

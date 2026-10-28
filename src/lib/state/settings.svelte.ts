@@ -33,6 +33,7 @@ interface Settings {
   collapsedGroups: string[];
   notifications: boolean;
   checkUpdates: boolean;
+  discordStatus: boolean;
 }
 
 const DEFAULTS: Settings = {
@@ -46,6 +47,7 @@ const DEFAULTS: Settings = {
   collapsedGroups: [],
   notifications: true,
   checkUpdates: true,
+  discordStatus: true,
 };
 
 export const settings = $state<Settings>(load());
@@ -72,6 +74,7 @@ function load(): Settings {
       : DEFAULTS.collapsedGroups,
     notifications: oneOf(saved.notifications, [true, false], DEFAULTS.notifications),
     checkUpdates: oneOf(saved.checkUpdates, [true, false], DEFAULTS.checkUpdates),
+    discordStatus: oneOf(saved.discordStatus, [true, false], DEFAULTS.discordStatus),
   };
 }
 

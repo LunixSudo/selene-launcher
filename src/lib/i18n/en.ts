@@ -189,6 +189,9 @@ export const en: Messages = {
     megabytesPerSecond: "{count} MB/s",
     notifications: "Windows notifications",
     notificationsHint: "While the launcher is minimized: game ready, mods updated, pack imported.",
+    discordStatus: "Discord status",
+    discordStatusHint:
+      "Shows friends “Playing Selene Launcher”, the instance name and time in game.",
     dataFolder: "Launcher folder",
     dataFolderHint: "Instances, game versions and Java live here.",
   },
@@ -324,6 +327,9 @@ export const en: Messages = {
     checkNow: "Check now",
     checking: "Checking…",
     upToDate: "You have the latest version",
+  },
+  discord: {
+    idle: "In the launcher",
   },
   notify: {
     gameReady: "“{name}” is starting",

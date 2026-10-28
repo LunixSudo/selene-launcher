@@ -190,6 +190,9 @@ export const ru = {
     notifications: "Уведомления Windows",
     notificationsHint:
       "Когда лаунчер свёрнут: игра готова к запуску, моды обновлены, сборка импортирована.",
+    discordStatus: "Статус в Discord",
+    discordStatusHint:
+      "Показывает друзьям «Играет в Selene Launcher», название сборки и время в игре.",
     dataFolder: "Папка лаунчера",
     dataFolderHint: "Здесь лежат сборки, версии игры и Java.",
   },
@@ -325,6 +328,9 @@ export const ru = {
     checkNow: "Проверить",
     checking: "Проверка…",
     upToDate: "У вас последняя версия",
+  },
+  discord: {
+    idle: "В лаунчере",
   },
   notify: {
     gameReady: "«{name}» запускается",

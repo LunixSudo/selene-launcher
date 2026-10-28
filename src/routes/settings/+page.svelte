@@ -263,6 +263,13 @@
         </div>
         <input class="switch" type="checkbox" bind:checked={settings.notifications}>
       </label>
+      <label class="row switch-row">
+        <div>
+          <h3>{t("settings.discordStatus")}</h3>
+          <p>{t("settings.discordStatusHint")}</p>
+        </div>
+        <input class="switch" type="checkbox" bind:checked={settings.discordStatus}>
+      </label>
       <div class="row">
         <div>
           <h3>{t("settings.language")}</h3>

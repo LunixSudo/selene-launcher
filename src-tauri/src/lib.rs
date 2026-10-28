@@ -1,6 +1,7 @@
 mod account;
 mod commands;
 mod config;
+mod discord;
 mod error;
 mod state;
 
@@ -70,6 +71,7 @@ pub fn run() {
             commands::open_data_folder,
             commands::config,
             commands::take_startup_launch,
+            commands::set_discord_presence,
             commands::shortcut::create_shortcut,
             commands::set_config,
             commands::game_log,

@@ -4,6 +4,7 @@ import {
   api,
   type CommandError,
   type CrashReport,
+  type DiscordPresence,
   type GameExited,
   type GameLog,
   type Instance,
@@ -14,12 +15,13 @@ import {
   type ManualDownload,
 } from "$lib/api";
 import { t } from "$lib/i18n/index.svelte";
+import { LOADER_NAMES } from "$lib/loaders";
 import { notify } from "$lib/notify";
 import { settings } from "./settings.svelte";
 
 export type LaunchState =
   | { status: "preparing"; stage: LaunchProgress["stage"] | null; percent: number }
-  | { status: "running" }
+  | { status: "running"; since: number }
   | { status: "failed"; error: CommandError };
 
 const UNKNOWN_ERROR: CommandError = { kind: "core", message: "unknown error" };
@@ -85,6 +87,22 @@ export async function play(id: string, target: LaunchTarget | null = null) {
   }
 }
 
+/** What Discord shows under the launcher's name: the running instance, or nothing much. */
+export function discordPresence(): DiscordPresence {
+  for (const [id, launch] of Object.entries(library.launches)) {
+    const instance = library.instances.find((instance) => instance.id === id);
+    if (launch.status === "running" && instance) {
+      const loader = instance.loader ? ` · ${LOADER_NAMES[instance.loader.loader]}` : "";
+      return {
+        details: instance.name,
+        state: `Minecraft ${instance.version}${loader}`,
+        startedAt: Math.floor(launch.since / 1000),
+      };
+    }
+  }
+  return { details: t("discord.idle"), state: null, startedAt: null };
+}
+
 const logListeners = new Set<(log: GameLog) => void>();
 
 /** Calls `listener` for every line a running game prints. Returns a function that unsubscribes. */
@@ -104,7 +122,7 @@ export async function listenToGames(): Promise<() => void> {
       };
     }),
     listen<string>("game-started", ({ payload }) => {
-      library.launches[payload] = { status: "running" };
+      library.launches[payload] = { status: "running", since: Date.now() };
       const name = library.instances.find((instance) => instance.id === payload)?.name ?? payload;
       void notify(t("notify.gameReady", { name }), t("notify.gameReadyBody"));
       void loadInstances();

@@ -5,10 +5,11 @@
   import "@fontsource-variable/unbounded";
   import "$lib/styles/global.css";
   import type { Snippet } from "svelte";
+  import { api } from "$lib/api";
   import DropOverlay from "$lib/components/DropOverlay.svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
   import { locale } from "$lib/i18n/index.svelte";
-  import { listenToGames } from "$lib/state/instances.svelte";
+  import { discordPresence, listenToGames } from "$lib/state/instances.svelte";
   import { applySettings, settings } from "$lib/state/settings.svelte";
   import { checkForUpdate } from "$lib/state/update.svelte";
 
@@ -20,6 +21,11 @@
 
   $effect(() => {
     applySettings();
+  });
+
+  $effect(() => {
+    const presence = settings.discordStatus ? discordPresence() : null;
+    api.setDiscordPresence(presence).catch(() => {});
   });
 
   $effect(() => {

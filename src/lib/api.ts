@@ -78,6 +78,13 @@ export interface LauncherUpdate {
   url: string;
 }
 
+export interface DiscordPresence {
+  details: string;
+  state: string | null;
+  /** Unix seconds; Discord counts the elapsed time from it. */
+  startedAt: number | null;
+}
+
 export interface LauncherConfig {
   autoUpdateMods: boolean;
   maxDownloads: number | null;
@@ -309,6 +316,8 @@ export const api = {
   checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),
   installUpdate: () => invoke<void>("install_update"),
   setConfig: (config: LauncherConfig) => invoke<void>("set_config", { config }),
+  setDiscordPresence: (presence: DiscordPresence | null) =>
+    invoke<void>("set_discord_presence", { presence }),
   gameLog: (instanceId: string) => invoke<string[]>("game_log", { instanceId }),
   openInstanceFolder: (id: string) => invoke<void>("open_instance_folder", { id }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
