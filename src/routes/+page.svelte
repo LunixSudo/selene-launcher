@@ -12,6 +12,7 @@
   import ShareDialog from "$lib/components/ShareDialog.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
+  import { shortcutIcon } from "$lib/shortcut-icon";
   import {
     deleteInstance,
     importPack,
@@ -76,7 +77,7 @@
       {
         label: t("instances.shortcut"),
         icon: UI_ICONS.shortcut,
-        action: () => api.createShortcut(instance.id),
+        action: async () => api.createShortcut(instance.id, await shortcutIcon(instance)),
       },
       {
         label: t("instances.delete"),

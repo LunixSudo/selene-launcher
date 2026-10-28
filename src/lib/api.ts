@@ -337,7 +337,8 @@ export const api = {
   ) =>
     invoke<Instance>("set_launch_options", { instanceId, window, fullscreen, javaArgs, javaPath }),
   config: () => invoke<LauncherConfig>("config"),
-  createShortcut: (id: string) => invoke<void>("create_shortcut", { id }),
+  createShortcut: (id: string, icon: number[]) => invoke<void>("create_shortcut", { id, icon }),
+  updateShortcut: (id: string, icon: number[]) => invoke<void>("update_shortcut", { id, icon }),
   takeStartupLaunch: () => invoke<string | null>("take_startup_launch"),
   takeMissedCrashes: () => invoke<Record<string, CrashReport>>("take_missed_crashes"),
   checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),

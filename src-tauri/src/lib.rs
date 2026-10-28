@@ -72,6 +72,7 @@ pub fn run() {
             commands::take_missed_crashes,
             commands::set_discord_presence,
             commands::shortcut::create_shortcut,
+            commands::shortcut::update_shortcut,
             commands::skins::skin_profile,
             commands::skins::apply_skin,
             commands::skins::reset_skin,

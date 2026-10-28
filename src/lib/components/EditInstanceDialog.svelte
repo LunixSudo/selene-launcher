@@ -3,6 +3,7 @@
   import { COVERS, coverOf, DEFAULT_ICON, ICONS, iconOf } from "$lib/appearance";
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
+  import { shortcutIcon } from "$lib/shortcut-icon";
   import { library, replaceInstance } from "$lib/state/instances.svelte";
   import Dialog from "./Dialog.svelte";
 
@@ -35,8 +36,12 @@
     saving = true;
     error = null;
     try {
-      replaceInstance(await api.updateInstance(instance.id, name, icon, cover, group || null));
+      const updated = await api.updateInstance(instance.id, name, icon, cover, group || null);
+      replaceInstance(updated);
       open = false;
+      void shortcutIcon(updated)
+        .then((png) => api.updateShortcut(updated.id, png))
+        .catch(() => {});
     } catch (err) {
       error = describeError(err);
     } finally {
