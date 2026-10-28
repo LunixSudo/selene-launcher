@@ -273,13 +273,17 @@ pub async fn updates_by_hash(
 /// the same way the Modrinth app handles it.
 pub async fn resolve_install(
     client: &Client,
-    project_id: &str,
+    project_ids: &[String],
     game_version: &str,
     loader: Option<Loader>,
     installed_projects: impl IntoIterator<Item = String>,
 ) -> Result<Vec<Version>> {
     let mut seen: HashSet<String> = installed_projects.into_iter().collect();
-    let mut queue = vec![(project_id.to_owned(), None::<String>)];
+    let mut queue: Vec<(String, Option<String>)> = project_ids
+        .iter()
+        .rev()
+        .map(|id| (id.clone(), None))
+        .collect();
     let mut plan = Vec::new();
 
     while let Some((project, pinned)) = queue.pop() {

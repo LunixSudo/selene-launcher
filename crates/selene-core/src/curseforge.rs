@@ -128,7 +128,8 @@ pub struct SearchResults {
 /// downloads from the CurseForge website.
 #[derive(Debug, Clone, Default)]
 pub struct InstallPlan {
-    pub files: Vec<RemoteFile>,
+    /// Mod id and the file to download for it.
+    pub files: Vec<(u32, RemoteFile)>,
     pub manual: Vec<u32>,
 }
 
@@ -240,6 +241,22 @@ impl CurseForge {
         Ok(response.data)
     }
 
+    /// Mods by id, in no particular order. Unknown ids are left out.
+    pub async fn mods(&self, mod_ids: &[u32]) -> Result<Vec<Mod>> {
+        if mod_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let response: Response<Vec<Mod>> = self
+            .request(Method::POST, "/mods")
+            .json(&serde_json::json!({ "modIds": mod_ids }))
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        Ok(response.data)
+    }
+
     /// Files by id, in no particular order. Unknown ids are left out.
     pub async fn files(&self, file_ids: &[u32]) -> Result<Vec<File>> {
         if file_ids.is_empty() {
@@ -287,15 +304,17 @@ impl CurseForge {
             .collect())
     }
 
-    /// The mod plus its required dependencies, newest compatible file of each.
+    /// The mods plus their required dependencies, newest compatible file of each. Mods in
+    /// `installed` and their dependencies are skipped.
     pub async fn resolve_install(
         &self,
-        mod_id: u32,
+        mod_ids: &[u32],
         game_version: &str,
         loader: Loader,
+        installed: impl IntoIterator<Item = u32>,
     ) -> Result<InstallPlan> {
-        let mut seen = HashSet::new();
-        let mut queue = vec![mod_id];
+        let mut seen: HashSet<u32> = installed.into_iter().collect();
+        let mut queue: Vec<u32> = mod_ids.iter().rev().copied().collect();
         let mut plan = InstallPlan::default();
 
         while let Some(id) = queue.pop() {
@@ -313,7 +332,7 @@ impl CurseForge {
                     .map(|dependency| dependency.mod_id),
             );
             match file.remote_file() {
-                Some(remote) => plan.files.push(remote),
+                Some(remote) => plan.files.push((id, remote)),
                 None => plan.manual.push(id),
             }
         }
