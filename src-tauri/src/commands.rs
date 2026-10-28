@@ -7,6 +7,7 @@ pub mod content;
 pub mod packs;
 pub mod saves;
 pub mod shortcut;
+pub mod skins;
 pub mod update;
 
 use std::path::PathBuf;

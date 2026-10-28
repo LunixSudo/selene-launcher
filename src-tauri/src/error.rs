@@ -61,6 +61,7 @@ impl CommandError {
             Self::Core(selene_core::Error::Http(_)) => "network",
             Self::Core(selene_core::Error::InvalidPack(_)) => "invalidPack",
             Self::Core(selene_core::Error::UnsupportedLoader(_)) => "unsupportedLoader",
+            Self::Core(selene_core::Error::InvalidSkin) => "invalidSkin",
             Self::Core(selene_core::Error::Auth(error)) => match error {
                 AuthError::Denied(_) | AuthError::InvalidCallback => "signInCancelled",
                 AuthError::NoXboxAccount => "noXboxAccount",

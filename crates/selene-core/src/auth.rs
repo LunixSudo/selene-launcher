@@ -26,7 +26,8 @@ const XBOX_AUTH_URL: &str = "https://user.auth.xboxlive.com/user/authenticate";
 const XSTS_AUTH_URL: &str = "https://xsts.auth.xboxlive.com/xsts/authorize";
 const MINECRAFT_LOGIN_URL: &str =
     "https://api.minecraftservices.com/authentication/login_with_xbox";
-const MINECRAFT_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft/profile";
+pub(crate) const MINECRAFT_PROFILE_URL: &str =
+    "https://api.minecraftservices.com/minecraft/profile";
 const SCOPE: &str = "XboxLive.signin offline_access";
 
 const CALLBACK_PAGE: &str = "<!doctype html><meta charset=utf-8><title>Selene Launcher</title>\
@@ -75,6 +76,8 @@ pub struct Profile {
     pub name: String,
     #[serde(default)]
     pub skins: Vec<Skin>,
+    #[serde(default)]
+    pub capes: Vec<Cape>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -83,6 +86,14 @@ pub struct Skin {
     pub state: String,
     pub url: String,
     pub variant: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Cape {
+    pub id: String,
+    pub state: String,
+    pub url: String,
+    pub alias: String,
 }
 
 /// A sign-in waiting for the user to finish in their browser.
@@ -405,7 +416,7 @@ async fn post_json<T: DeserializeOwned>(
     parse_response(response, service).await
 }
 
-async fn parse_response<T: DeserializeOwned>(
+pub(crate) async fn parse_response<T: DeserializeOwned>(
     response: Response,
     service: &'static str,
 ) -> Result<T> {

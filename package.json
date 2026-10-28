@@ -25,7 +25,9 @@
     "@tauri-apps/plugin-notification": "^2.8.0",
     "@tauri-apps/plugin-opener": "^2",
     "dompurify": "^3.4.17",
-    "marked": "^18.1.2"
+    "marked": "^18.1.2",
+    "skinview-utils": "0.7.1",
+    "skinview3d": "3.4.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.3",

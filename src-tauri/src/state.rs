@@ -7,6 +7,7 @@ use selene_core::curseforge::CurseForge;
 use selene_core::game::GameDirs;
 use selene_core::instance::Instances;
 use selene_core::manifest::VersionManifest;
+use selene_core::skins::SkinLibrary;
 use tokio::sync::{OnceCell, oneshot};
 
 use crate::account::Accounts;
@@ -20,6 +21,7 @@ pub struct Launcher {
     pub accounts: Accounts,
     pub config: ConfigFile,
     pub discord: Discord,
+    pub skins: SkinLibrary,
     pub dirs: GameDirs,
     pub instances: Instances,
     pub total_memory_mb: u64,
@@ -42,6 +44,7 @@ impl Launcher {
             accounts: Accounts::load(data_dir.join("accounts.json")),
             config: ConfigFile::load(data_dir.join("settings.json")),
             discord: Discord::start(),
+            skins: SkinLibrary::new(data_dir.join("skins")),
             dirs: GameDirs::new(data_dir.join("game")),
             instances: Instances::new(data_dir.join("instances")),
             total_memory_mb: total_memory_mb(),

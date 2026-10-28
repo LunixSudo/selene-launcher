@@ -1,4 +1,5 @@
 <script lang="ts">
+  import PlayerHead from "$lib/components/PlayerHead.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import {
     activeAccount,
@@ -44,7 +45,7 @@
 <div class="account" bind:this={root}>
   <button type="button" class="pill" class:signing-in={session.signingIn} onclick={toggle}>
     {#if active}
-      <span class="avatar" aria-hidden="true">{active.name.slice(0, 1)}</span>
+      <PlayerHead skin={active.skin} name={active.name} />
       <span>{active.name}</span>
     {:else if session.signingIn}
       <span class="spinner" aria-hidden="true"></span>
@@ -65,7 +66,7 @@
             class="item"
             onclick={() => switchAccount(account.id)}
           >
-            <span class="avatar" aria-hidden="true">{account.name.slice(0, 1)}</span>
+            <PlayerHead skin={account.skin} name={account.name} />
             <span class="name">{account.name}</span>
             {#if account.id === session.active}
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
@@ -77,6 +78,15 @@
         </div>
       {/each}
 
+      {#if active}
+        <a class="item action" role="menuitem" href="/skins" onclick={() => (open = false)}>
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M5.5 2.5L2 4.5l1.5 3 1.5-.7v6.7h6V6.8l1.5.7 1.5-3-3.5-2a2.5 2.5 0 01-5 0z" />
+          </svg>
+          {t("skins.title")}
+        </a>
+      {/if}
+
       {#if session.signingIn}
         <div class="waiting">
           <span class="spinner" aria-hidden="true"></span>
@@ -84,7 +94,7 @@
           <button type="button" class="link" onclick={cancelSignIn}>{t("account.cancel")}</button>
         </div>
       {:else}
-        <button type="button" role="menuitem" class="item add" onclick={signIn}>
+        <button type="button" role="menuitem" class="item action" onclick={signIn}>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
           {t("account.add")}
         </button>
@@ -132,26 +142,12 @@
     background: var(--surface-hover);
   }
 
-  .pill:not(:has(.avatar)) {
+  .pill:not(:has(:global(.head))) {
     padding-left: 12px;
   }
 
   .pill.signing-in {
     padding-left: 8px;
-  }
-
-  .avatar {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    background: var(--accent);
-    color: var(--accent-text);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
   }
 
   .menu {
@@ -209,12 +205,17 @@
     stroke-linejoin: round;
   }
 
-  .item svg:only-of-type {
+  [aria-checked="true"] svg {
     color: var(--accent);
   }
 
-  .add {
+  .action {
     color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .action:hover {
+    color: var(--text);
   }
 
   .sign-out,

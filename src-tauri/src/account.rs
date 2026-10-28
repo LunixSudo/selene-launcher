@@ -5,7 +5,7 @@ use std::time::{Duration, SystemTime};
 
 use keyring::Entry;
 use reqwest::Client;
-use selene_core::auth::{self, LoginRequest, MicrosoftTokens, MinecraftSession};
+use selene_core::auth::{self, LoginRequest, MicrosoftTokens, MinecraftSession, Profile};
 use selene_core::launch::LaunchAccount;
 use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
@@ -25,6 +25,9 @@ const EXPIRY_MARGIN: Duration = Duration::from_secs(5 * 60);
 pub struct Account {
     pub id: String,
     pub name: String,
+    /// Texture URL of the current skin, for the player head in the title bar.
+    #[serde(default)]
+    pub skin: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -82,6 +85,7 @@ impl Accounts {
         let account = Account {
             id: session.profile.id.clone(),
             name: session.profile.name.clone(),
+            skin: active_skin(&session.profile),
         };
 
         store_refresh_token(&account.id, &tokens)?;
@@ -127,10 +131,21 @@ impl Accounts {
 
     /// The active account with a fresh game session, renewed through Microsoft when needed.
     pub async fn launch_account(&self, client: &Client) -> CommandResult<LaunchAccount> {
-        let Some(id) = self.list().active else {
+        if self.list().active.is_none() {
             return dev_account().ok_or(CommandError::NotSignedIn);
-        };
+        }
+        let session = self.session(client).await?;
+        Ok(LaunchAccount {
+            name: session.profile.name,
+            uuid: session.profile.id,
+            access_token: session.access_token,
+            xuid: None,
+        })
+    }
 
+    /// A game session for the active account, for calls to Minecraft Services.
+    pub async fn session(&self, client: &Client) -> CommandResult<MinecraftSession> {
+        let id = self.list().active.ok_or(CommandError::NotSignedIn)?;
         let mut sessions = self.sessions.lock().await;
         let fresh = sessions
             .get(&id)
@@ -142,15 +157,32 @@ impl Accounts {
             // Microsoft rotates refresh tokens, so the new one replaces the old right away.
             store_refresh_token(&id, &tokens)?;
             let session = auth::minecraft_login(client, &tokens.access_token).await?;
+            self.remember(&session.profile)?;
             sessions.insert(id.clone(), session);
         }
+        Ok(sessions[&id].clone())
+    }
 
-        let session = &sessions[&id];
-        Ok(LaunchAccount {
-            name: session.profile.name.clone(),
-            uuid: session.profile.id.clone(),
-            access_token: session.access_token.clone(),
-            xuid: None,
+    /// Keeps the cached session and the saved account in step after a skin or cape change.
+    pub async fn set_profile(&self, profile: &Profile) -> CommandResult<()> {
+        if let Some(session) = self.sessions.lock().await.get_mut(&profile.id) {
+            session.profile = profile.clone();
+        }
+        self.remember(profile)
+    }
+
+    /// The name and skin can change on minecraft.net too, so they are taken from every
+    /// fresh profile.
+    fn remember(&self, profile: &Profile) -> CommandResult<()> {
+        self.update(|list| {
+            for account in list
+                .accounts
+                .iter_mut()
+                .filter(|account| account.id == profile.id)
+            {
+                account.name.clone_from(&profile.name);
+                account.skin = active_skin(profile);
+            }
         })
     }
 
@@ -168,6 +200,14 @@ fn write_list(path: &Path, list: &AccountList) -> CommandResult<()> {
     let bytes = serde_json::to_vec_pretty(list).map_err(selene_core::Error::from)?;
     std::fs::write(path, bytes)?;
     Ok(())
+}
+
+fn active_skin(profile: &Profile) -> Option<String> {
+    profile
+        .skins
+        .iter()
+        .find(|skin| skin.state == "ACTIVE")
+        .map(|skin| skin.url.clone())
 }
 
 fn credential(id: &str) -> CommandResult<Entry> {

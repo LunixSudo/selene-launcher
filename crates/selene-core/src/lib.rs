@@ -17,6 +17,7 @@ pub mod mods;
 pub mod mrpack;
 pub mod rules;
 pub mod saves;
+pub mod skins;
 pub mod update;
 pub mod version;
 

@@ -94,6 +94,30 @@ export interface LauncherConfig {
 export interface Account {
   id: string;
   name: string;
+  skin: string | null;
+}
+
+export type SkinVariant = "classic" | "slim";
+
+export interface SkinProfile {
+  name: string;
+  skin: { url: string; variant: SkinVariant } | null;
+  capes: Cape[];
+}
+
+export interface Cape {
+  id: string;
+  name: string;
+  url: string;
+  active: boolean;
+}
+
+export interface SavedSkin {
+  id: string;
+  name: string;
+  variant: SkinVariant;
+  /** Data URL of the PNG. */
+  image: string;
 }
 
 export interface AccountList {
@@ -231,6 +255,7 @@ export type ErrorKind =
   | "unknownInstance"
   | "invalidPack"
   | "unsupportedLoader"
+  | "invalidSkin"
   | "noLoader"
   | "noCompatibleVersion"
   | "alreadyRunning"
@@ -316,6 +341,15 @@ export const api = {
   checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),
   installUpdate: () => invoke<void>("install_update"),
   setConfig: (config: LauncherConfig) => invoke<void>("set_config", { config }),
+  skinProfile: () => invoke<SkinProfile>("skin_profile"),
+  applySkin: (id: string) => invoke<SkinProfile>("apply_skin", { id }),
+  resetSkin: () => invoke<SkinProfile>("reset_skin"),
+  setCape: (id: string | null) => invoke<SkinProfile>("set_cape", { id }),
+  savedSkins: () => invoke<SavedSkin[]>("saved_skins"),
+  addSkin: (path: string, variant: SkinVariant) => invoke<SavedSkin>("add_skin", { path, variant }),
+  setSkinVariant: (id: string, variant: SkinVariant) =>
+    invoke<void>("set_skin_variant", { id, variant }),
+  removeSkin: (id: string) => invoke<void>("remove_skin", { id }),
   setDiscordPresence: (presence: DiscordPresence | null) =>
     invoke<void>("set_discord_presence", { presence }),
   gameLog: (instanceId: string) => invoke<string[]>("game_log", { instanceId }),
