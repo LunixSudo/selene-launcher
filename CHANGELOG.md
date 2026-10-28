@@ -101,3 +101,14 @@ All notable changes to this project are documented here. The format follows
 - Loader libraries with natives for several platforms no longer replace one another.
 - Dragging a link out of the window no longer drops a web shortcut on the desktop.
 - The focus ring of search fields is no longer cut off at the edge of a scrolling area.
+- Sign-in ignores connections to its local port that never send a request, such as a browser
+  preconnecting, and answers a callback with a foreign state with an error page.
+- Modpack import only downloads over HTTPS and from the hosts Modrinth allows, trying the next
+  listed link when the first one is not allowed.
+- Starting a second game of the same version no longer fails on natives the first one holds open.
+- Server lists and the skin library are written atomically, like accounts and settings.
+- Instance memory set by hand stays within what the PC has.
+- Links in project descriptions and in the privacy policy open in the browser instead of inside
+  the launcher, also with a middle or Ctrl click.
+- Dialogs are announced by their title to screen readers.
+- A slow catalog search can no longer replace the results of a newer one.

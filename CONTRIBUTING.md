@@ -12,6 +12,10 @@ cargo test --workspace
 
 CI runs the same commands.
 
+Dependabot opens weekly pull requests for Cargo and npm updates and monthly ones for GitHub
+Actions. Minor and patch updates come grouped; check the changelog of a major one before
+merging it.
+
 ## Commits
 
 [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`,
