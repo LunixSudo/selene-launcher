@@ -42,50 +42,6 @@ impl Variant {
     }
 }
 
-/// Makes `png` the profile's skin and returns the updated profile.
-pub async fn upload_skin(
-    client: &Client,
-    token: &str,
-    variant: Variant,
-    png: Vec<u8>,
-) -> Result<Profile> {
-    check_skin(&png)?;
-    let file = Part::bytes(png)
-        .file_name("skin.png")
-        .mime_str("image/png")?;
-    let form = Form::new()
-        .text("variant", variant.api_name())
-        .part("file", file);
-    let response = client
-        .post(format!("{MINECRAFT_PROFILE_URL}/skins"))
-        .bearer_auth(token)
-        .multipart(form)
-        .send()
-        .await?;
-    auth::parse_response(response, SERVICE).await
-}
-
-/// Goes back to the default skin the game picks for the account.
-pub async fn reset_skin(client: &Client, token: &str) -> Result<Profile> {
-    let response = client
-        .delete(format!("{MINECRAFT_PROFILE_URL}/skins/active"))
-        .bearer_auth(token)
-        .send()
-        .await?;
-    auth::parse_response(response, SERVICE).await
-}
-
-/// Shows one of the capes the account owns, or hides the cape with `None`.
-pub async fn set_cape(client: &Client, token: &str, cape_id: Option<&str>) -> Result<Profile> {
-    let url = format!("{MINECRAFT_PROFILE_URL}/capes/active");
-    let request = match cape_id {
-        Some(id) => client.put(url).json(&json!({ "capeId": id })),
-        None => client.delete(url),
-    };
-    let response = request.bearer_auth(token).send().await?;
-    auth::parse_response(response, SERVICE).await
-}
-
 /// A skin file the user added to the launcher.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -175,6 +131,50 @@ impl SkinLibrary {
     fn index_path(&self) -> PathBuf {
         self.dir.join("skins.json")
     }
+}
+
+/// Makes `png` the profile's skin and returns the updated profile.
+pub async fn upload_skin(
+    client: &Client,
+    token: &str,
+    variant: Variant,
+    png: Vec<u8>,
+) -> Result<Profile> {
+    check_skin(&png)?;
+    let file = Part::bytes(png)
+        .file_name("skin.png")
+        .mime_str("image/png")?;
+    let form = Form::new()
+        .text("variant", variant.api_name())
+        .part("file", file);
+    let response = client
+        .post(format!("{MINECRAFT_PROFILE_URL}/skins"))
+        .bearer_auth(token)
+        .multipart(form)
+        .send()
+        .await?;
+    auth::parse_response(response, SERVICE).await
+}
+
+/// Goes back to the default skin the game picks for the account.
+pub async fn reset_skin(client: &Client, token: &str) -> Result<Profile> {
+    let response = client
+        .delete(format!("{MINECRAFT_PROFILE_URL}/skins/active"))
+        .bearer_auth(token)
+        .send()
+        .await?;
+    auth::parse_response(response, SERVICE).await
+}
+
+/// Shows one of the capes the account owns, or hides the cape with `None`.
+pub async fn set_cape(client: &Client, token: &str, cape_id: Option<&str>) -> Result<Profile> {
+    let url = format!("{MINECRAFT_PROFILE_URL}/capes/active");
+    let request = match cape_id {
+        Some(id) => client.put(url).json(&json!({ "capeId": id })),
+        None => client.delete(url),
+    };
+    let response = request.bearer_auth(token).send().await?;
+    auth::parse_response(response, SERVICE).await
 }
 
 /// Minecraft takes 64x64 skins, and 64x32 ones from before 1.8. The size sits in the PNG

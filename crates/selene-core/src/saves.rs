@@ -58,6 +58,23 @@ struct LevelData {
     hardcore: Option<i8>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Server {
+    pub name: String,
+    pub address: String,
+    /// Base64 PNG the game saves after pinging the server.
+    pub icon: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Screenshot {
+    pub path: PathBuf,
+    pub name: String,
+    pub taken_at: Option<DateTime<Utc>>,
+}
+
 pub fn saves_dir(game_dir: &Path) -> PathBuf {
     game_dir.join(SAVES_DIR)
 }
@@ -166,15 +183,6 @@ pub fn world_dir(game_dir: &Path, folder: &str) -> Result<PathBuf> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Server {
-    pub name: String,
-    pub address: String,
-    /// Base64 PNG the game saves after pinging the server.
-    pub icon: Option<String>,
-}
-
 /// The multiplayer list as the game shows it.
 pub fn servers(game_dir: &Path) -> Result<Vec<Server>> {
     let Some(root) = read_servers(game_dir)? else {
@@ -250,14 +258,6 @@ fn compound(value: &Value) -> Option<&HashMap<String, Value>> {
         Value::Compound(map) => Some(map),
         _ => None,
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Screenshot {
-    pub path: PathBuf,
-    pub name: String,
-    pub taken_at: Option<DateTime<Utc>>,
 }
 
 /// Screenshots, newest first.

@@ -20,6 +20,20 @@ static BYTES_PER_SECOND: AtomicU64 = AtomicU64::new(0);
 /// When the speed budget is free again; downloads queue behind each other on it.
 static BUDGET_FREE_AT: Mutex<Option<Instant>> = Mutex::new(None);
 
+#[derive(Debug, Clone)]
+pub struct Download {
+    pub url: String,
+    pub path: PathBuf,
+    pub sha1: String,
+    pub size: u64,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Progress {
+    pub bytes_done: u64,
+    pub bytes_total: u64,
+}
+
 /// Caps how many files download at once and how fast, for slow or metered connections.
 pub fn set_limits(max_parallel: Option<usize>, bytes_per_second: Option<u64>) {
     MAX_PARALLEL.store(max_parallel.unwrap_or(0), Ordering::Relaxed);
@@ -41,20 +55,6 @@ fn throttle_delay(bytes: usize) -> Option<Duration> {
     let start = free_at.filter(|&at| at > now).unwrap_or(now);
     *free_at = Some(start + cost);
     Some(start - now)
-}
-
-#[derive(Debug, Clone)]
-pub struct Download {
-    pub url: String,
-    pub path: PathBuf,
-    pub sha1: String,
-    pub size: u64,
-}
-
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct Progress {
-    pub bytes_done: u64,
-    pub bytes_total: u64,
 }
 
 /// Downloads every file that is missing or fails its checksum.

@@ -152,6 +152,28 @@ pub struct ProjectPage {
     downloads: u64,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionChange {
+    /// Mods that have a build for the new version and will be swapped for it.
+    updated: Vec<ContentUpdate>,
+    /// Mods with no build for the new version; they get disabled, not deleted.
+    incompatible: Vec<String>,
+    /// Mods neither site could check; they stay as they are.
+    unknown: Vec<String>,
+}
+
+struct Plan {
+    files: Vec<RemoteFile>,
+    preview: InstallPreview,
+}
+
+struct ChangePlan {
+    updates: Vec<(ModFile, RemoteFile, ContentUpdate)>,
+    incompatible: Vec<(ModFile, String)>,
+    unknown: Vec<String>,
+}
+
 /// Searches one source, already filtered to what runs on the instance.
 #[tauri::command]
 #[allow(clippy::too_many_arguments, reason = "one argument per search filter")]
@@ -419,11 +441,6 @@ async fn list_installed(
         .collect();
     installed.sort_by_cached_key(|installed| display_name(installed).to_lowercase());
     Ok(installed)
-}
-
-struct Plan {
-    files: Vec<RemoteFile>,
-    preview: InstallPreview,
 }
 
 /// What installing the picked projects would download, dependencies included.
@@ -756,23 +773,6 @@ async fn available_updates(
             newer.then(|| (file.clone(), update))
         })
         .collect())
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionChange {
-    /// Mods that have a build for the new version and will be swapped for it.
-    updated: Vec<ContentUpdate>,
-    /// Mods with no build for the new version; they get disabled, not deleted.
-    incompatible: Vec<String>,
-    /// Mods neither site could check; they stay as they are.
-    unknown: Vec<String>,
-}
-
-struct ChangePlan {
-    updates: Vec<(ModFile, RemoteFile, ContentUpdate)>,
-    incompatible: Vec<(ModFile, String)>,
-    unknown: Vec<String>,
 }
 
 /// What moving the instance to another game version would do to its mods.
