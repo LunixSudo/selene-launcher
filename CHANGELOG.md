@@ -36,6 +36,9 @@ All notable changes to this project are documented here. The format follows
 - Desktop shortcuts of instances use the instance's icon and cover and follow later changes.
 - Removing a project from its catalog entry, with a confirmation.
 - Rounded tooltips in place of the system ones.
+- Forge and NeoForge instances, including Forge and NeoForge modpacks. Their official installer
+  runs in the background without windows, with its progress on the instance card; Forge
+  suggests its recommended build. Forge goes back to 1.12.2.
 
 ### Changed
 

@@ -87,6 +87,8 @@ impl PackIndex {
                 "minecraft" => continue,
                 "fabric-loader" => Loader::Fabric,
                 "quilt-loader" => Loader::Quilt,
+                "forge" => Loader::Forge,
+                "neoforge" => Loader::NeoForge,
                 other => return Err(Error::UnsupportedLoader(other.to_owned())),
             };
             return Ok(Some(LoaderVersion {
@@ -198,6 +200,8 @@ pub async fn export(
         let key = match loader.loader {
             Loader::Fabric => "fabric-loader",
             Loader::Quilt => "quilt-loader",
+            Loader::Forge => "forge",
+            Loader::NeoForge => "neoforge",
         };
         dependencies.insert(key.to_owned(), loader.version.clone());
     }
@@ -396,10 +400,16 @@ mod tests {
             })
         );
 
+        index.dependencies.remove("fabric-loader");
         index
             .dependencies
-            .insert("neoforge".into(), "21.10.1".into());
-        index.dependencies.remove("fabric-loader");
+            .insert("neoforge".into(), "21.10.64".into());
+        assert_eq!(index.loader().unwrap().unwrap().loader, Loader::NeoForge);
+
+        index.dependencies.remove("neoforge");
+        index
+            .dependencies
+            .insert("liteloader".into(), "1.12.2".into());
         assert!(matches!(index.loader(), Err(Error::UnsupportedLoader(_))));
     }
 

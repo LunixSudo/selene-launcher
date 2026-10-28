@@ -4,7 +4,7 @@
 //! cargo run -p selene-core --example prepare -- 1.21.10 ./game fabric
 //! ```
 //!
-//! The optional loader is `fabric` or `quilt`, with a version after a colon to pin one.
+//! The optional loader is `fabric`, `quilt`, `forge` or `neoforge`, with a version after a colon to pin one.
 
 use std::time::Instant;
 
@@ -56,6 +56,8 @@ async fn pick_loader(
     let loader = match name {
         "fabric" => Loader::Fabric,
         "quilt" => Loader::Quilt,
+        "forge" => Loader::Forge,
+        "neoforge" => Loader::NeoForge,
         other => panic!("unknown loader {other}"),
     };
     let version = if version.is_empty() {

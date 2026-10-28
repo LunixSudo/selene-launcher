@@ -8,7 +8,7 @@ export interface VersionSummary {
   releaseTime: string;
 }
 
-export type Loader = "fabric" | "quilt";
+export type Loader = "fabric" | "quilt" | "forge" | "neoforge";
 
 export interface LoaderVersion {
   loader: Loader;
@@ -18,6 +18,7 @@ export interface LoaderVersion {
 export interface LoaderRelease {
   version: string;
   stable: boolean;
+  recommended: boolean;
 }
 
 export interface Instance {
@@ -256,6 +257,7 @@ export type ErrorKind =
   | "unknownInstance"
   | "invalidPack"
   | "unsupportedLoader"
+  | "loaderInstaller"
   | "invalidSkin"
   | "noLoader"
   | "noCompatibleVersion"
@@ -272,7 +274,7 @@ export interface CommandError {
 
 export interface LaunchProgress {
   instanceId: string;
-  stage: "mods" | "files" | "java";
+  stage: "mods" | "files" | "java" | "loader";
   bytesDone: number;
   bytesTotal: number;
 }

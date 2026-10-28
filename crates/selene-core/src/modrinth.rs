@@ -36,6 +36,8 @@ impl<'a> Target<'a> {
             (ContentKind::Mod, Some(Loader::Fabric)) => &["fabric"],
             // Quilt also loads Fabric mods.
             (ContentKind::Mod, Some(Loader::Quilt)) => &["quilt", "fabric"],
+            (ContentKind::Mod, Some(Loader::Forge)) => &["forge"],
+            (ContentKind::Mod, Some(Loader::NeoForge)) => &["neoforge"],
             (ContentKind::Mod, None) => &[],
             (ContentKind::ResourcePack, _) => &["minecraft"],
             // Iris runs nearly every pack made for OptiFine.

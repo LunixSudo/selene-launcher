@@ -17,7 +17,7 @@ None of this is sent anywhere, except as described below.
 | --- | --- | --- |
 | Microsoft and Xbox Live | Signing in | Sign-in tokens |
 | Mojang and Minecraft Services | Checking you own the game, downloading the game and Java, skins and capes | Your Minecraft token, the skin you choose |
-| Fabric and Quilt | Mod loaders | The game version |
+| Fabric, Quilt, Forge and NeoForge | Mod loaders: the list of builds and the loader itself, which Forge and NeoForge download with their own installer | The game version |
 | Modrinth and CurseForge | The catalog, installing and updating mods | Search queries, and checksums of installed files to recognise them and find updates |
 | GitHub | Checking for launcher updates | Nothing beyond the request itself |
 | Discord (the app on your computer) | The "Playing Selene Launcher" status | The game version and instance name. Can be turned off in settings |

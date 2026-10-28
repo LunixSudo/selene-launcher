@@ -5,18 +5,19 @@ use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::version::{Arguments, Artifact, Library, LibraryDownloads, VersionInfo};
-use crate::{Result, http};
+use crate::{Result, forge, http};
 
 const FABRIC_META_URL: &str = "https://meta.fabricmc.net/v2";
 const QUILT_META_URL: &str = "https://meta.quiltmc.org/v3";
 const HASH_CONCURRENCY: usize = 8;
 
-/// Mod loaders that patch the game through a version profile, without running an installer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Loader {
     Fabric,
     Quilt,
+    Forge,
+    NeoForge,
 }
 
 /// A loader pinned to one of its versions, as stored in an instance.
@@ -30,6 +31,8 @@ pub struct LoaderVersion {
 pub struct LoaderRelease {
     pub version: String,
     pub stable: bool,
+    /// The build Forge suggests for this game version.
+    pub recommended: bool,
 }
 
 /// The part of a version JSON a loader adds on top of the game version it inherits from.
@@ -64,10 +67,15 @@ struct LoaderInfo {
 }
 
 impl Loader {
+    /// Forge and NeoForge have to run their installer; the others only add a profile.
+    pub fn uses_installer(self) -> bool {
+        matches!(self, Self::Forge | Self::NeoForge)
+    }
+
     fn meta_url(self) -> &'static str {
         match self {
-            Self::Fabric => FABRIC_META_URL,
             Self::Quilt => QUILT_META_URL,
+            _ => FABRIC_META_URL,
         }
     }
 }
@@ -78,6 +86,9 @@ pub async fn releases(
     loader: Loader,
     game_version: &str,
 ) -> Result<Vec<LoaderRelease>> {
+    if loader.uses_installer() {
+        return forge::releases(client, loader, game_version).await;
+    }
     let url = format!("{}/versions/loader/{game_version}", loader.meta_url());
     let response = client.get(&url).send().await?;
     // Both sites answer versions they do not support (anything before 1.14) with an error.
@@ -95,6 +106,7 @@ pub async fn releases(
                 .loader
                 .stable
                 .unwrap_or_else(|| !entry.loader.version.contains('-')),
+            recommended: false,
             version: entry.loader.version,
         })
         .collect())
@@ -125,6 +137,7 @@ impl VersionPatch {
         Ok(ResolvedPatch {
             main_class: self.main_class,
             arguments: self.arguments,
+            minecraft_arguments: None,
             libraries,
         })
     }
@@ -134,6 +147,8 @@ impl VersionPatch {
 pub struct ResolvedPatch {
     pub main_class: String,
     pub arguments: Option<Arguments>,
+    /// Replaces the game's own arguments in versions before 1.13.
+    pub minecraft_arguments: Option<String>,
     pub libraries: Vec<Library>,
 }
 
@@ -162,7 +177,7 @@ impl MavenLibrary {
     }
 }
 
-async fn fetch_sha1(client: &Client, jar_url: &str) -> Result<String> {
+pub(crate) async fn fetch_sha1(client: &Client, jar_url: &str) -> Result<String> {
     let text = client
         .get(format!("{jar_url}.sha1"))
         .send()
@@ -209,6 +224,9 @@ impl VersionInfo {
         self.libraries = libraries;
 
         self.main_class = patch.main_class;
+        if patch.minecraft_arguments.is_some() {
+            self.minecraft_arguments = patch.minecraft_arguments;
+        }
         if let Some(extra) = patch.arguments {
             match &mut self.arguments {
                 Some(arguments) => {
@@ -275,6 +293,7 @@ mod tests {
                 r#"{ "jvm": ["-DFabricMcEmu= net.minecraft.client.main.Main "] }"#,
             )
             .unwrap(),
+            minecraft_arguments: None,
             libraries: vec![serde_json::from_str(r#"{ "name": "org.ow2.asm:asm:9.9" }"#).unwrap()],
         };
 

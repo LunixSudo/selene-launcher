@@ -100,6 +100,7 @@ export const ru = {
     mods: "Обновление модов…",
     files: "Загрузка игры {percent}%",
     java: "Загрузка Java {percent}%",
+    loader: "Установка загрузчика {percent}%",
     starting: "Запуск…",
   },
   create: {
@@ -113,6 +114,7 @@ export const ru = {
     loaderVersion: "Версия загрузчика",
     loadingLoader: "Загрузка версий…",
     unstable: "бета",
+    recommended: "рекомендуемая",
     loaderUnsupported:
       "{loader} нет для этой версии игры. Выберите другую версию или сборку без модов.",
     loadingVersions: "Загрузка списка версий…",
@@ -408,7 +410,8 @@ export const ru = {
     unknownVersion: "Такой версии нет.",
     unknownInstance: "Сборка не найдена.",
     invalidPack: "Это не сборка Modrinth или файл повреждён.",
-    unsupportedLoader: "Сборки на Forge и NeoForge пока не поддерживаются.",
+    unsupportedLoader: "Этот загрузчик модов не поддерживается.",
+    loaderInstaller: "Не удалось установить загрузчик модов. Подробности на вкладке «Логи».",
     invalidSkin: "Это не скин Minecraft: нужен PNG 64×64 или 64×32.",
     noLoader: "В этой сборке нет загрузчика модов.",
     noWorld: "Выберите мир для датапака.",

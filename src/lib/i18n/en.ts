@@ -102,6 +102,7 @@ export const en: Messages = {
     mods: "Updating mods…",
     files: "Downloading game {percent}%",
     java: "Downloading Java {percent}%",
+    loader: "Installing the mod loader {percent}%",
     starting: "Starting…",
   },
   create: {
@@ -115,6 +116,7 @@ export const en: Messages = {
     loaderVersion: "Loader version",
     loadingLoader: "Loading versions…",
     unstable: "beta",
+    recommended: "recommended",
     loaderUnsupported:
       "{loader} is not available for this game version. Pick another version or no mod loader.",
     loadingVersions: "Loading versions…",
@@ -410,7 +412,8 @@ export const en: Messages = {
     unknownVersion: "This version does not exist.",
     unknownInstance: "Instance not found.",
     invalidPack: "This is not a Modrinth modpack, or the file is damaged.",
-    unsupportedLoader: "Forge and NeoForge modpacks are not supported yet.",
+    unsupportedLoader: "This mod loader is not supported.",
+    loaderInstaller: "Could not install the mod loader. The Logs tab has the details.",
     invalidSkin: "Not a Minecraft skin: it has to be a 64×64 or 64×32 PNG.",
     noLoader: "This instance has no mod loader.",
     noWorld: "Pick a world for the data pack.",

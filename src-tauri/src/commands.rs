@@ -399,6 +399,7 @@ async fn start_game(
                         stage: match stage {
                             Stage::Files => "files",
                             Stage::Java => "java",
+                            Stage::Loader => "loader",
                         },
                         bytes_done: progress.bytes_done,
                         bytes_total: progress.bytes_total,
@@ -407,7 +408,16 @@ async fn start_game(
             }
         },
     )
-    .await?;
+    .await
+    .inspect_err(|err| {
+        // The console tab is the only place the installer's own explanation can be read.
+        if let selene_core::Error::LoaderInstaller(output) = err {
+            launcher.clear_log(&instance.id);
+            for line in output.lines() {
+                launcher.push_log(&instance.id, line.to_owned());
+            }
+        }
+    })?;
 
     let dirs = &launcher.dirs;
     let token = account.access_token.clone();

@@ -6,9 +6,9 @@ use crate::download::{self, Progress};
 use crate::java::{self, JavaRuntime};
 use crate::loader::{self, LoaderVersion};
 use crate::manifest::VersionEntry;
-use crate::rules::{Environment, Features};
-use crate::version::{AssetIndex, VersionInfo};
-use crate::{Error, Result};
+use crate::rules::{self, Environment, Features};
+use crate::version::{self, AssetIndex, VersionInfo};
+use crate::{Error, Result, forge};
 
 const DOWNLOAD_CONCURRENCY: usize = 32;
 /// Versions older than the `javaVersion` field all ran on Java 8.
@@ -24,6 +24,8 @@ pub struct GameDirs {
 pub enum Stage {
     Files,
     Java,
+    /// Forge or NeoForge running their installer.
+    Loader,
 }
 
 #[derive(Debug, Clone)]
@@ -71,7 +73,7 @@ where
     F: Fn(Stage, Progress) + Sync,
 {
     let mut version = VersionInfo::fetch(client, entry).await?;
-    if let Some(loader) = loader {
+    if let Some(loader) = loader.filter(|loader| !loader.loader.uses_installer()) {
         let patch = loader::fetch_patch(client, loader, &entry.id).await?;
         version = version.with_patch(patch.resolve(client).await?);
     }
@@ -94,6 +96,28 @@ where
         on_progress(Stage::Java, progress);
     })
     .await?;
+
+    if let Some(loader) = loader.filter(|loader| loader.loader.uses_installer()) {
+        let patch = forge::install(
+            client,
+            dirs,
+            loader,
+            &entry.id,
+            &java.console_executable(),
+            |progress| on_progress(Stage::Loader, progress),
+        )
+        .await?;
+        let libraries = patch
+            .libraries
+            .iter()
+            .filter(|library| rules::allowed(&library.rules, &env));
+        let downloads = version::library_downloads(libraries, &env, &dirs.libraries());
+        download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, |progress| {
+            on_progress(Stage::Files, progress);
+        })
+        .await?;
+        version = version.with_patch(patch);
+    }
 
     Ok(Installed { version, java })
 }

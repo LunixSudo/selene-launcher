@@ -84,6 +84,8 @@ impl PackManifest {
         let loader = match name {
             "fabric" => Loader::Fabric,
             "quilt" => Loader::Quilt,
+            "forge" => Loader::Forge,
+            "neoforge" => Loader::NeoForge,
             other => return Err(Error::UnsupportedLoader(other.to_owned())),
         };
         Ok(Some(LoaderVersion {
@@ -187,6 +189,8 @@ pub async fn export(
             let name = match loader.loader {
                 Loader::Fabric => "fabric",
                 Loader::Quilt => "quilt",
+                Loader::Forge => "forge",
+                Loader::NeoForge => "neoforge",
             };
             ModLoader {
                 id: format!("{name}-{}", loader.version),
@@ -244,9 +248,12 @@ mod tests {
     }
 
     #[test]
-    fn rejects_forge_packs() {
+    fn reads_forge_and_rejects_unknown_loaders() {
+        let loader = manifest("forge-47.3.0").loader().unwrap().unwrap();
+        assert_eq!(loader.loader, Loader::Forge);
+        assert_eq!(loader.version, "47.3.0");
         assert!(matches!(
-            manifest("forge-47.3.0").loader(),
+            manifest("liteloader-1.12.2").loader(),
             Err(Error::UnsupportedLoader(_))
         ));
     }

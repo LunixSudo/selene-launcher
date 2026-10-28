@@ -83,6 +83,15 @@ impl JavaRuntime {
             self.home.join("bin").join("java")
         }
     }
+
+    /// `java` with console output, for tools whose output the launcher reads.
+    pub fn console_executable(&self) -> PathBuf {
+        if cfg!(windows) {
+            self.home.join("bin").join("java.exe")
+        } else {
+            self.executable()
+        }
+    }
 }
 
 /// Mojang's name for the platform this launcher was built for.

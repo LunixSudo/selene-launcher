@@ -7,7 +7,7 @@
     type VersionSummary,
   } from "$lib/api";
   import { t } from "$lib/i18n/index.svelte";
-  import { LOADER_NAMES, LOADERS } from "$lib/loaders";
+  import { LOADER_NAMES, LOADERS, preferredRelease } from "$lib/loaders";
   import { createInstance } from "$lib/state/instances.svelte";
   import Select from "./Select.svelte";
 
@@ -47,7 +47,7 @@
           return;
         }
         loaderReleases = releases;
-        loaderVersion = (releases.find((release) => release.stable) ?? releases[0])?.version ?? "";
+        loaderVersion = preferredRelease(releases)?.version ?? "";
       })
       .catch((err) => {
         error = t(`errors.${isCommandError(err) ? err.kind : "core"}`);
@@ -148,9 +148,11 @@
             bind:value={loaderVersion}
             options={loaderReleases.map((release) => ({
               value: release.version,
-              label: release.stable
-                ? release.version
-                : `${release.version} (${t("create.unstable")})`,
+              label: release.recommended
+                ? `${release.version} (${t("create.recommended")})`
+                : release.stable
+                  ? release.version
+                  : `${release.version} (${t("create.unstable")})`,
             }))}
           />
         {/if}
@@ -178,7 +180,7 @@
 
 <style>
   dialog {
-    width: min(420px, calc(100vw - 32px));
+    width: min(460px, calc(100vw - 32px));
     padding: 0;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);

@@ -2,6 +2,7 @@
   import { api, type Instance, type LoaderVersion, type VersionChange } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
+  import { preferredRelease } from "$lib/loaders";
   import { replaceInstance } from "$lib/state/instances.svelte";
   import Dialog from "./Dialog.svelte";
   import Select from "./Select.svelte";
@@ -52,13 +53,13 @@
     }
   }
 
-  // Keeps the same loader, on its newest stable build for the new game version.
+  // Keeps the same loader, on its preferred build for the new game version.
   async function loaderFor(gameVersion: string): Promise<LoaderVersion | null> {
     if (!instance.loader) {
       return null;
     }
     const builds = await api.loaderVersions(instance.loader.loader, gameVersion);
-    const build = builds.find((entry) => entry.stable) ?? builds[0];
+    const build = preferredRelease(builds);
     if (!build) {
       throw { kind: "noCompatibleVersion", message: "" };
     }

@@ -157,28 +157,41 @@ impl VersionInfo {
             sha1: client.sha1.clone(),
             size: client.size,
         }];
-
-        for library in self.libraries(env) {
-            let artifacts = library
-                .downloads
-                .artifact
-                .iter()
-                .chain(library.native_artifact(env));
-            for artifact in artifacts {
-                let Some(path) = &artifact.path else {
-                    continue;
-                };
-                downloads.push(Download {
-                    url: artifact.url.clone(),
-                    path: libraries_dir.join(path),
-                    sha1: artifact.sha1.clone(),
-                    size: artifact.size,
-                });
-            }
-        }
-
+        downloads.extend(library_downloads(self.libraries(env), env, libraries_dir));
         downloads
     }
+}
+
+/// Library files to fetch. Ones without a URL were made by a loader installer and are already
+/// on disk.
+pub fn library_downloads<'a>(
+    libraries: impl IntoIterator<Item = &'a Library>,
+    env: &Environment,
+    libraries_dir: &Path,
+) -> Vec<Download> {
+    let mut downloads = Vec::new();
+    for library in libraries {
+        let artifacts = library
+            .downloads
+            .artifact
+            .iter()
+            .chain(library.native_artifact(env));
+        for artifact in artifacts {
+            let Some(path) = &artifact.path else {
+                continue;
+            };
+            if artifact.url.is_empty() {
+                continue;
+            }
+            downloads.push(Download {
+                url: artifact.url.clone(),
+                path: libraries_dir.join(path),
+                sha1: artifact.sha1.clone(),
+                size: artifact.size,
+            });
+        }
+    }
+    downloads
 }
 
 impl Library {

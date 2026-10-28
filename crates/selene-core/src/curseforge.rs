@@ -182,6 +182,8 @@ fn loader_type(loader: Loader) -> u32 {
     match loader {
         Loader::Fabric => 4,
         Loader::Quilt => 5,
+        Loader::Forge => 1,
+        Loader::NeoForge => 6,
     }
 }
 

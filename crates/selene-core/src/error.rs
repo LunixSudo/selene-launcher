@@ -37,6 +37,9 @@ pub enum Error {
     #[error("the {0} mod loader is not supported yet")]
     UnsupportedLoader(String),
 
+    #[error("the mod loader installer failed:\n{0}")]
+    LoaderInstaller(String),
+
     #[error("not a Minecraft skin: expected a 64x64 or 64x32 PNG")]
     InvalidSkin,
 
