@@ -9,6 +9,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES, LOADERS } from "$lib/loaders";
   import { createInstance } from "$lib/state/instances.svelte";
+  import Select from "./Select.svelte";
 
   let { open = $bindable() }: { open: boolean } = $props();
 
@@ -107,11 +108,11 @@
     <div class="field">
       <label for="instance-version">{t("create.version")}</label>
       {#if versions}
-        <select id="instance-version" bind:value={version} required>
-          {#each visibleVersions as entry (entry.id)}
-            <option value={entry.id}>{entry.id}</option>
-          {/each}
-        </select>
+        <Select
+          id="instance-version"
+          bind:value={version}
+          options={visibleVersions.map((entry) => ({ value: entry.id, label: entry.id }))}
+        />
       {:else}
         <div class="placeholder">{t("create.loadingVersions")}</div>
       {/if}
@@ -142,13 +143,16 @@
         {:else if loaderReleases.length === 0}
           <p class="hint">{t("create.loaderUnsupported", { loader: LOADER_NAMES[loader] })}</p>
         {:else}
-          <select id="loader-version" bind:value={loaderVersion}>
-            {#each loaderReleases as release (release.version)}
-              <option value={release.version}>
-                {release.stable ? release.version : `${release.version} (${t("create.unstable")})`}
-              </option>
-            {/each}
-          </select>
+          <Select
+            id="loader-version"
+            bind:value={loaderVersion}
+            options={loaderReleases.map((release) => ({
+              value: release.version,
+              label: release.stable
+                ? release.version
+                : `${release.version} (${t("create.unstable")})`,
+            }))}
+          />
         {/if}
       </div>
     {/if}
@@ -214,7 +218,6 @@
   }
 
   input:not([type="checkbox"]),
-  select,
   .placeholder {
     height: 36px;
     padding: 0 12px;
