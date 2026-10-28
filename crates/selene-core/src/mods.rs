@@ -225,9 +225,7 @@ pub async fn set_enabled(
         (dir.join(base), dir.join(disabled))
     };
     if fs::try_exists(&from).await.unwrap_or(false) {
-        fs::rename(&from, &to)
-            .await
-            .map_err(|err| Error::io(&from, err))?;
+        crate::fs::rename(&from, &to).await?;
     }
     Ok(())
 }

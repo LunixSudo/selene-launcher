@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use futures_util::{StreamExt, TryStreamExt, stream};
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 use sha1::{Digest, Sha1};
 use tokio::fs::{self, File};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -13,6 +13,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::{Error, Result, http};
 
 const MAX_ATTEMPTS: u32 = 3;
+const RETRY_DELAY: Duration = Duration::from_secs(1);
 const READ_BUFFER_SIZE: usize = 64 * 1024;
 
 /// User limits shared by every download in the process. Zero means no limit.
@@ -181,11 +182,30 @@ async fn fetch_with_retry(client: &Client, download: &Download) -> Result<()> {
     let mut attempt = 1;
     loop {
         match fetch(client, download).await {
-            Err(Error::Http(_) | Error::ChecksumMismatch { .. }) if attempt < MAX_ATTEMPTS => {
+            Err(err) if is_retryable(&err) && attempt < MAX_ATTEMPTS => {
+                tokio::time::sleep(RETRY_DELAY * attempt).await;
                 attempt += 1;
             }
-            result => return result,
+            Err(err) => {
+                let _ = fs::remove_file(partial_path(&download.path)).await;
+                return Err(err);
+            }
+            Ok(()) => return Ok(()),
         }
+    }
+}
+
+/// Dropped connections, timeouts, server errors and damaged files can go away on a second
+/// try; a missing file or a refused request will not.
+fn is_retryable(err: &Error) -> bool {
+    match err {
+        Error::Http(err) => err.status().is_none_or(|status| {
+            status.is_server_error()
+                || status == StatusCode::REQUEST_TIMEOUT
+                || status == StatusCode::TOO_MANY_REQUESTS
+        }),
+        Error::ChecksumMismatch { .. } => true,
+        _ => false,
     }
 }
 
@@ -232,9 +252,7 @@ async fn fetch(client: &Client, download: &Download) -> Result<()> {
         });
     }
 
-    fs::rename(&partial, path)
-        .await
-        .map_err(|err| Error::io(path, err))
+    crate::fs::rename(&partial, path).await
 }
 
 fn partial_path(path: &Path) -> PathBuf {
