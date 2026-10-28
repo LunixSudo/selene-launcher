@@ -5,7 +5,11 @@ A fast, minimal Minecraft: Java Edition launcher for licensed accounts.
 - Sign in with a Microsoft account; game ownership is verified on every login
 - Game versions, libraries and assets come straight from Mojang
 - The right Java runtime is downloaded automatically for each version
-- Mods from Modrinth and CurseForge, with required dependencies resolved for you
+- Mods, resource packs and shaders from Modrinth and CurseForge, with required dependencies
+  resolved for you and updates that stay on the release channel you installed
+- Worlds, servers and screenshots per instance, with one-click join through Quick Play
+- Skins and capes with a 3D preview
+- Portable mode: put an empty `portable.txt` next to the executable
 
 There is no offline mode. You need a Minecraft: Java Edition license to play.
 
