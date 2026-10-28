@@ -54,8 +54,6 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
-- New logo: a moon-rock cube with a golden crescent, with a simpler drawing for
-  16–32 px icons. Sources are in `docs/brand`.
 - The solid style is the default, so the launcher stays light on slower PCs.
 - An imported modpack shows up in the list right away, while its files download.
 - Fabric and Quilt say when they have no build for an old game version instead of reporting
