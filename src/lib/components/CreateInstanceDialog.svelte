@@ -30,6 +30,7 @@
   let loaderReleases = $state<LoaderRelease[] | null>(null);
   let loaderVersion = $state("");
   let error = $state<string | null>(null);
+  let loaderError = $state<string | null>(null);
   let submitting = $state(false);
 
   const visibleVersions = $derived(
@@ -46,6 +47,7 @@
     const gameVersion = version;
     loaderReleases = null;
     loaderVersion = "";
+    loaderError = null;
     if (!selected || !gameVersion) {
       return;
     }
@@ -61,7 +63,9 @@
         loaderVersion = preferredRelease(releases)?.version ?? "";
       })
       .catch((err) => {
-        error = t(`errors.${isCommandError(err) ? err.kind : "core"}`);
+        if (!stale) {
+          loaderError = t(`errors.${isCommandError(err) ? err.kind : "core"}`);
+        }
       });
     return () => {
       stale = true;
@@ -155,7 +159,9 @@
     {#if loader}
       <div class="form-field">
         <label for="loader-version">{t("create.loaderVersion")}</label>
-        {#if !loaderReleases}
+        {#if loaderError}
+          <p class="error" role="alert">{loaderError}</p>
+        {:else if !loaderReleases}
           <div class="placeholder">{t("create.loadingLoader")}</div>
         {:else if loaderReleases.length === 0}
           <p class="hint">{t("create.loaderUnsupported", { loader: LOADER_NAMES[loader] })}</p>

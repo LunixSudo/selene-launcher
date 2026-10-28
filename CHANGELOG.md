@@ -114,3 +114,5 @@ All notable changes to this project are documented here. The format follows
   the launcher, also with a middle or Ctrl click.
 - Dialogs are announced by their title to screen readers.
 - A slow catalog search can no longer replace the results of a newer one.
+- A mod loader that could not be reached shows its error under the loader and no longer
+  keeps it on screen after picking another loader or game version.

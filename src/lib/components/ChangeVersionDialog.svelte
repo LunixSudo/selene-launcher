@@ -23,6 +23,7 @@
   let showBetas = $state(false);
   let working = $state(false);
   let error = $state<string | null>(null);
+  let loaderError = $state<string | null>(null);
 
   const options = $derived(releases.map((value) => ({ value, label: value })));
   const loader = $derived<LoaderVersion | null>(
@@ -59,6 +60,7 @@
     change = null;
     loaderBuilds = null;
     loaderVersion = "";
+    loaderError = null;
     if (!open || !current || !gameVersion) {
       return;
     }
@@ -77,7 +79,9 @@
           "";
       })
       .catch((err) => {
-        error = describeError(err);
+        if (!stale) {
+          loaderError = describeError(err);
+        }
       });
     return () => {
       stale = true;
@@ -134,7 +138,9 @@
       <span
         >{t("changeVersion.loaderVersion", { loader: LOADER_NAMES[instance.loader.loader] })}</span
       >
-      {#if !loaderBuilds}
+      {#if loaderError}
+        <p class="error" role="alert">{loaderError}</p>
+      {:else if !loaderBuilds}
         <div class="placeholder">{t("create.loadingLoader")}</div>
       {:else if loaderBuilds.length === 0}
         <p class="muted">
