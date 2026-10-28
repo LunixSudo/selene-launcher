@@ -209,7 +209,13 @@
     font-weight: var(--display-weight);
   }
 
-  label,
+  label {
+    display: grid;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
   input:not([type="checkbox"]),
   .placeholder {
     height: 36px;

@@ -71,6 +71,12 @@
     button.focus();
   }
 
+  // A fixed list is placed inside any ancestor with a backdrop filter and clipped by it,
+  // so it moves up to the page, or to the dialog the select sits in.
+  function lift(node: HTMLElement) {
+    (button.closest("dialog") ?? document.body).append(node);
+  }
+
   function scrollToActive() {
     list?.children[active]?.scrollIntoView({ block: "nearest" });
   }
@@ -125,6 +131,7 @@
   <div
     class="list"
     bind:this={list}
+    {@attach lift}
     role="listbox"
     class:above={placement.above}
     style:left="{placement.left}px"
