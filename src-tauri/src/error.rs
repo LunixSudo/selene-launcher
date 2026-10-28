@@ -65,8 +65,10 @@ impl CommandError {
             Self::JavaNotFound(_) => "javaNotFound",
             Self::GameRunning => "gameRunning",
             Self::Spawn(_) => "spawn",
-            Self::Io(_) => "io",
-            Self::Core(selene_core::Error::Http(_)) => "network",
+            Self::Io(err) | Self::Core(selene_core::Error::Io { source: err, .. }) => io_kind(err),
+            Self::Core(
+                selene_core::Error::Http(_) | selene_core::Error::ChecksumMismatch { .. },
+            ) => "network",
             Self::Core(selene_core::Error::InvalidPack(_)) => "invalidPack",
             Self::Core(selene_core::Error::UnsupportedLoader(_)) => "unsupportedLoader",
             Self::Core(selene_core::Error::LoaderInstaller(_)) => "loaderInstaller",
@@ -87,6 +89,14 @@ impl CommandError {
             },
             Self::Core(_) => "core",
         }
+    }
+}
+
+fn io_kind(err: &std::io::Error) -> &'static str {
+    if err.kind() == std::io::ErrorKind::StorageFull {
+        "diskFull"
+    } else {
+        "io"
     }
 }
 

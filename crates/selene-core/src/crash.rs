@@ -6,6 +6,7 @@ use serde::Serialize;
 #[serde(rename_all = "camelCase")]
 pub enum CrashCause {
     OutOfMemory,
+    SystemMemory,
     WrongJava,
     MissingDependency,
     IncompatibleMods,
@@ -32,6 +33,15 @@ pub fn analyze<S: AsRef<str>>(log: &[S]) -> CrashReport {
             .rposition(|line| needles.iter().any(|needle| line.contains(needle)))
     };
 
+    // Java could not get the memory it was told to take: the PC has less free than the
+    // instance asks for, the opposite of running out inside the game.
+    if let Some(index) = find(&[
+        "Could not reserve enough space",
+        "insufficient memory for the Java Runtime Environment",
+        "Native memory allocation (malloc) failed",
+    ]) {
+        return report(CrashCause::SystemMemory, &lines[index..=index]);
+    }
     if let Some(index) = find(&["java.lang.OutOfMemoryError"]) {
         return report(CrashCause::OutOfMemory, &lines[index..=index]);
     }
@@ -130,5 +140,14 @@ mod tests {
     #[test]
     fn falls_back_to_unknown() {
         assert_eq!(analyze(&["something odd"]).cause, CrashCause::Unknown);
+    }
+
+    #[test]
+    fn tells_a_full_pc_from_a_full_game() {
+        let report = analyze(&[
+            "Error occurred during initialization of VM",
+            "Could not reserve enough space for 8388608KB object heap",
+        ]);
+        assert_eq!(report.cause, CrashCause::SystemMemory);
     }
 }

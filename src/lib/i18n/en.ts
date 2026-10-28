@@ -327,6 +327,8 @@ export const en: Messages = {
     showLogs: "Open logs",
     causes: {
       outOfMemory: "The game ran out of memory. Give it more in the instance settings.",
+      systemMemory:
+        "The PC has too little free memory for the game. Close other programs or give the game less in the instance settings.",
       wrongJava: "A mod needs a newer Java. Update the mod or change the game version.",
       missingDependency: "Some mods need others that aren't installed:",
       incompatibleMods: "Some mods don't work together:",
@@ -398,6 +400,7 @@ export const en: Messages = {
     reset: "Default skin",
     resetHint: "Go back to the skin Minecraft gave the account.",
     resetButton: "Reset",
+    noPreview: "The 3D preview needs a graphics card with WebGL, which this PC does not offer.",
   },
   discord: {
     idle: "In the launcher",
@@ -423,6 +426,7 @@ export const en: Messages = {
       "Mojang has not approved Selene Launcher for sign-in yet. The request is under review; sign-in will work once it is approved.",
     keyring: "Could not save the sign-in to the system credential store.",
     io: "Could not read or write files.",
+    diskFull: "The disk is full. Free some space and try again.",
     unknownVersion: "This version does not exist.",
     unknownInstance: "Instance not found.",
     invalidPack: "This is not a Modrinth modpack, or the file is damaged.",

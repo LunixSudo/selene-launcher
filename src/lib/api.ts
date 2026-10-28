@@ -254,6 +254,7 @@ export type ErrorKind =
   | "appNotApproved"
   | "keyring"
   | "io"
+  | "diskFull"
   | "unknownVersion"
   | "unknownInstance"
   | "invalidPack"
@@ -283,6 +284,7 @@ export interface LaunchProgress {
 
 export type CrashCause =
   | "outOfMemory"
+  | "systemMemory"
   | "wrongJava"
   | "missingDependency"
   | "incompatibleMods"
