@@ -121,11 +121,14 @@ export const en: Messages = {
   },
   catalog: {
     search: "Search the catalog",
-    select: "Select",
-    done: "Done",
-    selected: "Selected: {count}",
-    clear: "Clear",
-    addSelected: "Add ({count})",
+    remove: "Remove",
+    removeTitle: "Remove {name}?",
+    removeMessage: {
+      mod: "The mod will be removed from this instance.",
+      resourcePack: "The resource pack will be removed from this instance.",
+      shaderPack: "The shader pack will be removed from this instance.",
+      dataPack: "The data pack will be removed from this world.",
+    },
   },
   install: {
     title: "Install mods",

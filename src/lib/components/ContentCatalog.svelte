@@ -14,6 +14,7 @@
   import { categoryName } from "$lib/categories";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
+  import ConfirmDialog from "./ConfirmDialog.svelte";
   import InstallPreviewDialog from "./InstallPreviewDialog.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
   import Segmented from "./Segmented.svelte";
@@ -67,16 +68,15 @@
   let error = $state<string | null>(null);
   let manual = $state<ManualDownload[]>([]);
   let installing = $state<Record<string, "busy" | "done">>({});
-  let installed = $state(new Set<string>());
-  let selecting = $state(false);
-  let selected = $state<Record<string, CatalogHit>>({});
+  let installed = $state(new Map<string, string>());
+  let removing = $state<CatalogHit | null>(null);
+  let confirmingRemove = $state(false);
   let pending = $state<CatalogHit[]>([]);
   let pendingKind: ContentKind = "mod";
   let preview = $state<InstallPreview | null>(null);
   let confirming = $state(false);
 
   const kind = $derived(kinds.includes(chosenKind) ? chosenKind : kinds[0]);
-  const selectedCount = $derived(Object.keys(selected).length);
   const kindOptions = $derived(
     kinds.map((value) => ({ value, label: t(`content.kinds.${value}`) })),
   );
@@ -90,7 +90,6 @@
   $effect(() => {
     void source;
     void kind;
-    selected = {};
     chosenCategories = [];
     categories = [];
     api
@@ -132,14 +131,16 @@
   }
 
   async function loadInstalled(id: string, current: ContentKind, place: string | null) {
-    installed = new Set();
+    installed = new Map();
     if (current === "dataPack" && !place) {
       return;
     }
     try {
-      installed = new Set(await api.installedProjects(id, current, worldFor(current, place)));
+      installed = new Map(
+        Object.entries(await api.installedProjects(id, current, worldFor(current, place))),
+      );
       if (current === "shaderPack") {
-        hasIris = (await api.installedProjects(id, "mod", null)).includes(`modrinth:${IRIS.id}`);
+        hasIris = `modrinth:${IRIS.id}` in (await api.installedProjects(id, "mod", null));
       }
     } catch {
       // Without it every entry just offers to install.
@@ -148,6 +149,21 @@
 
   function worldFor(target: ContentKind, place = world): string | null {
     return target === "dataPack" ? place : null;
+  }
+
+  function askRemove(hit: CatalogHit) {
+    removing = hit;
+    confirmingRemove = true;
+  }
+
+  async function remove(hit: CatalogHit) {
+    const fileName = installed.get(key(hit));
+    if (fileName) {
+      await api.removeContent(instanceId, kind, worldFor(kind), fileName);
+    }
+    delete installing[key(hit)];
+    oninstall();
+    await loadInstalled(instanceId, kind, world);
   }
 
   function status(hit: CatalogHit): "busy" | "done" | undefined {
@@ -195,27 +211,6 @@
     }
   }
 
-  function toggleSelected(hit: CatalogHit) {
-    if (key(hit) in selected) {
-      delete selected[key(hit)];
-    } else {
-      selected[key(hit)] = hit;
-    }
-  }
-
-  function toggleSelecting() {
-    if (selecting) {
-      stopSelecting();
-    } else {
-      selecting = true;
-    }
-  }
-
-  function stopSelecting() {
-    selecting = false;
-    selected = {};
-  }
-
   // Shows what will be downloaded when dependencies or manual downloads come along,
   // otherwise installs straight away.
   async function requestInstall(picked: CatalogHit[], target = kind) {
@@ -253,7 +248,6 @@
       );
       manual = result.manual;
       setStatus(picked, "done");
-      stopSelecting();
       oninstall();
       void loadInstalled(instanceId, kind, world);
     } catch (err) {
@@ -320,15 +314,6 @@
     name="catalog-source"
     label={t("instance.source")}
   />
-  <button
-    type="button"
-    class="select-mode"
-    class:on={selecting}
-    aria-pressed={selecting}
-    onclick={toggleSelecting}
-  >
-    {selecting ? t("catalog.done") : t("catalog.select")}
-  </button>
 </div>
 
 <div class="filters">
@@ -381,19 +366,7 @@
 
 <ul>
   {#each hits as hit (key(hit))}
-    <li class:picked={key(hit) in selected}>
-      {#if selecting}
-        <label class="pick">
-          <input
-            type="checkbox"
-            checked={key(hit) in selected}
-            disabled={status(hit) !== undefined}
-            onchange={() => toggleSelected(hit)}
-            aria-label={hit.title}
-          >
-          <span aria-hidden="true"></span>
-        </label>
-      {/if}
+    <li>
       {#if hit.iconUrl}
         <img src={hit.iconUrl} alt="" loading="lazy">
       {:else}
@@ -419,13 +392,14 @@
         type="button"
         class="add"
         class:done={status(hit) === "done"}
-        disabled={status(hit) !== undefined}
-        onclick={() => requestInstall([hit])}
+        disabled={status(hit) === "busy"}
+        onclick={() => (status(hit) === "done" ? askRemove(hit) : requestInstall([hit]))}
       >
         {#if status(hit) === "busy"}
           {t("instance.adding")}
         {:else if status(hit) === "done"}
-          {t("instance.added")}
+          <span class="installed-label">{t("instance.added")}</span>
+          <span class="remove-label">{t("catalog.remove")}</span>
         {:else}
           {t("instance.add")}
         {/if}
@@ -445,16 +419,15 @@
   </button>
 {/if}
 
-{#if selecting && selectedCount > 0}
-  <div class="selection-bar">
-    <strong>{t("catalog.selected", { count: selectedCount })}</strong>
-    <button type="button" class="clear" onclick={() => (selected = {})}>
-      {t("catalog.clear")}
-    </button>
-    <button type="button" class="add" onclick={() => requestInstall(Object.values(selected))}>
-      {t("catalog.addSelected", { count: selectedCount })}
-    </button>
-  </div>
+{#if removing}
+  {@const hit = removing}
+  <ConfirmDialog
+    bind:open={confirmingRemove}
+    title={t("catalog.removeTitle", { name: hit.title })}
+    message={t(`catalog.removeMessage.${kind}`)}
+    confirmLabel={t("catalog.remove")}
+    onconfirm={() => remove(hit)}
+  />
 {/if}
 
 {#if shownHit}
@@ -476,101 +449,6 @@
 {/if}
 
 <style>
-  .select-mode {
-    flex: none;
-    height: 38px;
-    padding: 0 16px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .select-mode.on {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .pick {
-    display: grid;
-    flex: none;
-    place-items: center;
-    cursor: pointer;
-  }
-
-  .pick input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .pick span {
-    width: 22px;
-    height: 22px;
-    border: 2px solid var(--border);
-    border-radius: 50%;
-    transition:
-      background 150ms var(--ease),
-      border-color 150ms var(--ease);
-  }
-
-  .pick input:checked + span {
-    border-color: var(--accent);
-    background:
-      var(--accent)
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l3 3 5-6' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
-      center / 14px no-repeat;
-  }
-
-  .pick input:disabled + span {
-    opacity: 0.35;
-  }
-
-  .pick input:focus-visible + span {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-
-  li.picked {
-    border-color: var(--accent);
-  }
-
-  .selection-bar {
-    position: sticky;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 12px;
-    padding: 10px 10px 10px 18px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface-solid);
-    box-shadow: 0 12px 32px rgb(0 0 0 / 0.25);
-    animation: rise 180ms var(--ease);
-  }
-
-  .selection-bar strong {
-    flex: 1;
-    font-weight: 600;
-  }
-
-  .clear {
-    height: 32px;
-    padding: 0 14px;
-    border: none;
-    border-radius: 999px;
-    background: var(--field);
-  }
-
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-  }
-
   .search-bar {
     display: flex;
     align-items: center;
@@ -704,6 +582,23 @@
     background: var(--field);
     color: var(--text);
     opacity: 1;
+    transition:
+      background 150ms var(--ease),
+      color 150ms var(--ease);
+  }
+
+  .add.done:hover {
+    background: color-mix(in srgb, var(--danger) 16%, transparent);
+    color: var(--danger);
+  }
+
+  .remove-label,
+  .add.done:hover .installed-label {
+    display: none;
+  }
+
+  .add.done:hover .remove-label {
+    display: inline;
   }
 
   .more {

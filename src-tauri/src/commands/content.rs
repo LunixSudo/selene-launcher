@@ -298,44 +298,50 @@ pub async fn catalog_categories(
     Ok(tags)
 }
 
-/// Catalog entries already in the instance, as `source:id`. A file uploaded to both sites
-/// counts for both.
+/// Catalog entries already in the instance, as `source:id` mapped to the file's name. A
+/// file uploaded to both sites counts for both.
 #[tauri::command]
 pub async fn installed_projects(
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
     world: Option<String>,
-) -> CommandResult<Vec<String>> {
+) -> CommandResult<HashMap<String, String>> {
     let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
     let files = mods::list(&game_dir, kind).await?;
     let hashes: Vec<String> = files.iter().map(|file| file.sha1.clone()).collect();
+    let file_name = |sha1: &str| {
+        files
+            .iter()
+            .find(|file| file.sha1 == sha1)
+            .map(|file| file.file_name.clone())
+    };
 
     let from_modrinth = async {
         modrinth::versions_by_hash(&launcher.client, &hashes)
             .await
-            .map(|versions| {
-                versions
-                    .into_values()
-                    .map(|version| format!("modrinth:{}", version.project_id))
-                    .collect::<Vec<_>>()
-            })
             .unwrap_or_default()
+            .into_iter()
+            .filter_map(|(sha1, version)| {
+                Some((
+                    format!("modrinth:{}", version.project_id),
+                    file_name(&sha1)?,
+                ))
+            })
+            .collect::<HashMap<_, _>>()
     };
     let from_curseforge = async {
         let Some(curseforge) = &launcher.curseforge else {
-            return Vec::new();
+            return HashMap::new();
         };
         curseforge_matches(curseforge, &game_dir, kind, &files)
             .await
-            .into_values()
-            .map(|mod_id| format!("curseforge:{mod_id}"))
+            .into_iter()
+            .filter_map(|(sha1, mod_id)| Some((format!("curseforge:{mod_id}"), file_name(&sha1)?)))
             .collect()
     };
     let (mut installed, from_curseforge) = tokio::join!(from_modrinth, from_curseforge);
     installed.extend(from_curseforge);
-    installed.sort();
-    installed.dedup();
     Ok(installed)
 }
 

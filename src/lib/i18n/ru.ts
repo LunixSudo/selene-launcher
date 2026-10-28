@@ -119,11 +119,14 @@ export const ru = {
   },
   catalog: {
     search: "Поиск в каталоге",
-    select: "Выбрать",
-    done: "Готово",
-    selected: "Выбрано: {count}",
-    clear: "Сбросить",
-    addSelected: "Добавить ({count})",
+    remove: "Удалить",
+    removeTitle: "Удалить «{name}»?",
+    removeMessage: {
+      mod: "Мод удалится из этой сборки.",
+      resourcePack: "Ресурспак удалится из этой сборки.",
+      shaderPack: "Шейдер удалится из этой сборки.",
+      dataPack: "Датапак удалится из этого мира.",
+    },
   },
   install: {
     title: "Установка модов",

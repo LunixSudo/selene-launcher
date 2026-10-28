@@ -399,7 +399,7 @@ export const api = {
   catalogCategories: (kind: ContentKind, source: Source) =>
     invoke<CategoryTag[]>("catalog_categories", { kind, source }),
   installedProjects: (instanceId: string, kind: ContentKind, world: string | null) =>
-    invoke<string[]>("installed_projects", { instanceId, kind, world }),
+    invoke<Record<string, string>>("installed_projects", { instanceId, kind, world }),
   installedContent: (instanceId: string, kind: ContentKind, world: string | null) =>
     invoke<InstalledFile[]>("installed_content", { instanceId, kind, world }),
   previewInstall: (
