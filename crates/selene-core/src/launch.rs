@@ -117,6 +117,11 @@ fn build_command_for(
             ]);
         }
     }
+    if let Some(QuickPlay::Multiplayer(address)) = &options.quick_play
+        && !args.iter().any(|arg| arg == "--quickPlayMultiplayer")
+    {
+        args.extend(legacy_server_args(address));
+    }
     if options.fullscreen {
         args.push("--fullscreen".into());
     }
@@ -125,6 +130,16 @@ fn build_command_for(
         program: options.java.clone(),
         args,
         working_dir: options.game_dir.clone(),
+    }
+}
+
+/// Versions before 1.20 only know `--server` and `--port`.
+fn legacy_server_args(address: &str) -> Vec<String> {
+    match address.rsplit_once(':') {
+        Some((host, port)) if port.parse::<u16>().is_ok() => {
+            vec!["--server".into(), host.into(), "--port".into(), port.into()]
+        }
+        _ => vec!["--server".into(), address.into()],
     }
 }
 
@@ -382,6 +397,18 @@ mod tests {
         assert_eq!(
             args[main + 1..],
             ["--username", "Steve", "--version", "1.21.10"]
+        );
+    }
+
+    #[test]
+    fn joins_servers_on_old_versions() {
+        let mut options = options();
+        options.quick_play = Some(QuickPlay::Multiplayer("mc.example.com:25570".into()));
+        let args = command(LEGACY, &options);
+
+        assert_eq!(
+            &args[args.len() - 4..],
+            ["--server", "mc.example.com", "--port", "25570"]
         );
     }
 

@@ -5,6 +5,7 @@
 
 pub mod mods;
 pub mod packs;
+pub mod saves;
 
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -15,14 +16,15 @@ use selene_core::crash::{self, CrashReport};
 use selene_core::download::Progress;
 use selene_core::game::{self, Stage};
 use selene_core::instance::{Instance, WindowSize};
-use selene_core::launch::{self, LaunchAccount, LaunchOptions};
+use selene_core::launch::{self, LaunchAccount, LaunchOptions, QuickPlay};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
 use selene_core::memory;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
 use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
+use tokio::sync::oneshot;
 
 use crate::account::{Account, AccountList};
 use crate::error::{CommandError, CommandResult};
@@ -42,6 +44,23 @@ pub struct MemoryInfo {
     total: u64,
     max: u32,
     recommended: u32,
+}
+
+/// Where the game should go right after it starts.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "camelCase")]
+pub enum LaunchTarget {
+    World(String),
+    Server(String),
+}
+
+impl From<LaunchTarget> for QuickPlay {
+    fn from(target: LaunchTarget) -> Self {
+        match target {
+            LaunchTarget::World(folder) => Self::Singleplayer(folder),
+            LaunchTarget::Server(address) => Self::Multiplayer(address),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -231,16 +250,12 @@ pub async fn open_instance_folder(
 ) -> CommandResult<()> {
     let dir = launcher.instances.game_dir(&id);
     tokio::fs::create_dir_all(&dir).await?;
-    app.opener()
-        .open_path(dir.to_string_lossy(), None::<&str>)
-        .map_err(|err| CommandError::Io(std::io::Error::other(err)))
+    saves::open_path(&app, &dir)
 }
 
 #[tauri::command]
 pub fn open_data_folder(app: AppHandle, launcher: State<'_, Launcher>) -> CommandResult<()> {
-    app.opener()
-        .open_path(launcher.dirs.root.to_string_lossy(), None::<&str>)
-        .map_err(|err| CommandError::Io(std::io::Error::other(err)))
+    saves::open_path(&app, &launcher.dirs.root)
 }
 
 #[tauri::command]
@@ -259,6 +274,7 @@ pub async fn launch_instance(
     app: AppHandle,
     launcher: State<'_, Launcher>,
     id: String,
+    target: Option<LaunchTarget>,
 ) -> CommandResult<()> {
     let instance = launcher
         .instances
@@ -270,11 +286,17 @@ pub async fn launch_instance(
         return Err(CommandError::AlreadyRunning(id));
     }
 
-    let result = start_game(&app, &launcher, instance, account).await;
+    let result = start_game(&app, &launcher, instance, account, target).await;
     if result.is_err() {
         launcher.stop_running(&id);
     }
     result
+}
+
+/// Kills a game that hangs or will not close.
+#[tauri::command]
+pub fn stop_instance(launcher: State<'_, Launcher>, id: String) -> bool {
+    launcher.stop_game(&id)
 }
 
 async fn start_game(
@@ -282,6 +304,7 @@ async fn start_game(
     launcher: &Launcher,
     mut instance: Instance,
     account: LaunchAccount,
+    target: Option<LaunchTarget>,
 ) -> CommandResult<()> {
     let entry = launcher
         .manifest()
@@ -333,7 +356,7 @@ async fn start_game(
         },
         resolution: instance.window.map(|size| (size.width, size.height)),
         fullscreen: instance.fullscreen,
-        quick_play: None,
+        quick_play: target.map(QuickPlay::from),
         extra_jvm_args: instance
             .java_args
             .split_whitespace()
@@ -342,7 +365,7 @@ async fn start_game(
     };
     launch::extract_natives(&installed.version, &options)?;
 
-    let mut child = tokio::process::Command::from(
+    let child = tokio::process::Command::from(
         launch::build_command(&installed.version, &options).to_command(),
     )
     .stdin(Stdio::null())
@@ -356,41 +379,59 @@ async fn start_game(
     launcher.clear_log(&instance.id);
     let _ = app.emit("game-started", &instance.id);
 
-    let stdout = child.stdout.take().map(|out| {
+    let (stop, stopped) = oneshot::channel();
+    launcher.set_stopper(&instance.id, stop);
+    tauri::async_runtime::spawn(watch_game(app.clone(), instance.id, token, child, stopped));
+    Ok(())
+}
+
+/// Streams the game's output until it exits or the player stops it, then reports how it went.
+async fn watch_game(
+    app: AppHandle,
+    instance_id: String,
+    token: String,
+    mut child: tokio::process::Child,
+    mut stopped: oneshot::Receiver<()>,
+) {
+    let started = Instant::now();
+    let forward = |output| {
         tauri::async_runtime::spawn(forward_log(
             app.clone(),
-            instance.id.clone(),
+            instance_id.clone(),
             token.clone(),
-            out,
+            output,
         ))
-    });
-    let stderr = child.stderr.take().map(|err| {
-        tauri::async_runtime::spawn(forward_log(app.clone(), instance.id.clone(), token, err))
-    });
+    };
+    let stdout = child.stdout.take().map(|out| forward(Box::new(out)));
+    let stderr = child.stderr.take().map(|err| forward(Box::new(err)));
 
-    let app = app.clone();
-    let started = Instant::now();
-    tauri::async_runtime::spawn(async move {
-        let code = child.wait().await.ok().and_then(|status| status.code());
-        // Let the readers drain what the game printed last; that is where the error is.
-        for reader in [stdout, stderr].into_iter().flatten() {
-            let _ = reader.await;
+    let mut killed = false;
+    let status = tokio::select! {
+        status = child.wait() => status,
+        Ok(()) = &mut stopped => {
+            killed = true;
+            let _ = child.kill().await;
+            child.wait().await
         }
-        let launcher = app.state::<Launcher>();
-        launcher.stop_running(&instance.id);
-        add_play_time(&launcher, &instance.id, started.elapsed().as_secs()).await;
+    };
+    let code = status.ok().and_then(|status| status.code());
+    // Let the readers drain what the game printed last; that is where the error is.
+    for reader in [stdout, stderr].into_iter().flatten() {
+        let _ = reader.await;
+    }
+    let launcher = app.state::<Launcher>();
+    launcher.stop_running(&instance_id);
+    add_play_time(&launcher, &instance_id, started.elapsed().as_secs()).await;
 
-        let crash = (code != Some(0)).then(|| crash::analyze(&launcher.log(&instance.id)));
-        let _ = app.emit(
-            "game-exited",
-            GameExited {
-                instance_id: instance.id,
-                code,
-                crash,
-            },
-        );
-    });
-    Ok(())
+    let crash = (!killed && code != Some(0)).then(|| crash::analyze(&launcher.log(&instance_id)));
+    let _ = app.emit(
+        "game-exited",
+        GameExited {
+            instance_id,
+            code,
+            crash,
+        },
+    );
 }
 
 /// Sends each line the game prints to the UI, with the session token blanked out in case
@@ -399,7 +440,7 @@ async fn forward_log(
     app: AppHandle,
     instance_id: String,
     token: String,
-    output: impl AsyncRead + Unpin,
+    output: Box<dyn AsyncRead + Send + Unpin>,
 ) {
     let mut lines = BufReader::new(output).lines();
     while let Ok(Some(line)) = lines.next_line().await {

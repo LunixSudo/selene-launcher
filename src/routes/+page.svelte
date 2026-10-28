@@ -3,15 +3,21 @@
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { goto } from "$app/navigation";
   import { api, type Instance } from "$lib/api";
+  import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import ContextMenu, { type MenuItem } from "$lib/components/ContextMenu.svelte";
   import CreateInstanceDialog from "$lib/components/CreateInstanceDialog.svelte";
-  import DeleteInstanceDialog from "$lib/components/DeleteInstanceDialog.svelte";
   import EditInstanceDialog from "$lib/components/EditInstanceDialog.svelte";
   import InstanceCard from "$lib/components/InstanceCard.svelte";
   import ShareDialog from "$lib/components/ShareDialog.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
-  import { importPack, library, loadInstances, play } from "$lib/state/instances.svelte";
+  import {
+    deleteInstance,
+    importPack,
+    library,
+    loadInstances,
+    play,
+  } from "$lib/state/instances.svelte";
 
   let creating = $state(false);
   let selected = $state<Instance | null>(null);
@@ -130,7 +136,14 @@
 {#if selected}
   <EditInstanceDialog instance={selected} bind:open={editing} />
   <ShareDialog instance={selected} bind:open={sharing} />
-  <DeleteInstanceDialog instance={selected} bind:open={deleting} />
+  {@const instance = selected}
+  <ConfirmDialog
+    bind:open={deleting}
+    title={t("delete.title", { name: instance.name })}
+    message={t("delete.message")}
+    confirmLabel={t("delete.confirm")}
+    onconfirm={() => deleteInstance(instance.id)}
+  />
 {/if}
 
 <style>

@@ -19,6 +19,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
+            // World icons and screenshots are shown straight from the instance folders.
+            app.asset_protocol_scope()
+                .allow_directory(&data_dir, true)?;
             app.manage(Launcher::new(&data_dir)?);
             Ok(())
         })
@@ -41,6 +44,7 @@ pub fn run() {
             commands::set_instance_memory,
             commands::set_launch_options,
             commands::launch_instance,
+            commands::stop_instance,
             commands::mods::search_mods,
             commands::mods::installed_projects,
             commands::mods::installed_mods,
@@ -52,6 +56,15 @@ pub fn run() {
             commands::mods::update_mods,
             commands::packs::import_pack,
             commands::packs::export_pack,
+            commands::saves::worlds,
+            commands::saves::open_world_folder,
+            commands::saves::back_up_world,
+            commands::saves::delete_world,
+            commands::saves::servers,
+            commands::saves::save_servers,
+            commands::saves::screenshots,
+            commands::saves::open_screenshot,
+            commands::saves::delete_screenshot,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri application");

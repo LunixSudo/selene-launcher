@@ -6,13 +6,16 @@
   import InstanceSettings from "$lib/components/InstanceSettings.svelte";
   import ModCatalog from "$lib/components/ModCatalog.svelte";
   import ModList from "$lib/components/ModList.svelte";
+  import ScreenshotGallery from "$lib/components/ScreenshotGallery.svelte";
+  import ServerList from "$lib/components/ServerList.svelte";
   import ShareDialog from "$lib/components/ShareDialog.svelte";
+  import WorldList from "$lib/components/WorldList.svelte";
   import { playTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { library, loadInstances, play } from "$lib/state/instances.svelte";
 
-  type Tab = "mods" | "catalog" | "settings" | "logs";
+  type Tab = "mods" | "catalog" | "worlds" | "servers" | "screenshots" | "settings" | "logs";
 
   let chosenTab = $state<Tab | null>(null);
   let refresh = $state(0);
@@ -20,9 +23,11 @@
 
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
   const launch = $derived(instance ? library.launches[instance.id] : undefined);
-  const busy = $derived(launch?.status === "preparing" || launch?.status === "running");
+  const running = $derived(launch?.status === "running");
+  const COMMON_TABS: Tab[] = ["worlds", "servers", "screenshots", "settings", "logs"];
+
   const tabs = $derived<Tab[]>(
-    instance?.loader ? ["mods", "catalog", "settings", "logs"] : ["settings", "logs"],
+    instance?.loader ? ["mods", "catalog", ...COMMON_TABS] : COMMON_TABS,
   );
   const crash = $derived(instance ? library.crashes[instance.id] : undefined);
   const tab = $derived(chosenTab ?? tabs[0]);
@@ -61,8 +66,14 @@
         <button type="button" class="share" onclick={() => (sharing = true)}>
           {t("instance.share")}
         </button>
-        <button type="button" class="play" disabled={busy} onclick={() => play(instance.id)}>
-          {launch?.status === "running" ? t("instances.running") : t("instances.play")}
+        <button
+          type="button"
+          class="play"
+          class:running
+          disabled={launch?.status === "preparing"}
+          onclick={() => (running ? api.stopInstance(instance.id) : play(instance.id))}
+        >
+          {running ? t("instances.stop") : t("instances.play")}
         </button>
       </div>
     </header>
@@ -93,6 +104,12 @@
         <ModList instanceId={instance.id} {refresh} />
       {:else if tab === "catalog"}
         <ModCatalog instanceId={instance.id} oninstall={() => refresh++} />
+      {:else if tab === "worlds"}
+        <WorldList instanceId={instance.id} />
+      {:else if tab === "servers"}
+        <ServerList instanceId={instance.id} />
+      {:else if tab === "screenshots"}
+        <ScreenshotGallery instanceId={instance.id} />
       {:else if tab === "logs"}
         <GameConsole instanceId={instance.id} />
       {:else}
@@ -208,6 +225,11 @@
 
   .play:disabled {
     opacity: 0.7;
+  }
+
+  .play.running {
+    background: var(--danger);
+    color: #ffffff;
   }
 
   .tabs {

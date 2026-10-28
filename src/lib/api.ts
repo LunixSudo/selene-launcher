@@ -41,6 +41,35 @@ export interface WindowSize {
   height: number;
 }
 
+export type LaunchTarget = { kind: "world"; value: string } | { kind: "server"; value: string };
+
+export type GameMode = "survival" | "creative" | "adventure" | "spectator" | "hardcore";
+
+export interface World {
+  folder: string;
+  name: string;
+  lastPlayed: string | null;
+  gameMode: GameMode | null;
+  icon: string | null;
+}
+
+export interface WorldList {
+  worlds: World[];
+  quickPlay: boolean;
+}
+
+export interface Server {
+  name: string;
+  address: string;
+  icon: string | null;
+}
+
+export interface Screenshot {
+  path: string;
+  name: string;
+  takenAt: string | null;
+}
+
 export interface Account {
   id: string;
   name: string;
@@ -220,7 +249,24 @@ export const api = {
   memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),
   setInstanceMemory: (instanceId: string, maxMemoryMb: number | null) =>
     invoke<Instance>("set_instance_memory", { instanceId, maxMemoryMb }),
-  launchInstance: (id: string) => invoke<void>("launch_instance", { id }),
+  launchInstance: (id: string, target: LaunchTarget | null = null) =>
+    invoke<void>("launch_instance", { id, target }),
+  stopInstance: (id: string) => invoke<boolean>("stop_instance", { id }),
+  worlds: (instanceId: string) => invoke<WorldList>("worlds", { instanceId }),
+  openWorldFolder: (instanceId: string, folder: string) =>
+    invoke<void>("open_world_folder", { instanceId, folder }),
+  backUpWorld: (instanceId: string, folder: string) =>
+    invoke<string>("back_up_world", { instanceId, folder }),
+  deleteWorld: (instanceId: string, folder: string) =>
+    invoke<void>("delete_world", { instanceId, folder }),
+  servers: (instanceId: string) => invoke<Server[]>("servers", { instanceId }),
+  saveServers: (instanceId: string, servers: Server[]) =>
+    invoke<void>("save_servers", { instanceId, servers }),
+  screenshots: (instanceId: string) => invoke<Screenshot[]>("screenshots", { instanceId }),
+  openScreenshot: (instanceId: string, name: string) =>
+    invoke<void>("open_screenshot", { instanceId, name }),
+  deleteScreenshot: (instanceId: string, name: string) =>
+    invoke<void>("delete_screenshot", { instanceId, name }),
   searchMods: (instanceId: string, source: Source, query: string, page: number) =>
     invoke<CatalogPage>("search_mods", { instanceId, source, query, page }),
   installedProjects: (instanceId: string) => invoke<string[]>("installed_projects", { instanceId }),

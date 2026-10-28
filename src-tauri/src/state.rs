@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -7,7 +7,7 @@ use selene_core::curseforge::CurseForge;
 use selene_core::game::GameDirs;
 use selene_core::instance::Instances;
 use selene_core::manifest::VersionManifest;
-use tokio::sync::OnceCell;
+use tokio::sync::{OnceCell, oneshot};
 
 use crate::account::Accounts;
 use crate::error::CommandResult;
@@ -20,7 +20,8 @@ pub struct Launcher {
     pub instances: Instances,
     pub total_memory_mb: u64,
     manifest: OnceCell<VersionManifest>,
-    running: Mutex<HashSet<String>>,
+    /// Instances being prepared or played; the sender stops a game that has started.
+    running: Mutex<HashMap<String, Option<oneshot::Sender<()>>>>,
     logs: Mutex<HashMap<String, VecDeque<String>>>,
 }
 
@@ -38,7 +39,7 @@ impl Launcher {
             instances: Instances::new(data_dir.join("instances")),
             total_memory_mb: total_memory_mb(),
             manifest: OnceCell::new(),
-            running: Mutex::new(HashSet::new()),
+            running: Mutex::new(HashMap::new()),
             logs: Mutex::new(HashMap::new()),
         })
     }
@@ -54,15 +55,35 @@ impl Launcher {
 
     /// Marks an instance as running; returns `false` if it already was.
     pub fn start_running(&self, id: &str) -> bool {
-        self.running_set().insert(id.to_owned())
+        let mut running = self.running_map();
+        if running.contains_key(id) {
+            return false;
+        }
+        running.insert(id.to_owned(), None);
+        true
+    }
+
+    /// Remembers how to stop the game once its process exists.
+    pub fn set_stopper(&self, id: &str, stop: oneshot::Sender<()>) {
+        if let Some(slot) = self.running_map().get_mut(id) {
+            *slot = Some(stop);
+        }
+    }
+
+    /// Asks a running game to stop; returns `false` if it was not running.
+    pub fn stop_game(&self, id: &str) -> bool {
+        self.running_map()
+            .get_mut(id)
+            .and_then(Option::take)
+            .is_some_and(|stop| stop.send(()).is_ok())
     }
 
     pub fn stop_running(&self, id: &str) {
-        self.running_set().remove(id);
+        self.running_map().remove(id);
     }
 
     pub fn is_running(&self, id: &str) -> bool {
-        self.running_set().contains(id)
+        self.running_map().contains_key(id)
     }
 
     /// Forgets the previous run's output.
@@ -92,7 +113,9 @@ impl Launcher {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
-    fn running_set(&self) -> std::sync::MutexGuard<'_, HashSet<String>> {
+    fn running_map(
+        &self,
+    ) -> std::sync::MutexGuard<'_, HashMap<String, Option<oneshot::Sender<()>>>> {
         self.running
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)

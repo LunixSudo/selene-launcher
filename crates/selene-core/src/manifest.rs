@@ -7,6 +7,8 @@ use crate::{Result, http};
 pub const VERSION_MANIFEST_URL: &str =
     "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
 
+const QUICK_PLAY_SINCE: &str = "23w14a";
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct VersionManifest {
     pub latest: Latest,
@@ -60,6 +62,15 @@ impl VersionManifest {
 
     pub fn get(&self, id: &str) -> Option<&VersionEntry> {
         self.versions.iter().find(|version| version.id == id)
+    }
+
+    /// Whether the version can open a world or a server straight from the command line.
+    /// Quick Play arrived in snapshot 23w14a, before 1.20.
+    pub fn supports_quick_play(&self, id: &str) -> bool {
+        match (self.get(id), self.get(QUICK_PLAY_SINCE)) {
+            (Some(version), Some(first)) => version.release_time >= first.release_time,
+            _ => false,
+        }
     }
 
     /// Versions of the given kind, newest first, as Mojang orders them.

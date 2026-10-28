@@ -28,6 +28,9 @@ pub enum Error {
     #[error("java runtime `{component}` is not available for {platform}")]
     JavaUnavailable { component: String, platform: String },
 
+    #[error("invalid NBT data: {0}")]
+    Nbt(#[from] fastnbt::error::Error),
+
     #[error("not a valid modpack: {0}")]
     InvalidPack(String),
 

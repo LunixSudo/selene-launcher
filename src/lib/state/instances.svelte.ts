@@ -9,6 +9,7 @@ import {
   type Instance,
   isCommandError,
   type LaunchProgress,
+  type LaunchTarget,
   type LoaderVersion,
   type ManualDownload,
 } from "$lib/api";
@@ -68,11 +69,11 @@ export async function deleteInstance(id: string) {
   delete library.launches[id];
 }
 
-export async function play(id: string) {
+export async function play(id: string, target: LaunchTarget | null = null) {
   library.launches[id] = { status: "preparing", stage: null, percent: 0 };
   delete library.crashes[id];
   try {
-    await api.launchInstance(id);
+    await api.launchInstance(id, target);
   } catch (error) {
     library.launches[id] = {
       status: "failed",

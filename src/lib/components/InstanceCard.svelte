@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { Instance } from "$lib/api";
+  import { api, type Instance } from "$lib/api";
   import { coverOf, iconOf } from "$lib/appearance";
-  import { playTime } from "$lib/format";
-  import { locale, t } from "$lib/i18n/index.svelte";
+  import { playTime, relativeTime } from "$lib/format";
+  import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
   import { LOADER_NAMES } from "$lib/loaders";
   import { type LaunchState, library, play } from "$lib/state/instances.svelte";
@@ -17,26 +17,18 @@
     onmenu: (x: number, y: number) => void;
   } = $props();
 
-  const busy = $derived(launch?.status === "preparing" || launch?.status === "running");
+  const preparing = $derived(launch?.status === "preparing");
+  const running = $derived(launch?.status === "running");
 
   function lastPlayed(): string {
-    if (!instance.lastPlayed) {
-      return t("instances.neverPlayed");
-    }
-    const minutes = (new Date(instance.lastPlayed).getTime() - Date.now()) / 60_000;
-    const format = new Intl.RelativeTimeFormat(locale(), { numeric: "auto" });
-    const time =
-      Math.abs(minutes) < 60
-        ? format.format(Math.round(minutes), "minute")
-        : Math.abs(minutes) < 60 * 24
-          ? format.format(Math.round(minutes / 60), "hour")
-          : format.format(Math.round(minutes / 60 / 24), "day");
-    return t("instances.lastPlayed", { time });
+    return instance.lastPlayed
+      ? t("instances.lastPlayed", { time: relativeTime(instance.lastPlayed) })
+      : t("instances.neverPlayed");
   }
 
   function playLabel(): string {
     if (launch?.status === "running") {
-      return t("instances.running");
+      return t("instances.stop");
     }
     if (launch?.status === "preparing") {
       return launch.stage
@@ -96,13 +88,15 @@
   <button
     type="button"
     class="play"
-    class:running={launch?.status === "running"}
-    disabled={busy}
+    class:running
+    disabled={preparing}
     style:--progress={launch?.status === "preparing" ? `${launch.percent}%` : "0%"}
-    onclick={() => play(instance.id)}
+    onclick={() => (running ? api.stopInstance(instance.id) : play(instance.id))}
   >
-    {#if !busy}
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d={UI_ICONS.play} /></svg>
+    {#if !preparing}
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d={running ? UI_ICONS.stop : UI_ICONS.play} />
+      </svg>
     {/if}
     <span>{playLabel()}</span>
   </button>
