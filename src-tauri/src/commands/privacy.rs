@@ -6,7 +6,7 @@ use crate::state::Launcher;
 
 /// The date of the current privacy policy. The installer writes it once the user agrees, so
 /// bump it here and in `nsis/hooks.nsh` whenever `PRIVACY.md` changes.
-pub const PRIVACY_VERSION: &str = "2026-10-28.4";
+pub const PRIVACY_VERSION: &str = "2026-10-28.5";
 const ACCEPTED_FILE: &str = "privacy-accepted.txt";
 
 #[derive(Debug, Clone, Serialize)]

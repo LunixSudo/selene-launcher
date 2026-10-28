@@ -24,6 +24,8 @@ None of this is sent anywhere, except as described below.
 
 Like any website, these services see your IP address and handle data under their own policies. The launcher sends them nothing beyond what a feature needs.
 
+Project pages in the catalog show icons, descriptions and galleries chosen by the authors of the projects. Their images can be hosted on other sites, which then also see your IP address when the page is opened.
+
 The launcher does not collect statistics or analytics, show ads, or sell or share data with anyone.
 
 ## Deleting your data
