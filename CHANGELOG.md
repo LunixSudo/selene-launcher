@@ -56,6 +56,15 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Starting an installed game no longer hashes every asset and library again: files that are
+  in place with the right size are trusted, since they were checked when downloaded.
+- The game starts without an internet connection once it has been installed: the version
+  list, version files, loader profiles and the Java list are kept on disk, and a signed-in
+  account plays single player offline as in the official launcher.
+- Loader profiles are saved with their library hashes, which spares a dozen requests per launch.
+- The add-ons list hashes files in parallel and remembers hashes of files that did not change.
+- The game console receives output in batches instead of one message per line.
+- Mods that CurseForge does not allow to download are looked up in one request.
 - The installer puts the program into `%LOCALAPPDATA%\SeleneLauncher`, without a space, and
   moves an install from the old `Selene Launcher` folder there.
 - The privacy policy mentions that catalog pages load images from the sites their authors
