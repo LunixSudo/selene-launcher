@@ -17,6 +17,8 @@
     actions: Snippet;
   } = $props();
 
+  const titleId = $props.id();
+
   let dialog: HTMLDialogElement;
 
   $effect(() => {
@@ -33,9 +35,14 @@
   }
 </script>
 
-<dialog bind:this={dialog} style:--width="{width}px" onclose={() => (open = false)}>
+<dialog
+  bind:this={dialog}
+  aria-labelledby={titleId}
+  style:--width="{width}px"
+  onclose={() => (open = false)}
+>
   <form onsubmit={submit}>
-    <h2>{title}</h2>
+    <h2 id={titleId}>{title}</h2>
     {@render children()}
     <div class="actions">
       {@render actions()}

@@ -205,9 +205,13 @@
       hasMore = results.hasMore;
       page = next;
     } catch (err) {
-      error = describeError(err);
+      if (request === lastRequest) {
+        error = describeError(err);
+      }
     } finally {
-      loading = false;
+      if (request === lastRequest) {
+        loading = false;
+      }
     }
   }
 
