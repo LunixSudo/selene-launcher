@@ -324,9 +324,14 @@ export const en: Messages = {
   },
   updates: {
     title: "Updates available",
-    loader: "Recommended {loader} version: {to} (you have {from}).",
-    content: "New versions: {list}.",
-    updateAll: "Update all",
+    loader: "{loader} loader: {from} → {to} (recommended)",
+    kinds: {
+      mod: "Mods: {count}",
+      resourcePack: "Resource packs: {count}",
+      shaderPack: "Shaders: {count}",
+      dataPack: "Data packs: {count}",
+    },
+    update: "Update",
     working: "Updating…",
     later: "Later",
   },

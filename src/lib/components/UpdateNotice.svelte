@@ -19,19 +19,19 @@
 
   let loaderTarget = $state<string | null>(null);
   let counts = $state<Partial<Record<ContentKind, number>>>({});
+  let skipped = $state<Record<string, boolean>>({});
   let working = $state(false);
   let error = $state<string | null>(null);
 
   const kinds = $derived<ContentKind[]>(
     instance.loader ? ["mod", "resourcePack", "shaderPack"] : ["resourcePack"],
   );
-  const parts = $derived(
-    kinds
-      .filter((kind) => (counts[kind] ?? 0) > 0)
-      .map((kind) => `${t(`content.kinds.${kind}`).toLocaleLowerCase()}: ${counts[kind]}`),
+  const pending = $derived(kinds.filter((kind) => (counts[kind] ?? 0) > 0));
+  const chosen = $derived(
+    (loaderTarget !== null && !skipped.loader) || pending.some((kind) => !skipped[kind]),
   );
   const visible = $derived(
-    !dismissed[instance.id] && (loaderTarget !== null || parts.length > 0 || error !== null),
+    !dismissed[instance.id] && (loaderTarget !== null || pending.length > 0 || error !== null),
   );
 
   $effect(() => {
@@ -41,6 +41,7 @@
     let stale = false;
     loaderTarget = null;
     counts = {};
+    skipped = {};
     error = null;
 
     if (loader) {
@@ -75,11 +76,11 @@
     working = true;
     error = null;
     try {
-      if (instance.loader && loaderTarget) {
+      if (instance.loader && loaderTarget && !skipped.loader) {
         const loader = { loader: instance.loader.loader, version: loaderTarget };
         replaceInstance(await api.changeVersion(instance.id, instance.version, loader));
       }
-      for (const kind of kinds) {
+      for (const kind of pending.filter((kind) => !skipped[kind])) {
         await api.updateContent(instance.id, kind, null);
       }
       onupdated();
@@ -96,24 +97,36 @@
     <div class="text">
       <strong>{t("updates.title")}</strong>
       {#if instance.loader && loaderTarget}
-        <p>
-          {t("updates.loader", {
-            loader: LOADER_NAMES[instance.loader.loader],
-            from: instance.loader.version,
-            to: loaderTarget,
-          })}
-        </p>
+        <label class="toggle">
+          <input
+            type="checkbox"
+            bind:checked={() => !skipped.loader, (checked) => (skipped.loader = !checked)}
+          >
+          <span>
+            {t("updates.loader", {
+              loader: LOADER_NAMES[instance.loader.loader],
+              from: instance.loader.version,
+              to: loaderTarget,
+            })}
+          </span>
+        </label>
       {/if}
-      {#if parts.length > 0}
-        <p>{t("updates.content", { list: parts.join(", ") })}</p>
-      {/if}
+      {#each pending as kind (kind)}
+        <label class="toggle">
+          <input
+            type="checkbox"
+            bind:checked={() => !skipped[kind], (checked) => (skipped[kind] = !checked)}
+          >
+          <span>{t(`updates.kinds.${kind}`, { count: counts[kind] ?? 0 })}</span>
+        </label>
+      {/each}
       {#if error}
         <p class="error" role="alert">{error}</p>
       {/if}
     </div>
     <div class="actions">
-      <button type="button" disabled={disabled || working} onclick={update}>
-        {working ? t("updates.working") : t("updates.updateAll")}
+      <button type="button" disabled={disabled || working || !chosen} onclick={update}>
+        {working ? t("updates.working") : t("updates.update")}
       </button>
       <button type="button" class="ghost" onclick={() => (dismissed[instance.id] = true)}>
         {t("updates.later")}
@@ -136,7 +149,7 @@
   .text {
     display: grid;
     flex: 1;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
   }
 

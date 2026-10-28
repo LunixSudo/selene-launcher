@@ -39,7 +39,7 @@ All notable changes to this project are documented here. The format follows
 - A third-party licenses page in the settings, generated at build time from the Rust and npm
   packages the launcher ships.
 - An instance page notice when the loader has a newer recommended build or mods, resource
-  packs or shaders have updates, with one button that updates all of it.
+  packs or shaders have updates, with a checkbox for each and one button that updates them.
 - Changing an instance's mod loader build, newer or older, next to its game version; the
   recommended build is marked in every list.
 - An "Uninstall Selene Launcher" button at the bottom of the settings, which opens the Windows

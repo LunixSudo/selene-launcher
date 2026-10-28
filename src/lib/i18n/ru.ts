@@ -322,9 +322,14 @@ export const ru = {
   },
   updates: {
     title: "Есть обновления",
-    loader: "Рекомендуемая версия {loader}: {to} (сейчас {from}).",
-    content: "Новые версии: {list}.",
-    updateAll: "Обновить всё",
+    loader: "Загрузчик {loader}: {from} → {to} (рекомендуемая)",
+    kinds: {
+      mod: "Моды: {count}",
+      resourcePack: "Ресурспаки: {count}",
+      shaderPack: "Шейдеры: {count}",
+      dataPack: "Датапаки: {count}",
+    },
+    update: "Обновить",
     working: "Обновляем…",
     later: "Позже",
   },
