@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import logo from "$lib/assets/logo.png";
   import AccountMenu from "$lib/components/AccountMenu.svelte";
   import { t } from "$lib/i18n/index.svelte";
 
@@ -8,11 +9,7 @@
 
 <header class="titlebar" data-tauri-drag-region>
   <a class="brand" href="/">
-    <span class="logo">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5z" />
-      </svg>
-    </span>
+    <img class="logo" src={logo} alt="" width="22" height="22">
     <span class="wordmark">Selene</span>
   </a>
 
@@ -67,20 +64,9 @@
   }
 
   .logo {
-    display: grid;
-    place-items: center;
     width: 22px;
     height: 22px;
-    border-radius: 7px;
-    background: linear-gradient(135deg, #8fa2ff, var(--accent) 55%, #c45bff);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 45%, transparent);
-  }
-
-  .logo svg {
-    width: 14px;
-    height: 14px;
-    fill: #ffffff;
-    stroke: none;
+    filter: drop-shadow(0 2px 6px rgb(109 59 222 / 0.45));
   }
 
   .wordmark {
