@@ -7,6 +7,7 @@ pub mod content;
 pub mod packs;
 pub mod saves;
 
+use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
@@ -28,6 +29,7 @@ use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 use tokio::sync::oneshot;
 
 use crate::account::{Account, AccountList};
+use crate::config::Config;
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
@@ -240,6 +242,7 @@ pub async fn set_launch_options(
     window: Option<WindowSize>,
     fullscreen: bool,
     java_args: String,
+    java_path: Option<PathBuf>,
 ) -> CommandResult<Instance> {
     let mut instance = launcher
         .instances
@@ -249,6 +252,7 @@ pub async fn set_launch_options(
     instance.window = window;
     instance.fullscreen = fullscreen;
     java_args.trim().clone_into(&mut instance.java_args);
+    instance.java_path = java_path.filter(|path| !path.as_os_str().is_empty());
     launcher.instances.save(&instance).await?;
     Ok(instance)
 }
@@ -268,6 +272,16 @@ pub async fn open_instance_folder(
     let dir = launcher.instances.game_dir(&id);
     tokio::fs::create_dir_all(&dir).await?;
     saves::open_path(&app, &dir)
+}
+
+#[tauri::command]
+pub fn config(launcher: State<'_, Launcher>) -> Config {
+    launcher.config.get()
+}
+
+#[tauri::command]
+pub fn set_config(launcher: State<'_, Launcher>, config: Config) -> CommandResult<()> {
+    Ok(launcher.config.set(config)?)
 }
 
 #[tauri::command]
@@ -329,6 +343,20 @@ async fn start_game(
         .get(&instance.version)
         .ok_or_else(|| CommandError::UnknownVersion(instance.version.clone()))?;
 
+    if launcher.config.get().auto_update_mods && instance.loader.is_some() {
+        let _ = app.emit(
+            "launch-progress",
+            LaunchProgress {
+                instance_id: &instance.id,
+                stage: "mods",
+                bytes_done: 0,
+                bytes_total: 0,
+            },
+        );
+        // Being offline should not stop the game from starting with the mods it has.
+        let _ = content::update_all(launcher, &instance.id, ContentKind::Mod).await;
+    }
+
     let last_percent = AtomicU32::new(u32::MAX);
     let installed = game::install(
         &launcher.client,
@@ -359,8 +387,13 @@ async fn start_game(
 
     let dirs = &launcher.dirs;
     let token = account.access_token.clone();
+    let java = match &instance.java_path {
+        Some(path) if path.is_file() => path.clone(),
+        Some(path) => return Err(CommandError::JavaNotFound(path.clone())),
+        None => installed.java.executable(),
+    };
     let options = LaunchOptions {
-        java: installed.java.executable(),
+        java,
         game_dir: launcher.instances.game_dir(&instance.id),
         assets_dir: dirs.assets(),
         libraries_dir: dirs.libraries(),

@@ -29,6 +29,9 @@ pub enum CommandError {
     #[error("instance {0} is already running")]
     AlreadyRunning(String),
 
+    #[error("java not found at {}", .0.display())]
+    JavaNotFound(std::path::PathBuf),
+
     #[error("could not start the game: {0}")]
     Spawn(#[source] std::io::Error),
 
@@ -52,6 +55,7 @@ impl CommandError {
             Self::NoLoader => "noLoader",
             Self::NoCompatibleVersion => "noCompatibleVersion",
             Self::AlreadyRunning(_) => "alreadyRunning",
+            Self::JavaNotFound(_) => "javaNotFound",
             Self::Spawn(_) => "spawn",
             Self::Io(_) => "io",
             Self::Core(selene_core::Error::Http(_)) => "network",

@@ -13,6 +13,8 @@ import {
   type LoaderVersion,
   type ManualDownload,
 } from "$lib/api";
+import { t } from "$lib/i18n/index.svelte";
+import { notify } from "$lib/notify";
 import { settings } from "./settings.svelte";
 
 export type LaunchState =
@@ -50,6 +52,7 @@ export async function importPack(path: string) {
     const result = await api.importPack(path);
     library.instances = [result.instance, ...library.instances];
     library.importManual = result.manual;
+    void notify(t("notify.imported"), t("notify.importedBody", { name: result.instance.name }));
   } catch (error) {
     library.importError = isCommandError(error) ? error : UNKNOWN_ERROR;
   } finally {
@@ -102,6 +105,8 @@ export async function listenToGames(): Promise<() => void> {
     }),
     listen<string>("game-started", ({ payload }) => {
       library.launches[payload] = { status: "running" };
+      const name = library.instances.find((instance) => instance.id === payload)?.name ?? payload;
+      void notify(t("notify.gameReady", { name }), t("notify.gameReadyBody"));
       void loadInstances();
       const appWindow = getCurrentWindow();
       if (settings.afterLaunch === "minimize") {

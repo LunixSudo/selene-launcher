@@ -41,6 +41,9 @@ pub struct Instance {
     /// Extra JVM arguments, separated by spaces.
     #[serde(default)]
     pub java_args: String,
+    /// Java to run the game with instead of the one Mojang ships for this version.
+    #[serde(default)]
+    pub java_path: Option<PathBuf>,
     /// Group the instance is filed under on the home screen.
     #[serde(default)]
     pub group: Option<String>,
@@ -118,6 +121,7 @@ impl Instances {
             window: None,
             fullscreen: false,
             java_args: String::new(),
+            java_path: None,
             group: None,
         };
         let game_dir = self.game_dir(&instance.id);

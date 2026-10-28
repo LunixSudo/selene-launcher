@@ -10,12 +10,14 @@ use selene_core::manifest::VersionManifest;
 use tokio::sync::{OnceCell, oneshot};
 
 use crate::account::Accounts;
+use crate::config::ConfigFile;
 use crate::error::CommandResult;
 
 pub struct Launcher {
     pub client: Client,
     pub curseforge: Option<CurseForge>,
     pub accounts: Accounts,
+    pub config: ConfigFile,
     pub dirs: GameDirs,
     pub instances: Instances,
     pub total_memory_mb: u64,
@@ -35,6 +37,7 @@ impl Launcher {
             curseforge: curseforge(&client),
             client,
             accounts: Accounts::load(data_dir.join("accounts.json")),
+            config: ConfigFile::load(data_dir.join("settings.json")),
             dirs: GameDirs::new(data_dir.join("game")),
             instances: Instances::new(data_dir.join("instances")),
             total_memory_mb: total_memory_mb(),

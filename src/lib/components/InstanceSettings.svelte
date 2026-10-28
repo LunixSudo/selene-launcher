@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { open } from "@tauri-apps/plugin-dialog";
   import { api, type Instance, type MemoryInfo } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
@@ -36,15 +37,37 @@
   let javaArgs = $derived(instance.javaArgs);
 
   async function saveLaunch(
-    changes: Partial<Pick<Instance, "window" | "fullscreen" | "javaArgs">>,
+    changes: Partial<Pick<Instance, "window" | "fullscreen" | "javaArgs" | "javaPath">>,
   ) {
-    const next = { window: instance.window, fullscreen: instance.fullscreen, javaArgs, ...changes };
+    const next = {
+      window: instance.window,
+      fullscreen: instance.fullscreen,
+      javaArgs,
+      javaPath: instance.javaPath,
+      ...changes,
+    };
     try {
       replaceInstance(
-        await api.setLaunchOptions(instance.id, next.window, next.fullscreen, next.javaArgs),
+        await api.setLaunchOptions(
+          instance.id,
+          next.window,
+          next.fullscreen,
+          next.javaArgs,
+          next.javaPath,
+        ),
       );
     } catch (err) {
       error = describeError(err);
+    }
+  }
+
+  async function chooseJava() {
+    const path = await open({
+      filters: [{ name: "Java", extensions: ["exe"] }],
+      title: t("launchOptions.chooseJava"),
+    });
+    if (path) {
+      await saveLaunch({ javaPath: path });
     }
   }
 
@@ -65,7 +88,7 @@
 </script>
 
 <section class="group">
-  <h2>{t("instance.memory")}</h2>
+  <h2>{t("launchOptions.javaTitle")}</h2>
 
   {#if info}
     {@const recommended = info.recommended}
@@ -103,6 +126,21 @@
       <p class="hint">{t("instance.memoryManualHint")}</p>
     {/if}
   {/if}
+
+  <div class="row">
+    <div class="java">
+      <span>{t("launchOptions.java")}</span>
+      <span class="hint path">{instance.javaPath ?? t("launchOptions.javaAuto")}</span>
+    </div>
+    {#if instance.javaPath}
+      <button type="button" class="pill-button" onclick={() => saveLaunch({ javaPath: null })}>
+        {t("launchOptions.javaReset")}
+      </button>
+    {/if}
+    <button type="button" class="pill-button" onclick={chooseJava}>
+      {t("launchOptions.chooseJava")}
+    </button>
+  </div>
 
   <label class="field">
     <span>{t("launchOptions.javaArgs")}</span>
@@ -240,6 +278,22 @@
     color: var(--text);
     font: inherit;
     font-size: 13px;
+  }
+
+  .row {
+    gap: 8px;
+  }
+
+  .java {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .size {

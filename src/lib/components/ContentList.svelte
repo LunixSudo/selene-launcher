@@ -9,6 +9,8 @@
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
+  import { notify } from "$lib/notify";
+  import { library } from "$lib/state/instances.svelte";
   import ContextMenu, { type MenuItem } from "./ContextMenu.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
 
@@ -68,8 +70,12 @@
     updating = true;
     error = null;
     try {
-      await api.updateContent(instanceId, kind);
+      const count = await api.updateContent(instanceId, kind);
       updates = [];
+      if (count > 0) {
+        const name = library.instances.find((instance) => instance.id === instanceId)?.name ?? "";
+        void notify(t("notify.modsUpdated"), t("notify.modsUpdatedBody", { name, count }));
+      }
       await load();
     } catch (err) {
       error = describeError(err);

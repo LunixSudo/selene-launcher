@@ -34,6 +34,7 @@ export interface Instance {
   window: WindowSize | null;
   fullscreen: boolean;
   javaArgs: string;
+  javaPath: string | null;
   group: string | null;
 }
 
@@ -69,6 +70,12 @@ export interface Screenshot {
   path: string;
   name: string;
   takenAt: string | null;
+}
+
+export interface LauncherConfig {
+  autoUpdateMods: boolean;
+  maxDownloads: number | null;
+  speedLimitKib: number | null;
 }
 
 export interface Account {
@@ -208,6 +215,7 @@ export type ErrorKind =
   | "noLoader"
   | "noCompatibleVersion"
   | "alreadyRunning"
+  | "javaNotFound"
   | "spawn"
   | "network"
   | "core";
@@ -219,7 +227,7 @@ export interface CommandError {
 
 export interface LaunchProgress {
   instanceId: string;
-  stage: "files" | "java";
+  stage: "mods" | "files" | "java";
   bytesDone: number;
   bytesTotal: number;
 }
@@ -280,7 +288,11 @@ export const api = {
     window: WindowSize | null,
     fullscreen: boolean,
     javaArgs: string,
-  ) => invoke<Instance>("set_launch_options", { instanceId, window, fullscreen, javaArgs }),
+    javaPath: string | null,
+  ) =>
+    invoke<Instance>("set_launch_options", { instanceId, window, fullscreen, javaArgs, javaPath }),
+  config: () => invoke<LauncherConfig>("config"),
+  setConfig: (config: LauncherConfig) => invoke<void>("set_config", { config }),
   gameLog: (instanceId: string) => invoke<string[]>("game_log", { instanceId }),
   openInstanceFolder: (id: string) => invoke<void>("open_instance_folder", { id }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),

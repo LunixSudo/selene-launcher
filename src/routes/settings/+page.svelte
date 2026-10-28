@@ -1,7 +1,8 @@
 <script lang="ts">
   import { getVersion } from "@tauri-apps/api/app";
-  import { api } from "$lib/api";
+  import { api, type LauncherConfig } from "$lib/api";
   import Segmented from "$lib/components/Segmented.svelte";
+  import Select from "$lib/components/Select.svelte";
   import { type Locale, locale, setLocale, t } from "$lib/i18n/index.svelte";
   import {
     ACCENTS,
@@ -18,8 +19,45 @@
     { value: "en", label: "English" },
   ];
 
+  const PARALLEL = ["auto", "2", "4", "8", "16"];
+  const SPEEDS_MB = ["unlimited", "1", "2", "5", "10", "25"];
+
   let language = $state(locale());
   let version = $state("");
+  let config = $state<LauncherConfig | null>(null);
+
+  const parallelOptions = $derived(
+    PARALLEL.map((value) => ({
+      value,
+      label: value === "auto" ? t("settings.auto") : value,
+    })),
+  );
+  const speedOptions = $derived(
+    SPEEDS_MB.map((value) => ({
+      value,
+      label:
+        value === "unlimited"
+          ? t("settings.unlimited")
+          : t("settings.megabytesPerSecond", { count: value }),
+    })),
+  );
+
+  $effect(() => {
+    api
+      .config()
+      .then((loaded) => {
+        config = loaded;
+      })
+      .catch(() => {});
+  });
+
+  function saveConfig(changes: Partial<LauncherConfig>) {
+    if (!config) {
+      return;
+    }
+    config = { ...config, ...changes };
+    void api.setConfig(config);
+  }
 
   const themes = $derived(THEMES.map((value) => ({ value, label: t(`settings.themes.${value}`) })));
   const afterLaunch = $derived(
@@ -147,6 +185,20 @@
           <input class="switch" type="checkbox" bind:checked={settings.restoreAfterGame}>
         </label>
       {/if}
+      {#if config}
+        <label class="row switch-row">
+          <div>
+            <h3>{t("settings.autoUpdateMods")}</h3>
+            <p>{t("settings.autoUpdateModsHint")}</p>
+          </div>
+          <input
+            class="switch"
+            type="checkbox"
+            checked={config.autoUpdateMods}
+            onchange={(event) => saveConfig({ autoUpdateMods: event.currentTarget.checked })}
+          >
+        </label>
+      {/if}
       <div class="row">
         <div>
           <h3>{t("settings.dataFolder")}</h3>
@@ -158,8 +210,58 @@
       </div>
     </section>
 
+    {#if config}
+      {@const current = config}
+      <section class="group">
+        <h2>{t("settings.downloads")}</h2>
+        <div class="row">
+          <div>
+            <h3>{t("settings.maxDownloads")}</h3>
+            <p>{t("settings.maxDownloadsHint")}</p>
+          </div>
+          <div class="select">
+            <Select
+              bind:value={
+                () => String(current.maxDownloads ?? "auto"),
+                (value) => saveConfig({ maxDownloads: value === "auto" ? null : Number(value) })
+              }
+              options={parallelOptions}
+            />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <h3>{t("settings.speedLimit")}</h3>
+            <p>{t("settings.speedLimitHint")}</p>
+          </div>
+          <div class="select">
+            <Select
+              bind:value={
+                () =>
+                  current.speedLimitKib === null
+                    ? "unlimited"
+                    : String(current.speedLimitKib / 1024),
+                (value) =>
+    saveConfig({
+      speedLimitKib: value === "unlimited" ? null : Number(value) * 1024,
+    })
+              }
+              options={speedOptions}
+            />
+          </div>
+        </div>
+      </section>
+    {/if}
+
     <section class="group">
       <h2>{t("settings.general")}</h2>
+      <label class="row switch-row">
+        <div>
+          <h3>{t("settings.notifications")}</h3>
+          <p>{t("settings.notificationsHint")}</p>
+        </div>
+        <input class="switch" type="checkbox" bind:checked={settings.notifications}>
+      </label>
       <div class="row">
         <div>
           <h3>{t("settings.language")}</h3>
@@ -443,6 +545,11 @@
   .font-name {
     color: var(--text-muted);
     font-size: 12px;
+  }
+
+  .select {
+    flex: none;
+    width: 200px;
   }
 
   .switch-row {

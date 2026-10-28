@@ -31,6 +31,7 @@ interface Settings {
   restoreAfterGame: boolean;
   sort: SortOrder;
   collapsedGroups: string[];
+  notifications: boolean;
 }
 
 const DEFAULTS: Settings = {
@@ -42,6 +43,7 @@ const DEFAULTS: Settings = {
   restoreAfterGame: true,
   sort: "lastPlayed",
   collapsedGroups: [],
+  notifications: true,
 };
 
 export const settings = $state<Settings>(load());
@@ -66,6 +68,7 @@ function load(): Settings {
     collapsedGroups: Array.isArray(saved.collapsedGroups)
       ? saved.collapsedGroups.filter((group) => typeof group === "string")
       : DEFAULTS.collapsedGroups,
+    notifications: oneOf(saved.notifications, [true, false], DEFAULTS.notifications),
   };
 }
 

@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::time::{Duration, Instant};
 
 use futures_util::{StreamExt, TryStreamExt, stream};
 use reqwest::Client;
@@ -11,6 +13,35 @@ use crate::{Error, Result};
 
 const MAX_ATTEMPTS: u32 = 3;
 const READ_BUFFER_SIZE: usize = 64 * 1024;
+
+/// User limits shared by every download in the process. Zero means no limit.
+static MAX_PARALLEL: AtomicUsize = AtomicUsize::new(0);
+static BYTES_PER_SECOND: AtomicU64 = AtomicU64::new(0);
+/// When the speed budget is free again; downloads queue behind each other on it.
+static BUDGET_FREE_AT: Mutex<Option<Instant>> = Mutex::new(None);
+
+/// Caps how many files download at once and how fast, for slow or metered connections.
+pub fn set_limits(max_parallel: Option<usize>, bytes_per_second: Option<u64>) {
+    MAX_PARALLEL.store(max_parallel.unwrap_or(0), Ordering::Relaxed);
+    BYTES_PER_SECOND.store(bytes_per_second.unwrap_or(0), Ordering::Relaxed);
+}
+
+/// How long to wait before using `bytes` more of the speed budget.
+fn throttle_delay(bytes: usize) -> Option<Duration> {
+    let rate = BYTES_PER_SECOND.load(Ordering::Relaxed);
+    if rate == 0 {
+        return None;
+    }
+    let bytes = u64::try_from(bytes).unwrap_or(u64::MAX);
+    let cost = Duration::from_nanos(bytes.saturating_mul(1_000_000_000) / rate);
+    let mut free_at = BUDGET_FREE_AT
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let now = Instant::now();
+    let start = free_at.filter(|&at| at > now).unwrap_or(now);
+    *free_at = Some(start + cost);
+    Some(start - now)
+}
 
 #[derive(Debug, Clone)]
 pub struct Download {
@@ -55,7 +86,10 @@ where
             });
             Ok::<_, Error>(())
         })
-        .buffer_unordered(concurrency.max(1))
+        .buffer_unordered(match MAX_PARALLEL.load(Ordering::Relaxed) {
+            0 => concurrency.max(1),
+            limit => concurrency.clamp(1, limit),
+        })
         .try_collect()
         .await
 }
@@ -126,6 +160,9 @@ async fn fetch(client: &Client, download: &Download) -> Result<()> {
 
     while let Some(chunk) = body.next().await {
         let chunk = chunk?;
+        if let Some(delay) = throttle_delay(chunk.len()).filter(|delay| !delay.is_zero()) {
+            tokio::time::sleep(delay).await;
+        }
         hasher.update(&chunk);
         file.write_all(&chunk)
             .await
@@ -169,6 +206,18 @@ fn hex(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn throttling_spreads_bytes_over_time() {
+        set_limits(None, Some(1000));
+        let first = throttle_delay(1000).unwrap();
+        let second = throttle_delay(1000).unwrap();
+        set_limits(None, None);
+
+        assert!(first < Duration::from_millis(50));
+        assert!(second > Duration::from_millis(900));
+        assert!(throttle_delay(1000).is_none());
+    }
 
     const ABC_SHA1: &str = "a9993e364706816aba3e25717850c26c9cd0d89d";
 

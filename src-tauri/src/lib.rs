@@ -1,11 +1,22 @@
 mod account;
 mod commands;
+mod config;
 mod error;
 mod state;
+
+use std::path::PathBuf;
 
 use tauri::Manager;
 
 use crate::state::Launcher;
+
+/// A `portable.txt` next to the executable keeps everything in a `data` folder beside it,
+/// so the launcher can live on a USB stick. Prism Launcher uses the same marker.
+fn portable_data_dir() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    let dir = exe.parent()?;
+    dir.join("portable.txt").is_file().then(|| dir.join("data"))
+}
 
 /// Starts the launcher.
 ///
@@ -16,9 +27,13 @@ use crate::state::Launcher;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let data_dir = app.path().app_data_dir()?;
+            let data_dir = match portable_data_dir() {
+                Some(dir) => dir,
+                None => app.path().app_data_dir()?,
+            };
             // World icons and screenshots are shown straight from the instance folders.
             app.asset_protocol_scope()
                 .allow_directory(&data_dir, true)?;
@@ -40,6 +55,8 @@ pub fn run() {
             commands::delete_instance,
             commands::open_instance_folder,
             commands::open_data_folder,
+            commands::config,
+            commands::set_config,
             commands::game_log,
             commands::memory_info,
             commands::set_instance_memory,
