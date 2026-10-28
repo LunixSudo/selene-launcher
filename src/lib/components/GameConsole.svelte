@@ -8,30 +8,31 @@
 
   const MAX_LINES = 5000;
 
-  let lines = $state<string[]>([]);
+  type Line = { id: number; text: string; level: string };
+
+  let nextId = 0;
+  let lines = $state.raw<Line[]>([]);
   let filter = $state("");
   let copied = $state(false);
   let output = $state<HTMLDivElement>();
   let followTail = true;
 
-  const visible = $derived(
-    filter ? lines.filter((line) => line.toLowerCase().includes(filter.toLowerCase())) : lines,
-  );
+  const visible = $derived.by(() => {
+    const needle = filter.toLowerCase();
+    return needle ? lines.filter((line) => line.text.toLowerCase().includes(needle)) : lines;
+  });
 
   $effect(() => {
     const id = instanceId;
     void api.gameLog(id).then(async (saved) => {
-      lines = saved;
+      lines = toLines(saved).slice(-MAX_LINES);
       await scrollToEnd();
     });
     return onGameLog(async (log) => {
       if (log.instanceId !== id) {
         return;
       }
-      lines.push(...log.lines);
-      if (lines.length > MAX_LINES) {
-        lines.splice(0, lines.length - MAX_LINES);
-      }
+      lines = lines.concat(toLines(log.lines)).slice(-MAX_LINES);
       if (followTail) {
         await scrollToEnd();
       }
@@ -50,9 +51,15 @@
   }
 
   async function copy() {
-    await navigator.clipboard.writeText(visible.join("\n"));
+    await navigator.clipboard.writeText(visible.map((line) => line.text).join("\n"));
     copied = true;
     setTimeout(() => (copied = false), 1500);
+  }
+
+  // Ids and levels are worked out once per line, so trimming the head of the log does not
+  // re-render or re-match the thousands of lines that stay.
+  function toLines(texts: string[]): Line[] {
+    return texts.map((text) => ({ id: nextId++, text, level: level(text) }));
   }
 
   function level(line: string): string {
@@ -78,8 +85,8 @@
     {#if lines.length === 0}
       <p class="empty">{t("logs.empty")}</p>
     {:else}
-      {#each visible as line, index (index)}
-        <div class="line {level(line)}">{line}</div>
+      {#each visible as line (line.id)}
+        <div class="line {line.level}">{line.text}</div>
       {/each}
     {/if}
   </div>
@@ -142,6 +149,8 @@
   .line {
     white-space: pre-wrap;
     word-break: break-word;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 18px;
   }
 
   .warn {
