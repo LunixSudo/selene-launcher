@@ -1,11 +1,12 @@
 <script lang="ts" generics="T extends string">
   import { tick } from "svelte";
 
-  let {
-    value = $bindable(),
-    options,
-    id,
-  }: { value: T; options: { value: T; label: string }[]; id?: string } = $props();
+  type Props = { options: { value: T; label: string }[]; id?: string; placeholder?: string } & (
+    | { multiple?: false; value: T }
+    | { multiple: true; value: T[] }
+  );
+
+  let { value = $bindable(), options, id, placeholder = "", multiple = false }: Props = $props();
 
   const GAP = 6;
   const MAX_HEIGHT = 280;
@@ -16,7 +17,18 @@
   let active = $state(0);
   let placement = $state({ left: 0, top: 0, width: 0, maxHeight: MAX_HEIGHT, above: false });
 
-  const selected = $derived(options.find((option) => option.value === value));
+  const chosen = $derived(options.filter((option) => isChosen(option.value)));
+  const label = $derived(
+    chosen.length === 0
+      ? placeholder
+      : chosen.length === 1
+        ? chosen[0].label
+        : `${chosen[0].label} +${chosen.length - 1}`,
+  );
+
+  function isChosen(option: T): boolean {
+    return Array.isArray(value) ? value.includes(option) : value === option;
+  }
 
   $effect(() => {
     if (!open) {
@@ -50,7 +62,7 @@
     };
     active = Math.max(
       0,
-      options.findIndex((option) => option.value === value),
+      options.findIndex((option) => isChosen(option.value)),
     );
     open = true;
     await tick();
@@ -66,7 +78,12 @@
   }
 
   function choose(index: number) {
-    value = options[index].value;
+    const option = options[index].value;
+    if (Array.isArray(value)) {
+      value = isChosen(option) ? value.filter((item) => item !== option) : [...value, option];
+      return;
+    }
+    value = option;
     open = false;
     button.focus();
   }
@@ -123,7 +140,7 @@
   onclick={toggle}
   {onkeydown}
 >
-  <span>{selected?.label ?? ""}</span>
+  <span class:placeholder={chosen.length === 0}>{label}</span>
   <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
 </button>
 
@@ -133,6 +150,7 @@
     bind:this={list}
     {@attach lift}
     role="listbox"
+    aria-multiselectable={multiple}
     class:above={placement.above}
     style:left="{placement.left}px"
     style:top="{placement.top}px"
@@ -143,7 +161,7 @@
       <div
         role="option"
         tabindex="-1"
-        aria-selected={option.value === value}
+        aria-selected={isChosen(option.value)}
         class:active={index === active}
         onpointerenter={() => (active = index)}
         onpointerdown={(event) => event.preventDefault()}
@@ -151,7 +169,7 @@
         onkeydown={() => {}}
       >
         {option.label}
-        {#if option.value === value}
+        {#if isChosen(option.value)}
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
         {/if}
       </div>
@@ -184,6 +202,16 @@
     font-size: 14px;
     text-align: left;
     cursor: pointer;
+  }
+
+  .field span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .field .placeholder {
+    color: var(--text-muted);
   }
 
   .field.open {

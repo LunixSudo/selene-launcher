@@ -45,7 +45,7 @@
 
   let source = $state<Source>(loadSource());
   let chosenKind = $state<ContentKind>("mod");
-  let category = $state("");
+  let chosenCategories = $state<string[]>([]);
   let sort = $state<CatalogSort>("relevance");
   let categories = $state<CategoryTag[]>([]);
   let shownHit = $state<CatalogHit | null>(null);
@@ -75,16 +75,15 @@
   const sortOptions = $derived(
     SORTS.map((value) => ({ value, label: t(`content.sorts.${value}`) })),
   );
-  const categoryOptions = $derived([
-    { value: "", label: t("content.allCategories") },
-    ...categories.map((tag) => ({ value: tag.id, label: categoryName(tag.name) })),
-  ]);
+  const categoryOptions = $derived(
+    categories.map((tag) => ({ value: tag.id, label: categoryName(tag.name) })),
+  );
 
   $effect(() => {
     void source;
     void kind;
     selected = {};
-    category = "";
+    chosenCategories = [];
     categories = [];
     api
       .catalogCategories(kind, source)
@@ -95,7 +94,7 @@
   });
 
   $effect(() => {
-    const request = { text: query, from: source, kind, category, sort };
+    const request = { text: query, from: source, kind, categories: chosenCategories, sort };
     const timer = setTimeout(() => void search(request, 0), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
   });
@@ -147,7 +146,7 @@
     text: string;
     from: Source;
     kind: ContentKind;
-    category: string;
+    categories: string[];
     sort: CatalogSort;
   }
 
@@ -163,7 +162,7 @@
         request.kind,
         request.from,
         request.text,
-        request.category || null,
+        $state.snapshot(request.categories),
         request.sort,
         next,
       );
@@ -309,7 +308,12 @@
 
 <div class="filters">
   <div class="filter">
-    <Select bind:value={category} options={categoryOptions} />
+    <Select
+      multiple
+      bind:value={chosenCategories}
+      options={categoryOptions}
+      placeholder={t("content.allCategories")}
+    />
   </div>
   <div class="filter">
     <Select bind:value={sort} options={sortOptions} />

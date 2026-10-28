@@ -382,7 +382,7 @@ export const api = {
     kind: ContentKind,
     source: Source,
     query: string,
-    category: string | null,
+    categories: string[],
     sort: CatalogSort,
     page: number,
   ) =>
@@ -391,7 +391,7 @@ export const api = {
       kind,
       source,
       query,
-      category,
+      categories,
       sort,
       page,
     }),

@@ -183,7 +183,7 @@ pub async fn search_catalog(
     kind: ContentKind,
     source: Source,
     query: String,
-    category: Option<String>,
+    categories: Vec<String>,
     sort: CatalogSort,
     page: u32,
 ) -> CommandResult<CatalogPage> {
@@ -199,7 +199,7 @@ pub async fn search_catalog(
                     text: &query,
                     kind,
                     target: Target::new(kind, &instance.version, loader),
-                    category: category.as_deref(),
+                    categories: &categories,
                     sort,
                     offset,
                     limit: PAGE_SIZE,
@@ -232,7 +232,10 @@ pub async fn search_catalog(
                     kind,
                     game_version: &instance.version,
                     loader,
-                    category: category.and_then(|id| id.parse().ok()),
+                    categories: &categories
+                        .iter()
+                        .filter_map(|id| id.parse().ok())
+                        .collect::<Vec<_>>(),
                     sort,
                     offset,
                     limit: PAGE_SIZE,

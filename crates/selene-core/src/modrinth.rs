@@ -53,7 +53,8 @@ pub struct SearchQuery<'a> {
     pub text: &'a str,
     pub kind: ContentKind,
     pub target: Target<'a>,
-    pub category: Option<&'a str>,
+    /// Every one of these must match.
+    pub categories: &'a [String],
     pub sort: CatalogSort,
     pub offset: u32,
     pub limit: u32,
@@ -219,7 +220,7 @@ pub async fn search(client: &Client, query: &SearchQuery<'_>) -> Result<SearchRe
                 .collect(),
         );
     }
-    if let Some(category) = query.category {
+    for category in query.categories {
         facets.push(vec![format!("categories:{category}")]);
     }
     let index = match query.sort {

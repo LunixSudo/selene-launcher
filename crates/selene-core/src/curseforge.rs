@@ -148,7 +148,7 @@ pub struct SearchQuery<'a> {
     pub kind: ContentKind,
     pub game_version: &'a str,
     pub loader: Option<Loader>,
-    pub category: Option<u32>,
+    pub categories: &'a [u32],
     pub sort: CatalogSort,
     pub offset: u32,
     pub limit: u32,
@@ -239,8 +239,8 @@ impl CurseForge {
         if let Some(loader) = query.loader.filter(|_| query.kind == ContentKind::Mod) {
             params.push(("modLoaderType", loader_type(loader).to_string()));
         }
-        if let Some(category) = query.category {
-            params.push(("categoryId", category.to_string()));
+        if !query.categories.is_empty() {
+            params.push(("categoryIds", serde_json::to_string(query.categories)?));
         }
         let response: Response<Vec<Mod>> = self
             .get("/mods/search")
