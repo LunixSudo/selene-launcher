@@ -56,6 +56,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The installer puts the program into `%LOCALAPPDATA%\SeleneLauncher`, without a space, and
+  moves an install from the old `Selene Launcher` folder there.
 - The privacy policy mentions that catalog pages load images from the sites their authors
   chose.
 - New logo: a moon-rock cube with a golden crescent, with a simpler drawing for
