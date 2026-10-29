@@ -25,7 +25,14 @@ All notable changes to this project are documented here. The format follows
 - Search, sorting and groups on the home screen; copying an instance.
 - Desktop shortcuts that start an instance.
 - Skins page with a 3D preview, a skin library and cape selection; the player's head in the
-  title bar.
+  title bar. The character can idle, walk, run, fly with elytra or wave, and the capes sit in
+  one row under it: the mouse wheel scrolls them and hovering one tries it on.
+- Saving the skin the account wears now into the skin library.
+- Effects in the settings, all off by default: live backgrounds (halo rings, light rays,
+  starry sky, aurora), smooth page, card and dialog animations with a glowing Play button,
+  and a soft click sound. Each instance can use the launcher's background, its own animated
+  cover or any of the live ones.
+- On the first start the launcher asks whether to favour speed or looks.
 - Discord status "Playing Selene Launcher".
 - Launcher updates from GitHub Releases, checked against the SHA-256 digest GitHub publishes.
 - Windows notifications, download speed and parallelism limits, custom Java path.
@@ -79,6 +86,8 @@ All notable changes to this project are documented here. The format follows
 - The solid style turns blur off completely, and the launcher follows the Windows setting that
   turns animations off.
 - The game console stays light with thousands of lines.
+- Worlds are no longer started from the launcher, which was unreliable across game versions;
+  joining a server straight from the launcher stays.
 - An imported modpack shows up in the list right away, while its files download.
 - Fabric and Quilt say when they have no build for an old game version instead of reporting
   a connection error.

@@ -34,9 +34,11 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
   window.
 - **Playing.** Worlds (with renaming and backups), servers and screenshots per instance,
   joining a server in one click, a game console, crash analysis, play time and a Discord status.
-- **Skins.** A 3D preview, a library of saved skins and cape selection.
+- **Skins.** An animated 3D preview, a library of saved skins, saving the skin you wear now
+  and a row of capes under the character to try on.
 - **Launcher.** Updates from GitHub Releases checked against SHA-256, light and dark themes
-  with Mica and glass styles, Russian and English. Data lives in `%APPDATA%\SeleneLauncher`,
+  with Mica and glass styles, optional live backgrounds, animations and click sounds (also
+  per instance), Russian and English. Data lives in `%APPDATA%\SeleneLauncher`,
   or next to the executable in portable mode: put an empty `portable.txt` beside it.
 
 ## Download
