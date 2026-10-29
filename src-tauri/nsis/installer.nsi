@@ -895,6 +895,18 @@ Section Uninstall
       !insertmacro UnpinShortcut "$DESKTOP\${PRODUCTNAME}.lnk"
       Delete "$DESKTOP\${PRODUCTNAME}.lnk"
     ${EndIf}
+
+    ; Instance shortcuts start the launcher too and would only point at nothing now
+    FindFirst $R8 $R9 "$DESKTOP\*.lnk"
+    ${DoWhile} $R9 != ""
+      !insertmacro IsShortcutTarget "$DESKTOP\$R9" "$INSTDIR\${MAINBINARYNAME}.exe"
+      Pop $0
+      ${If} $0 = 1
+        Delete "$DESKTOP\$R9"
+      ${EndIf}
+      FindNext $R8 $R9
+    ${Loop}
+    FindClose $R8
   ${EndIf}
 
   ; Remove registry information for add/remove programs
