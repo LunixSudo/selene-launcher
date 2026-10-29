@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::{Mutex, PoisonError};
 
 use reqwest::{Client, Method, RequestBuilder};
 use serde::{Deserialize, Serialize};
@@ -390,30 +391,56 @@ impl CurseForge {
         &self,
         fingerprints: &[u32],
     ) -> Result<HashMap<u32, KnownFile>> {
-        if fingerprints.is_empty() {
-            return Ok(HashMap::new());
+        // A fingerprint always names the same file, so each is asked about once per session.
+        static KNOWN: Mutex<Option<HashMap<u32, Option<KnownFile>>>> = Mutex::new(None);
+        let lock = || KNOWN.lock().unwrap_or_else(PoisonError::into_inner);
+
+        let unknown: Vec<u32> = {
+            let known = lock();
+            fingerprints
+                .iter()
+                .copied()
+                .filter(|print| {
+                    known
+                        .as_ref()
+                        .is_none_or(|known| !known.contains_key(print))
+                })
+                .collect()
+        };
+        if !unknown.is_empty() {
+            let response: Response<FingerprintMatches> = http::send(
+                &self.client,
+                self.request(Method::POST, &format!("/fingerprints/{MINECRAFT_GAME_ID}"))
+                    .json(&serde_json::json!({ "fingerprints": unknown })),
+            )
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+            let mut found: HashMap<u32, KnownFile> = response
+                .data
+                .exact_matches
+                .into_iter()
+                .map(|found| {
+                    let file = found.file;
+                    let known = KnownFile {
+                        mod_id: file.mod_id,
+                        file_id: file.id,
+                    };
+                    (file.file_fingerprint, known)
+                })
+                .collect();
+            let mut known = lock();
+            let known = known.get_or_insert_default();
+            for print in unknown {
+                known.insert(print, found.remove(&print));
+            }
         }
-        let response: Response<FingerprintMatches> = http::send(
-            &self.client,
-            self.request(Method::POST, &format!("/fingerprints/{MINECRAFT_GAME_ID}"))
-                .json(&serde_json::json!({ "fingerprints": fingerprints })),
-        )
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
-        Ok(response
-            .data
-            .exact_matches
-            .into_iter()
-            .map(|found| {
-                let file = found.file;
-                let known = KnownFile {
-                    mod_id: file.mod_id,
-                    file_id: file.id,
-                };
-                (file.file_fingerprint, known)
-            })
+
+        let known = lock();
+        Ok(fingerprints
+            .iter()
+            .filter_map(|print| Some((*print, (*known.as_ref()?.get(print)?)?)))
             .collect())
     }
 

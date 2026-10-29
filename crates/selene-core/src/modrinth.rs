@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::BuildHasher;
+use std::sync::{Mutex, PoisonError};
 
 use chrono::{DateTime, Utc};
 use reqwest::Client;
@@ -377,20 +378,47 @@ pub async fn versions_by_hash(
     client: &Client,
     sha1s: &[String],
 ) -> Result<HashMap<String, Version>> {
-    if sha1s.is_empty() {
-        return Ok(HashMap::new());
+    // What a file is never changes, so each hash is asked about once per session.
+    static KNOWN: Mutex<Option<HashMap<String, Option<Version>>>> = Mutex::new(None);
+    let lock = || KNOWN.lock().unwrap_or_else(PoisonError::into_inner);
+
+    let unknown: Vec<&String> = {
+        let known = lock();
+        sha1s
+            .iter()
+            .filter(|sha1| {
+                known
+                    .as_ref()
+                    .is_none_or(|known| !known.contains_key(*sha1))
+            })
+            .collect()
+    };
+    if !unknown.is_empty() {
+        let mut found: HashMap<String, Version> = http::send(
+            client,
+            client
+                .post(format!("{API_URL}/version_files"))
+                .json(&json!({ "hashes": unknown, "algorithm": "sha1" })),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+        let mut known = lock();
+        let known = known.get_or_insert_default();
+        for sha1 in unknown {
+            known.insert(sha1.clone(), found.remove(sha1));
+        }
     }
-    let versions = http::send(
-        client,
-        client
-            .post(format!("{API_URL}/version_files"))
-            .json(&json!({ "hashes": sha1s, "algorithm": "sha1" })),
-    )
-    .await?
-    .error_for_status()?
-    .json()
-    .await?;
-    Ok(versions)
+
+    let known = lock();
+    Ok(sha1s
+        .iter()
+        .filter_map(|sha1| {
+            let version = known.as_ref()?.get(sha1)?.clone()?;
+            Some((sha1.clone(), version))
+        })
+        .collect())
 }
 
 /// The newest compatible version for each file, keyed by the file's SHA-1. `current` holds
