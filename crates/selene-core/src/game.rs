@@ -89,12 +89,13 @@ where
     })
     .await?;
 
-    let component = version
+    let (component, major) = version
         .java_version
         .as_ref()
-        .map_or(LEGACY_JAVA, |java| java.component.as_str());
-    let runtimes = java::fetch_index(client, &dirs.runtimes()).await?;
-    let java = java::install(client, &runtimes, component, &dirs.runtimes(), |progress| {
+        .map_or((LEGACY_JAVA, 8), |java| {
+            (java.component.as_str(), java.major_version)
+        });
+    let java = java::install_any(client, component, major, &dirs.runtimes(), |progress| {
         on_progress(Stage::Java, progress);
     })
     .await?;

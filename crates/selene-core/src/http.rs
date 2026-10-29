@@ -1,8 +1,10 @@
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::{Duration, Instant};
 
 use reqwest::{Client, RequestBuilder, Response, StatusCode, Url};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 use crate::Result;
 
@@ -104,6 +106,42 @@ const FALLBACKS: &[(&str, &str)] = &[
 const HOST_RETRY_AFTER: Duration = Duration::from_secs(5 * 60);
 static DOWN_HOSTS: Mutex<Vec<(String, Instant)>> = Mutex::new(Vec::new());
 
+/// Where downloads come from. Anything but `Auto` is for checking that the copies work.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Source {
+    #[default]
+    Auto,
+    /// BMCLAPI and MCIM wherever they have a copy, Java included.
+    Fallbacks,
+}
+
+static SOURCE: AtomicU8 = AtomicU8::new(0);
+
+pub fn set_source(source: Source) {
+    SOURCE.store(source as u8, Ordering::Relaxed);
+}
+
+pub fn source() -> Source {
+    match SOURCE.load(Ordering::Relaxed) {
+        1 => Source::Fallbacks,
+        _ => Source::Auto,
+    }
+}
+
+tokio::task_local! {
+    static OFFICIAL_ONLY: ();
+}
+
+/// Runs `future` without BMCLAPI and MCIM, for files that have a better second source.
+pub async fn official_only<F: Future>(future: F) -> F::Output {
+    OFFICIAL_ONLY.scope((), future).await
+}
+
+fn fallbacks_allowed() -> bool {
+    OFFICIAL_ONLY.try_with(|()| ()).is_err()
+}
+
 pub fn client() -> Result<Client> {
     let client = Client::builder()
         .user_agent(USER_AGENT)
@@ -153,7 +191,12 @@ fn is_fallback(url: &str) -> bool {
 pub async fn get(client: &Client, url: &str) -> Result<Response> {
     let mut sources = vec![url.to_owned()];
     sources.extend(mirrors_of(url));
-    sources.extend(fallback_of(url));
+    if fallbacks_allowed() {
+        match fallback_of(url) {
+            Some(copy) if source() == Source::Fallbacks => sources = vec![copy],
+            copy => sources.extend(copy),
+        }
+    }
     // Hosts that failed lately go last, still there in case the others fail too.
     sources.sort_by_key(|source| is_down(source));
 
@@ -182,6 +225,7 @@ pub async fn get(client: &Client, url: &str) -> Result<Response> {
 pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> {
     let request = request.build()?;
     let copy = fallback_of(request.url().as_str())
+        .filter(|_| fallbacks_allowed())
         .and_then(|url| Url::parse(&url).ok())
         .and_then(|url| {
             let mut copy = request.try_clone()?;
@@ -192,6 +236,9 @@ pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> 
     let Some(copy) = copy else {
         return Ok(client.execute(request).await?);
     };
+    if source() == Source::Fallbacks {
+        return Ok(client.execute(copy).await?);
+    }
     let mut requests = [request, copy];
     // Hosts that failed lately go last, still there in case the others fail too.
     requests.sort_by_key(|request| is_down(request.url().as_str()));

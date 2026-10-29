@@ -43,7 +43,7 @@ pub fn set_limits(max_parallel: Option<usize>, bytes_per_second: Option<u64>) {
 }
 
 /// How long to wait before using `bytes` more of the speed budget.
-fn throttle_delay(bytes: usize) -> Option<Duration> {
+pub(crate) fn throttle_delay(bytes: usize) -> Option<Duration> {
     let rate = BYTES_PER_SECOND.load(Ordering::Relaxed);
     if rate == 0 {
         return None;

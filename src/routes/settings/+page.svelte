@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getVersion } from "@tauri-apps/api/app";
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import { api, type LauncherConfig } from "$lib/api";
+  import { api, type DownloadSource, type LauncherConfig } from "$lib/api";
   import BackdropPicker from "$lib/components/BackdropPicker.svelte";
   import BackLink from "$lib/components/BackLink.svelte";
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
@@ -41,6 +41,10 @@
       label: value === "auto" ? t("settings.auto") : value,
     })),
   );
+  const sourceOptions = $derived([
+    { value: "auto", label: t("settings.sourceAuto") },
+    { value: "fallbacks", label: t("settings.sourceFallbacks") },
+  ]);
   const speedOptions = $derived(
     SPEEDS_MB.map((value) => ({
       value,
@@ -314,6 +318,21 @@
     })
               }
               options={speedOptions}
+            />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <h3>{t("settings.downloadSource")}</h3>
+            <p>{t("settings.downloadSourceHint")}</p>
+          </div>
+          <div class="select">
+            <Select
+              bind:value={
+                () => current.downloadSource,
+                (value) => saveConfig({ downloadSource: value as DownloadSource })
+              }
+              options={sourceOptions}
             />
           </div>
         </div>

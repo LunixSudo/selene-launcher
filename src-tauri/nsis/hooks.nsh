@@ -3,7 +3,7 @@
 !define PRIVACY_DIR "${__FILEDIR__}\privacy"
 
 ; Must match PRIVACY_VERSION in src/commands/privacy.rs.
-!define PRIVACY_VERSION "2026-10-29.2"
+!define PRIVACY_VERSION "2026-10-29.3"
 
 !macro NSIS_HOOK_POSTINSTALL
   ; The user agreed to the policy on the license page, so the launcher does not ask again.

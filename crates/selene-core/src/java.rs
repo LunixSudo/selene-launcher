@@ -1,15 +1,22 @@
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
+use futures_util::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use tokio::fs;
+use sha2::{Digest, Sha256};
+use tokio::fs::{self, File};
+use tokio::io::AsyncWriteExt;
 
 use crate::download::{self, Download, Progress};
 use crate::{Error, Result, cache, http};
 
 /// Index of every Java runtime Mojang ships, the same one the official launcher reads.
 pub const RUNTIME_INDEX_URL: &str = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
+
+/// Eclipse Temurin builds, used when Mojang's runtimes cannot be downloaded.
+const ADOPTIUM_API: &str = "https://api.adoptium.net/v3/assets/latest/";
+const ADOPTIUM_MIRROR: &str = "https://mirrors.tuna.tsinghua.edu.cn/Adoptium/";
 
 const INSTALL_MARKER: &str = ".selene-runtime.json";
 const DOWNLOAD_CONCURRENCY: usize = 16;
@@ -57,6 +64,25 @@ pub enum RuntimeEntry {
 #[derive(Debug, Clone, Deserialize)]
 pub struct FileDownloads {
     pub raw: FileRef,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct AdoptiumAsset {
+    binary: AdoptiumBinary,
+    release_name: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct AdoptiumBinary {
+    package: AdoptiumPackage,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct AdoptiumPackage {
+    checksum: String,
+    link: String,
+    name: String,
+    size: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -168,6 +194,217 @@ where
     write_marker(&runtime.home, &marker).await?;
 
     Ok(runtime)
+}
+
+/// Mojang's runtime from the official hosts, then Temurin, then Mojang's runtime from BMCLAPI.
+pub async fn install_any<F>(
+    client: &Client,
+    component: &str,
+    major: u32,
+    runtimes_dir: &Path,
+    on_progress: F,
+) -> Result<JavaRuntime>
+where
+    F: Fn(Progress) + Sync,
+{
+    if http::source() == http::Source::Fallbacks {
+        let index = fetch_index(client, runtimes_dir).await?;
+        return install(client, &index, component, runtimes_dir, on_progress).await;
+    }
+    let official = http::official_only(async {
+        let index = fetch_index(client, runtimes_dir).await?;
+        install(client, &index, component, runtimes_dir, &on_progress).await
+    })
+    .await;
+    if official.is_ok() {
+        return official;
+    }
+    if let Ok(runtime) = install_temurin(client, major, runtimes_dir, &on_progress).await {
+        return Ok(runtime);
+    }
+    let index = fetch_index(client, runtimes_dir).await?;
+    install(client, &index, component, runtimes_dir, on_progress).await
+}
+
+/// Installs the latest Temurin JRE of `major` into `runtimes_dir/temurin-<major>`.
+pub async fn install_temurin<F>(
+    client: &Client,
+    major: u32,
+    runtimes_dir: &Path,
+    on_progress: F,
+) -> Result<JavaRuntime>
+where
+    F: Fn(Progress) + Sync,
+{
+    let component = format!("temurin-{major}");
+    let arch = adoptium_arch(std::env::consts::OS, std::env::consts::ARCH)
+        .ok_or(Error::UnsupportedPlatform)?;
+    let home = runtimes_dir.join(&component);
+    let installed = read_marker(&home).await;
+
+    let url = format!(
+        "{ADOPTIUM_API}{major}/hotspot?architecture={arch}&image_type=jre&os=windows&vendor=eclipse"
+    );
+    let asset = match http::get_json::<Vec<AdoptiumAsset>>(client, &url).await {
+        Ok(assets) => assets.into_iter().next(),
+        // Offline, a build installed earlier is still good.
+        Err(err) => match installed {
+            Some(marker)
+                if fs::try_exists(home.join("bin/javaw.exe"))
+                    .await
+                    .unwrap_or(false) =>
+            {
+                return Ok(JavaRuntime {
+                    component,
+                    version: marker.version,
+                    home,
+                });
+            }
+            _ => return Err(err),
+        },
+    };
+    let asset = asset.ok_or_else(|| Error::JavaUnavailable {
+        component: component.clone(),
+        platform: format!("windows-{arch}"),
+    })?;
+    let package = &asset.binary.package;
+    let runtime = JavaRuntime {
+        component,
+        version: asset.release_name.clone(),
+        home,
+    };
+    let marker = InstallMarker {
+        version: asset.release_name.clone(),
+        manifest_sha1: package.checksum.clone(),
+    };
+    if installed.as_ref() == Some(&marker)
+        && fs::try_exists(runtime.executable()).await.unwrap_or(false)
+    {
+        return Ok(runtime);
+    }
+
+    let archive = runtimes_dir.join(&package.name);
+    let sources = [
+        package.link.clone(),
+        format!(
+            "{ADOPTIUM_MIRROR}{major}/jre/{arch}/windows/{}",
+            package.name
+        ),
+    ];
+    let mut result = Ok(());
+    for source in &sources {
+        result = fetch_archive(client, source, package, &archive, &on_progress).await;
+        if result.is_ok() {
+            break;
+        }
+    }
+    result?;
+
+    let home = runtime.home.clone();
+    let extracted = tokio::task::spawn_blocking({
+        let archive = archive.clone();
+        move || extract_archive(&archive, &home)
+    })
+    .await
+    .map_err(|err| Error::io(&archive, std::io::Error::other(err)))?;
+    let _ = fs::remove_file(&archive).await;
+    extracted?;
+    write_marker(&runtime.home, &marker).await?;
+
+    Ok(runtime)
+}
+
+/// Adoptium's name for the architecture. Only Windows builds are used, since the other
+/// platforms ship as tarballs or app bundles.
+fn adoptium_arch(os: &str, arch: &str) -> Option<&'static str> {
+    match (os, arch) {
+        ("windows", "x86_64") => Some("x64"),
+        ("windows", "aarch64") => Some("aarch64"),
+        _ => None,
+    }
+}
+
+async fn fetch_archive<F>(
+    client: &Client,
+    url: &str,
+    package: &AdoptiumPackage,
+    path: &Path,
+    on_progress: F,
+) -> Result<()>
+where
+    F: Fn(Progress),
+{
+    let mut file = File::create(path)
+        .await
+        .map_err(|err| Error::io(path, err))?;
+    let mut hasher = Sha256::new();
+    let mut body = http::get(client, url)
+        .await?
+        .error_for_status()?
+        .bytes_stream();
+    let mut done = 0;
+
+    while let Some(chunk) = body.next().await {
+        let chunk = chunk?;
+        if let Some(delay) = download::throttle_delay(chunk.len()).filter(|delay| !delay.is_zero())
+        {
+            tokio::time::sleep(delay).await;
+        }
+        hasher.update(&chunk);
+        file.write_all(&chunk)
+            .await
+            .map_err(|err| Error::io(path, err))?;
+        done += chunk.len() as u64;
+        on_progress(Progress {
+            bytes_done: done,
+            bytes_total: package.size,
+        });
+    }
+    file.flush().await.map_err(|err| Error::io(path, err))?;
+
+    let actual = download::hex(&hasher.finalize());
+    if !actual.eq_ignore_ascii_case(&package.checksum) {
+        let _ = fs::remove_file(path).await;
+        return Err(Error::ChecksumMismatch {
+            url: url.to_owned(),
+            expected: package.checksum.clone(),
+            actual,
+        });
+    }
+    Ok(())
+}
+
+/// Unpacks the JRE zip into `home`, dropping the archive's top folder.
+fn extract_archive(archive: &Path, home: &Path) -> Result<()> {
+    if home.exists() {
+        std::fs::remove_dir_all(home).map_err(|err| Error::io(home, err))?;
+    }
+    let file = std::fs::File::open(archive).map_err(|err| Error::io(archive, err))?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|err| Error::io(archive, err.into()))?;
+
+    for index in 0..zip.len() {
+        let mut entry = zip
+            .by_index(index)
+            .map_err(|err| Error::io(archive, err.into()))?;
+        let Some(name) = entry.enclosed_name() else {
+            continue;
+        };
+        let relative: PathBuf = name.components().skip(1).collect();
+        if relative.as_os_str().is_empty() {
+            continue;
+        }
+        let target = home.join(relative);
+        if entry.is_dir() {
+            std::fs::create_dir_all(&target).map_err(|err| Error::io(&target, err))?;
+            continue;
+        }
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent).map_err(|err| Error::io(parent, err))?;
+        }
+        let mut out = std::fs::File::create(&target).map_err(|err| Error::io(&target, err))?;
+        std::io::copy(&mut entry, &mut out).map_err(|err| Error::io(&target, err))?;
+    }
+    Ok(())
 }
 
 async fn fetch_manifest(client: &Client, manifest: &FileRef) -> Result<RuntimeManifest> {
@@ -337,6 +574,32 @@ mod tests {
             &manifest.files["legal/java.base/LICENSE"],
             RuntimeEntry::Link { target } if target == "../java.base/LICENSE"
         ));
+    }
+
+    #[test]
+    fn maps_adoptium_architectures() {
+        assert_eq!(adoptium_arch("windows", "x86_64"), Some("x64"));
+        assert_eq!(adoptium_arch("windows", "aarch64"), Some("aarch64"));
+        assert_eq!(adoptium_arch("linux", "x86_64"), None);
+    }
+
+    #[test]
+    fn extracts_without_top_folder() {
+        use std::io::Write;
+
+        let dir = tempfile::tempdir().unwrap();
+        let archive = dir.path().join("jre.zip");
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&archive).unwrap());
+        let options = zip::write::SimpleFileOptions::default();
+        zip.add_directory("jdk8u504-b01-jre/bin/", options).unwrap();
+        zip.start_file("jdk8u504-b01-jre/bin/javaw.exe", options)
+            .unwrap();
+        zip.write_all(b"java").unwrap();
+        zip.finish().unwrap();
+
+        let home = dir.path().join("temurin-8");
+        extract_archive(&archive, &home).unwrap();
+        assert_eq!(std::fs::read(home.join("bin/javaw.exe")).unwrap(), b"java");
     }
 
     #[tokio::test]

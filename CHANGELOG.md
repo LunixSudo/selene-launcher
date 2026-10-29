@@ -82,6 +82,11 @@ All notable changes to this project are documented here. The format follows
 - The mod catalog and mod downloads fall back to MCIM, a public copy of Modrinth and
   CurseForge, when those sites cannot be reached. Mod files keep the catalog checksums, and the
   CurseForge key is never sent to the copy.
+- When Mojang's Java cannot be downloaded, the launcher installs Eclipse Temurin of the same
+  version from Adoptium (or its TUNA mirror), checked against Adoptium's SHA-256, and only
+  then tries Mojang's Java on BMCLAPI.
+- A temporary "Download source" setting that takes everything from BMCLAPI and MCIM, to check
+  that the copies work. It goes away before the release.
 - Deleting an instance or changing its game version while its game, Java or loader is
   downloading cancels the download. Mods, resource packs and shaders can be updated meanwhile.
 - Changing the game version can also update resource packs and shaders for the new version
@@ -135,6 +140,9 @@ All notable changes to this project are documented here. The format follows
   `SeleneLauncher-Windows-Portable-0.1.0.zip`; the portable zip also carries the license.
 
 ### Fixed
+
+- The worlds, servers and screenshots tabs no longer reread their folders on every download
+  progress update.
 
 - The current skin and capes show on the skins page: Mojang's texture links are loaded over
   HTTPS.
