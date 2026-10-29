@@ -9,6 +9,7 @@
     type SkinProfile,
     type SkinVariant,
   } from "$lib/api";
+  import BackLink from "$lib/components/BackLink.svelte";
   import PlayerHead from "$lib/components/PlayerHead.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
   import SkinViewer from "$lib/components/SkinViewer.svelte";
@@ -161,10 +162,7 @@
 
 <section class="page">
   <header>
-    <a class="back-link" href="/">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
-      {t("instance.back")}
-    </a>
+    <BackLink />
     <h1 class="page-title">{t("skins.title")}</h1>
   </header>
 

@@ -5,6 +5,7 @@ export const en: Messages = {
     minimize: "Minimize",
     maximize: "Maximize",
     close: "Close",
+    back: "Back",
   },
   account: {
     signIn: "Sign in",
@@ -419,9 +420,7 @@ export const en: Messages = {
     aurora: "Aurora",
     liquid: "Liquid glass",
     bokeh: "Lights",
-    nebula: "Nebula",
     waves: "Waves",
-    moon: "Moon",
   },
   welcome: {
     title: "Welcome to Selene",

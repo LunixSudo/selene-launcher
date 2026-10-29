@@ -4,8 +4,12 @@
   import type { Backdrop } from "$lib/state/settings.svelte";
 
   const STAR_COUNT = 170;
-  const SHOOTING_STAR_EVERY_MS = 7000;
-  const SHOOTING_STAR_SPEED = 700;
+  /** Shooting stars come every few seconds, sometimes two or three together. */
+  const SHOOTING_PAUSE_MS: [number, number] = [2500, 9000];
+  const SHOOTING_SPEED: [number, number] = [220, 1300];
+  const SHOOTING_GROUP_CHANCE = 0.25;
+  /** Down and to the left, about 30 degrees below the horizon. */
+  const SHOOTING_ANGLE = Math.PI * 0.83;
 
   let { kind, cover = null }: { kind: Backdrop | "cover"; cover?: string | null } = $props();
 
@@ -25,6 +29,18 @@
 
   function isShader(kind: string): kind is ShaderBackdrop {
     return SHADER_BACKDROPS.includes(kind as ShaderBackdrop);
+  }
+
+  interface ShootingStar {
+    x: number;
+    y: number;
+    speed: number;
+    angle: number;
+    length: number;
+  }
+
+  function between([min, max]: [number, number]): number {
+    return min + Math.random() * (max - min);
   }
 
   interface Star {
@@ -49,8 +65,9 @@
       phase: Math.random() * Math.PI * 2,
       speed: Math.random() * 0.0012 + 0.0004,
     }));
-    let shooting: { x: number; y: number; born: number } | null = null;
-    let lastShooting = performance.now();
+    let shooting: ShootingStar[] = [];
+    let nextShooting = performance.now() + between(SHOOTING_PAUSE_MS);
+    let lastFrame = performance.now();
     let frame = 0;
     let color = "";
     let drawn = 0;
@@ -83,30 +100,34 @@
         context.fill();
       }
 
-      if (!still && !shooting && now - lastShooting > SHOOTING_STAR_EVERY_MS) {
-        shooting = { x: Math.random() * 0.6 + 0.3, y: Math.random() * 0.3, born: now };
-        lastShooting = now;
-      }
-      if (shooting) {
-        // It flies at a steady speed until its tail has left the window.
-        const seconds = (now - shooting.born) / 1000;
-        const headX = shooting.x * width - seconds * SHOOTING_STAR_SPEED;
-        const headY = shooting.y * height + seconds * SHOOTING_STAR_SPEED * 0.58;
-        if (headX < -140 || headY > height + 80) {
-          shooting = null;
-        } else {
-          const trail = context.createLinearGradient(headX, headY, headX + 120, headY - 70);
-          trail.addColorStop(0, color);
-          trail.addColorStop(1, "transparent");
-          context.globalAlpha = Math.min(1, seconds * 6);
-          context.strokeStyle = trail;
-          context.lineWidth = 1.6;
-          context.beginPath();
-          context.moveTo(headX, headY);
-          context.lineTo(headX + 120, headY - 70);
-          context.stroke();
+      if (!still && now >= nextShooting) {
+        const count = Math.random() < SHOOTING_GROUP_CHANCE ? 2 + Math.round(Math.random()) : 1;
+        for (let i = 0; i < count; i++) {
+          shooting.push(launchShootingStar(width, height));
         }
+        nextShooting = now + between(SHOOTING_PAUSE_MS);
       }
+      // A long pause, like a hidden window, should not make them jump ahead.
+      const seconds = Math.min(now - lastFrame, 100) / 1000;
+      lastFrame = now;
+      context.lineWidth = 1.6;
+      context.lineCap = "round";
+      for (const star of shooting) {
+        star.x += Math.cos(star.angle) * star.speed * seconds;
+        star.y += Math.sin(star.angle) * star.speed * seconds;
+        const tailX = star.x - Math.cos(star.angle) * star.length;
+        const tailY = star.y - Math.sin(star.angle) * star.length;
+        const trail = context.createLinearGradient(star.x, star.y, tailX, tailY);
+        trail.addColorStop(0, color);
+        trail.addColorStop(1, "transparent");
+        context.globalAlpha = 1;
+        context.strokeStyle = trail;
+        context.beginPath();
+        context.moveTo(star.x, star.y);
+        context.lineTo(tailX, tailY);
+        context.stroke();
+      }
+      shooting = shooting.filter((star) => star.x > -star.length && star.y < height + star.length);
       context.globalAlpha = 1;
       if (!still) {
         frame = requestAnimationFrame(draw);
@@ -122,6 +143,21 @@
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+    };
+  }
+
+  /** Starts just past the top or right edge, so it flies in instead of appearing. */
+  function launchShootingStar(width: number, height: number): ShootingStar {
+    const speed = between(SHOOTING_SPEED);
+    const length = 60 + speed * 0.12;
+    const angle = SHOOTING_ANGLE + (Math.random() - 0.5) * 0.2;
+    const fromTop = Math.random() < width / (width + height);
+    return {
+      x: fromTop ? between([width * 0.25, width + length]) : width + length,
+      y: fromTop ? -length : between([-length, height * 0.5]),
+      speed,
+      angle,
+      length,
     };
   }
 </script>

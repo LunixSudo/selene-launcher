@@ -3,6 +3,7 @@ export const ru = {
     minimize: "Свернуть",
     maximize: "Развернуть",
     close: "Закрыть",
+    back: "Назад",
   },
   account: {
     signIn: "Войти",
@@ -415,9 +416,7 @@ export const ru = {
     aurora: "Сияние",
     liquid: "Жидкое стекло",
     bokeh: "Огни",
-    nebula: "Туманность",
     waves: "Волны",
-    moon: "Луна",
   },
   welcome: {
     title: "Добро пожаловать в Selene",

@@ -1,12 +1,4 @@
-export type ShaderBackdrop =
-  | "halo"
-  | "rays"
-  | "aurora"
-  | "liquid"
-  | "bokeh"
-  | "nebula"
-  | "waves"
-  | "moon";
+export type ShaderBackdrop = "halo" | "rays" | "aurora" | "liquid" | "bokeh" | "waves";
 
 export const SHADER_BACKDROPS: ShaderBackdrop[] = [
   "halo",
@@ -14,9 +6,7 @@ export const SHADER_BACKDROPS: ShaderBackdrop[] = [
   "aurora",
   "liquid",
   "bokeh",
-  "nebula",
   "waves",
-  "moon",
 ];
 
 /** The canvas renders at this share of the window size; soft light needs no more. */
@@ -30,11 +20,17 @@ void main() {
 `;
 
 const COMMON = `
+// Old GPUs run mediump at half precision, which breaks the noise into blocks.
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
 precision mediump float;
+#endif
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform vec3 u_accent;
 uniform float u_light;
+uniform vec4 u_background;
 
 float hash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -69,10 +65,13 @@ vec3 spectrum(float t) {
 }
 
 // Light themes get the same colours, a little softer, laid over the page instead of glowing.
-// The output is premultiplied, so light adds up the way a glow does.
+// The output is premultiplied, so light adds up the way a glow does. Over a solid page the
+// page colour is blended in here: an opaque canvas leaves old GPUs nothing to composite wrong.
 void finish(vec3 color) {
   color = min(color, 1.0) * mix(1.0, 0.7, u_light);
   float alpha = max(color.r, max(color.g, color.b));
+  color += u_background.rgb * (1.0 - alpha) * u_background.a;
+  alpha = mix(alpha, 1.0, u_background.a);
   // A touch of noise hides the steps an 8-bit screen makes of soft gradients.
   float dither = (hash(gl_FragCoord.xy + fract(u_time)) - 0.5) / 255.0;
   gl_FragColor = clamp(vec4(color + dither, alpha + dither), 0.0, 1.0);
@@ -92,7 +91,7 @@ void main() {
     float angle = atan(q.y, q.x);
     float wobble = 0.035 * sin(angle * 3.0 + t * 0.6 + fi * 2.0)
       + 0.022 * sin(angle * 5.0 - t * 0.45 + fi * 4.0)
-      + 0.04 * (fbm(vec2(angle * 1.5 + fi * 10.0, t * 0.12)) - 0.5);
+      + 0.04 * (fbm(normalize(q) * 1.5 + vec2(fi * 10.0, t * 0.12)) - 0.5);
     float radius = 0.27 + 0.04 * fi + wobble;
     float d = abs(length(q) - radius);
     float core = exp(-d * d / 0.0009);
@@ -218,25 +217,6 @@ void main() {
 }
 `;
 
-/** Clouds of coloured gas with faint stars behind them. */
-const NEBULA = `
-void main() {
-  vec2 uv = gl_FragCoord.xy / u_resolution.y;
-  float t = u_time * 0.02;
-  float gas = fbm(uv * 1.8 + vec2(t, -t * 0.5) + fbm(uv * 3.0 - t) * 0.8);
-  float tint = fbm(uv * 2.5 - vec2(t * 0.7, t) + 4.0);
-  vec3 color = mix(vec3(0.45, 0.12, 0.7), u_accent, tint) * smoothstep(0.3, 0.8, gas) * 1.1;
-  color += vec3(0.1, 0.5, 0.85) * smoothstep(0.5, 0.9, tint) * smoothstep(0.3, 0.7, gas) * 0.4;
-  vec2 g = gl_FragCoord.xy / 9.0;
-  vec2 cell = floor(g);
-  vec2 jitter = vec2(hash(cell), hash(cell + 3.1)) - 0.5;
-  float dot = smoothstep(0.16, 0.0, length(fract(g) - 0.5 - jitter * 0.6));
-  float star = step(0.93, hash(cell + 11.0)) * dot;
-  star *= 0.55 + 0.45 * sin(u_time * 2.0 + hash(cell + 1.0) * 50.0);
-  finish(color + vec3(star) * 0.8);
-}
-`;
-
 /** Silky lines of light that ripple across the window. */
 const WAVES = `
 void main() {
@@ -257,37 +237,13 @@ void main() {
 }
 `;
 
-/** A large moon whose phase slowly changes, with thin clouds passing by. */
-const MOON = `
-void main() {
-  vec2 p = (gl_FragCoord.xy - vec2(0.8, 0.3) * u_resolution) / u_resolution.y;
-  float t = u_time;
-  float size = 0.17;
-  float r = length(p);
-  vec3 color = mix(vec3(0.75, 0.8, 1.0), u_accent, 0.35) * exp(-max(r - size, 0.0) * 6.0) * 0.3;
-  if (r < size) {
-    vec3 normal = vec3(p / size, sqrt(1.0 - (r / size) * (r / size)));
-    vec3 sun = normalize(vec3(cos(t * 0.03), 0.25, 0.7 + 0.3 * sin(t * 0.03)));
-    float lit = smoothstep(-0.05, 0.25, dot(normal, sun));
-    float craters = fbm(p * 14.0 + 3.0) * 0.5 + fbm(p * 40.0) * 0.2;
-    vec3 surface = vec3(0.92, 0.93, 1.0) * (0.72 + 0.38 * craters);
-    color = mix(color, surface * (0.06 + 0.9 * lit), smoothstep(size, size - 0.004, r));
-  }
-  vec2 uv = gl_FragCoord.xy / u_resolution.y;
-  float cloud = smoothstep(0.55, 0.85, fbm(uv * vec2(2.0, 5.0) + vec2(t * 0.02, 0.0)));
-  finish(color + vec3(0.6, 0.65, 0.85) * cloud * 0.06);
-}
-`;
-
 const FRAGMENTS: Record<ShaderBackdrop, string> = {
   halo: HALO,
   rays: RAYS,
   aurora: AURORA,
   liquid: LIQUID,
   bokeh: BOKEH,
-  nebula: NEBULA,
   waves: WAVES,
-  moon: MOON,
 };
 
 function compile(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
@@ -308,6 +264,20 @@ function accentColor(): [number, number, number] {
     number,
     number,
   ];
+}
+
+/** The solid colour behind the canvas, or all zeros when the window itself shows through. */
+function pageColor(canvas: HTMLCanvasElement): [number, number, number, number] {
+  if (!canvas.isConnected) {
+    return [0, 0, 0, 0];
+  }
+  const channels = getComputedStyle(document.body)
+    .backgroundColor.match(/[\d.]+/g)
+    ?.map(Number);
+  if (!channels || channels.length < 3 || (channels[3] ?? 1) < 1) {
+    return [0, 0, 0, 0];
+  }
+  return [channels[0] / 255, channels[1] / 255, channels[2] / 255, 1];
 }
 
 function isLight(): boolean {
@@ -349,12 +319,14 @@ function createRenderer(canvas: HTMLCanvasElement, kind: ShaderBackdrop): Render
   const time = gl.getUniformLocation(program, "u_time");
   const accent = gl.getUniformLocation(program, "u_accent");
   const light = gl.getUniformLocation(program, "u_light");
+  const background = gl.getUniformLocation(program, "u_background");
 
   return {
     draw(seconds, restyle) {
       if (restyle) {
         gl.uniform3fv(accent, accentColor());
         gl.uniform1f(light, isLight() ? 1 : 0);
+        gl.uniform4fv(background, pageColor(canvas));
       }
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(resolution, canvas.width, canvas.height);
@@ -378,7 +350,7 @@ export function startShader(canvas: HTMLCanvasElement, kind: ShaderBackdrop): ((
   }
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // Each start picks up somewhere else in the animation, so it never opens on the same frame.
-  const offset = Math.random() * 1000;
+  const offset = Math.random() * 300;
   let frame = 0;
   let drawn = 0;
 

@@ -3,6 +3,7 @@
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { api, type LauncherConfig } from "$lib/api";
   import BackdropPicker from "$lib/components/BackdropPicker.svelte";
+  import BackLink from "$lib/components/BackLink.svelte";
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
   import Select from "$lib/components/Select.svelte";
@@ -106,10 +107,7 @@
 
 <section class="page">
   <header>
-    <a class="back-link" href="/">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
-      {t("instance.back")}
-    </a>
+    <BackLink />
     <h1 class="page-title">{t("settings.title")}</h1>
   </header>
 
