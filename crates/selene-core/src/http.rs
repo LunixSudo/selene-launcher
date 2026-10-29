@@ -297,7 +297,8 @@ pub fn is_down(url: &str) -> bool {
     down.iter().any(|(down, _)| down == host)
 }
 
-fn mark_down(url: &str) {
+/// Has the host of `url` skipped for a few minutes, as after a failed request.
+pub fn mark_down(url: &str) {
     let host = host_of(url).to_owned();
     let mut down = DOWN_HOSTS
         .lock()

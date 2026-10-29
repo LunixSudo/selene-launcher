@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
 use std::process::Stdio;
+use std::time::Duration;
 
 use reqwest::Client;
 use serde::Deserialize;
@@ -28,6 +29,7 @@ const NEOFORGE_MAVEN_URL: &str = "https://maven.neoforged.net/releases/net/neofo
 const NEOFORGE_VERSIONS_URL: &str =
     "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge";
 /// NeoForge for 1.20.1 still carried Forge's name and numbering.
+const NEOFORGE_API_TIMEOUT: Duration = Duration::from_secs(8);
 const NEOFORGE_1_20_1_MAVEN_URL: &str = "https://maven.neoforged.net/releases/net/neoforged/forge";
 const NEOFORGE_1_20_1_VERSIONS_URL: &str =
     "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/forge";
@@ -203,9 +205,16 @@ async fn neoforge_versions(
     // A blocked API would cost a timeout on every list, so it waits until its host is back.
     let mut err = None;
     if !http::is_down(api_url) {
-        match http::get_json::<NeoForgeVersions>(client, api_url).await {
-            Ok(list) => return Ok(list.versions),
-            Err(api_err) => err = Some(api_err),
+        // Where the site is blocked the connection can hang instead of failing.
+        match tokio::time::timeout(
+            NEOFORGE_API_TIMEOUT,
+            http::get_json::<NeoForgeVersions>(client, api_url),
+        )
+        .await
+        {
+            Ok(Ok(list)) => return Ok(list.versions),
+            Ok(Err(api_err)) => err = Some(api_err),
+            Err(_) => http::mark_down(api_url),
         }
     }
     if let Some(url) = http::bmclapi(&format!("neoforge/list/{game_version}"))
