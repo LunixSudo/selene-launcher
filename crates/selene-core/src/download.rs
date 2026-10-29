@@ -226,9 +226,18 @@ async fn fetch(client: &Client, download: &Download) -> Result<()> {
     // Write next to the target and rename at the end, so a crash never leaves a truncated
     // file that looks complete.
     let partial = partial_path(path);
-    let mut file = File::create(&partial)
+    let result = fetch_into(client, download, &partial).await;
+    if result.is_err() {
+        let _ = fs::remove_file(&partial).await;
+    }
+    result
+}
+
+async fn fetch_into(client: &Client, download: &Download, partial: &Path) -> Result<()> {
+    let path = &download.path;
+    let mut file = File::create(partial)
         .await
-        .map_err(|err| Error::io(&partial, err))?;
+        .map_err(|err| Error::io(partial, err))?;
     let mut hasher = Sha1::new();
     let mut body = http::get(client, &download.url)
         .await?
@@ -243,14 +252,13 @@ async fn fetch(client: &Client, download: &Download) -> Result<()> {
         hasher.update(&chunk);
         file.write_all(&chunk)
             .await
-            .map_err(|err| Error::io(&partial, err))?;
+            .map_err(|err| Error::io(partial, err))?;
     }
-    file.flush().await.map_err(|err| Error::io(&partial, err))?;
+    file.flush().await.map_err(|err| Error::io(partial, err))?;
     drop(file);
 
     let actual = hex(&hasher.finalize());
     if !download.sha1.is_empty() && !actual.eq_ignore_ascii_case(&download.sha1) {
-        let _ = fs::remove_file(&partial).await;
         return Err(Error::ChecksumMismatch {
             url: download.url.clone(),
             expected: download.sha1.clone(),
@@ -258,12 +266,15 @@ async fn fetch(client: &Client, download: &Download) -> Result<()> {
         });
     }
 
-    crate::fs::rename(&partial, path).await
+    crate::fs::rename(partial, path).await
 }
 
+/// A name of its own for every download, so two installs fetching the same file at once do not
+/// write into each other.
 fn partial_path(path: &Path) -> PathBuf {
+    static NEXT: AtomicU64 = AtomicU64::new(0);
     let mut name = path.file_name().unwrap_or_default().to_os_string();
-    name.push(".part");
+    name.push(format!(".{}.part", NEXT.fetch_add(1, Ordering::Relaxed)));
     path.with_file_name(name)
 }
 
@@ -359,10 +370,10 @@ mod tests {
     }
 
     #[test]
-    fn partial_path_keeps_extension() {
-        assert_eq!(
-            partial_path(Path::new("libs/lwjgl-3.3.3.jar")),
-            Path::new("libs/lwjgl-3.3.3.jar.part")
-        );
+    fn partial_paths_differ() {
+        let first = partial_path(Path::new("libs/lwjgl-3.3.3.jar"));
+        let second = partial_path(Path::new("libs/lwjgl-3.3.3.jar"));
+        assert_ne!(first, second);
+        assert!(first.to_string_lossy().starts_with("libs/lwjgl-3.3.3.jar."));
     }
 }

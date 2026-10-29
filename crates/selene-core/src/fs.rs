@@ -1,5 +1,6 @@
 use std::io;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use crate::{Error, Result};
@@ -18,10 +19,14 @@ pub async fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
             .map_err(|err| Error::io(parent, err))?;
     }
     let temporary = temporary_path(path);
-    tokio::fs::write(&temporary, bytes)
-        .await
-        .map_err(|err| Error::io(&temporary, err))?;
-    rename(&temporary, path).await
+    let result = match tokio::fs::write(&temporary, bytes).await {
+        Ok(()) => rename(&temporary, path).await,
+        Err(err) => Err(Error::io(&temporary, err)),
+    };
+    if result.is_err() {
+        let _ = tokio::fs::remove_file(&temporary).await;
+    }
+    result
 }
 
 /// The blocking version, for code outside an async runtime.
@@ -30,7 +35,10 @@ pub fn write_atomic_blocking(path: &Path, bytes: &[u8]) -> Result<()> {
         std::fs::create_dir_all(parent).map_err(|err| Error::io(parent, err))?;
     }
     let temporary = temporary_path(path);
-    std::fs::write(&temporary, bytes).map_err(|err| Error::io(&temporary, err))?;
+    if let Err(err) = std::fs::write(&temporary, bytes) {
+        let _ = std::fs::remove_file(&temporary);
+        return Err(Error::io(&temporary, err));
+    }
     let mut attempt = 1;
     loop {
         match std::fs::rename(&temporary, path) {
@@ -67,8 +75,9 @@ fn is_transient(err: &io::Error) -> bool {
 }
 
 fn temporary_path(path: &Path) -> std::path::PathBuf {
+    static NEXT: AtomicU64 = AtomicU64::new(0);
     let mut name = path.file_name().unwrap_or_default().to_os_string();
-    name.push(".tmp");
+    name.push(format!(".{}.tmp", NEXT.fetch_add(1, Ordering::Relaxed)));
     path.with_file_name(name)
 }
 
@@ -86,6 +95,9 @@ mod tests {
         write_atomic_blocking(&path, b"{\"a\":2}").unwrap();
 
         assert_eq!(std::fs::read(&path).unwrap(), b"{\"a\":2}");
-        assert!(!dir.path().join("sub/settings.json.tmp").exists());
+        assert_eq!(
+            std::fs::read_dir(dir.path().join("sub")).unwrap().count(),
+            1
+        );
     }
 }
