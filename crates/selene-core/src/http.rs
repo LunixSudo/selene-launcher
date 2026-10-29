@@ -44,8 +44,9 @@ const MIRRORS: &[&[&str]] = &[
 ];
 
 /// BMCLAPI, a public copy of the official hosts. It is often reachable where
-/// they are not, so it is asked once every official host has failed. Files listed with a
-/// checksum are still checked against the one from the official index.
+/// they are not, so it is asked once every official host has failed. Files are checked against
+/// the checksums of the index they are listed in, which comes from the copy as well when the
+/// official one cannot be had.
 const BMCLAPI: &str = "https://bmclapi2.bangbang93.com/";
 /// MCIM, a public copy of the Modrinth and CurseForge APIs and files. Like
 /// BMCLAPI it is only asked when the official site fails. Mod files are checked against the
