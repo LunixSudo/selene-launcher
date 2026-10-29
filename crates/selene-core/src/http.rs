@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use reqwest::{Client, Response, StatusCode};
+use reqwest::{Client, RequestBuilder, Response, StatusCode, Url};
 use serde::de::DeserializeOwned;
 
 use crate::Result;
@@ -41,23 +41,62 @@ const MIRRORS: &[&[&str]] = &[
     ],
 ];
 
-/// BMCLAPI, the copy of the official hosts that HMCL and PCL use. It is often reachable where
+/// BMCLAPI, a public copy of the official hosts. It is often reachable where
 /// they are not, so it is asked once every official host has failed. Files listed with a
 /// checksum are still checked against the one from the official index.
-const BMCLAPI: &str = "https://bmclapi2.bangbang93.com";
-const BMCLAPI_PATHS: &[(&str, &str)] = &[
-    ("https://piston-meta.mojang.com/", "/"),
-    ("https://launchermeta.mojang.com/", "/"),
-    ("https://piston-data.mojang.com/", "/"),
-    ("https://launcher.mojang.com/", "/"),
-    ("https://resources.download.minecraft.net/", "/assets/"),
-    ("https://libraries.minecraft.net/", "/maven/"),
-    ("https://meta.fabricmc.net/", "/fabric-meta/"),
-    ("https://maven.fabricmc.net/", "/maven/"),
-    ("https://maven.minecraftforge.net/", "/maven/"),
-    ("https://files.minecraftforge.net/maven/", "/maven/"),
-    ("https://files.minecraftforge.net/", "/maven/"),
-    ("https://maven.neoforged.net/releases/", "/maven/"),
+const BMCLAPI: &str = "https://bmclapi2.bangbang93.com/";
+/// MCIM, a public copy of the Modrinth and CurseForge APIs and files. Like
+/// BMCLAPI it is only asked when the official site fails, and mod files keep the checksums the
+/// catalog lists.
+const MCIM: &str = "https://mod.mcimirror.top/";
+const FALLBACKS: &[(&str, &str)] = &[
+    ("https://piston-meta.mojang.com/", BMCLAPI),
+    ("https://launchermeta.mojang.com/", BMCLAPI),
+    ("https://piston-data.mojang.com/", BMCLAPI),
+    ("https://launcher.mojang.com/", BMCLAPI),
+    (
+        "https://resources.download.minecraft.net/",
+        "https://bmclapi2.bangbang93.com/assets/",
+    ),
+    (
+        "https://libraries.minecraft.net/",
+        "https://bmclapi2.bangbang93.com/maven/",
+    ),
+    (
+        "https://meta.fabricmc.net/",
+        "https://bmclapi2.bangbang93.com/fabric-meta/",
+    ),
+    (
+        "https://maven.fabricmc.net/",
+        "https://bmclapi2.bangbang93.com/maven/",
+    ),
+    (
+        "https://maven.minecraftforge.net/",
+        "https://bmclapi2.bangbang93.com/maven/",
+    ),
+    (
+        "https://files.minecraftforge.net/maven/",
+        "https://bmclapi2.bangbang93.com/maven/",
+    ),
+    (
+        "https://files.minecraftforge.net/",
+        "https://bmclapi2.bangbang93.com/maven/",
+    ),
+    (
+        "https://maven.neoforged.net/releases/",
+        "https://bmclapi2.bangbang93.com/maven/",
+    ),
+    (
+        "https://api.modrinth.com/v2/",
+        "https://mod.mcimirror.top/modrinth/v2/",
+    ),
+    ("https://cdn.modrinth.com/", MCIM),
+    (
+        "https://api.curseforge.com/v1/",
+        "https://mod.mcimirror.top/curseforge/v1/",
+    ),
+    ("https://edge.forgecdn.net/", MCIM),
+    ("https://mediafilez.forgecdn.net/", MCIM),
 ];
 
 /// A host that failed is skipped for a while, so a blocked one does not cost a timeout for
@@ -91,17 +130,21 @@ pub fn mirrors_of(url: &str) -> Vec<String> {
         .collect()
 }
 
-/// The same file as `url` on BMCLAPI, for hosts it copies.
-pub fn bmclapi_of(url: &str) -> Option<String> {
+/// The same file as `url` on BMCLAPI or MCIM, for hosts they copy.
+pub fn fallback_of(url: &str) -> Option<String> {
     let mirrors = mirrors_of(url);
     std::iter::once(url)
         .chain(mirrors.iter().map(String::as_str))
         .find_map(|url| {
-            BMCLAPI_PATHS.iter().find_map(|(host, path)| {
-                url.strip_prefix(host)
-                    .map(|rest| format!("{BMCLAPI}{path}{rest}"))
+            FALLBACKS.iter().find_map(|(official, copy)| {
+                url.strip_prefix(official)
+                    .map(|rest| format!("{copy}{rest}"))
             })
         })
+}
+
+fn is_fallback(url: &str) -> bool {
+    url.starts_with(BMCLAPI) || url.starts_with(MCIM)
 }
 
 /// Sends a GET to `url`, moving on to its mirrors and then to BMCLAPI while the host is
@@ -110,7 +153,7 @@ pub fn bmclapi_of(url: &str) -> Option<String> {
 pub async fn get(client: &Client, url: &str) -> Result<Response> {
     let mut sources = vec![url.to_owned()];
     sources.extend(mirrors_of(url));
-    sources.extend(bmclapi_of(url));
+    sources.extend(fallback_of(url));
     // Hosts that failed lately go last, still there in case the others fail too.
     sources.sort_by_key(|source| is_down(source));
 
@@ -119,8 +162,8 @@ pub async fn get(client: &Client, url: &str) -> Result<Response> {
         let response = client.get(source).send().await;
         match &response {
             Ok(answer) if !host_failed(answer.status()) => {
-                // BMCLAPI does not copy everything; a file it lacks may still be upstream.
-                if !(source.starts_with(BMCLAPI) && answer.status() == StatusCode::NOT_FOUND) {
+                // The copies lack some files that may still be upstream.
+                if !(is_fallback(source) && answer.status() == StatusCode::NOT_FOUND) {
                     return Ok(response?);
                 }
             }
@@ -131,6 +174,45 @@ pub async fn get(client: &Client, url: &str) -> Result<Response> {
     match last {
         Some(response) => Ok(response?),
         None => Ok(client.get(url).send().await?),
+    }
+}
+
+/// Sends an API request, and the same request to the API's copy when the API cannot be
+/// reached. The copy never gets the CurseForge key.
+pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> {
+    let request = request.build()?;
+    let copy = fallback_of(request.url().as_str())
+        .and_then(|url| Url::parse(&url).ok())
+        .and_then(|url| {
+            let mut copy = request.try_clone()?;
+            *copy.url_mut() = url;
+            copy.headers_mut().remove("x-api-key");
+            Some(copy)
+        });
+    let Some(copy) = copy else {
+        return Ok(client.execute(request).await?);
+    };
+    let mut requests = [request, copy];
+    // Hosts that failed lately go last, still there in case the others fail too.
+    requests.sort_by_key(|request| is_down(request.url().as_str()));
+
+    let mut last = None;
+    for request in requests {
+        let url = request.url().to_string();
+        let response = client.execute(request).await;
+        match &response {
+            Ok(answer) if !host_failed(answer.status()) => {
+                if !(is_fallback(&url) && answer.status() == StatusCode::NOT_FOUND) {
+                    return Ok(response?);
+                }
+            }
+            _ => mark_down(&url),
+        }
+        last = Some(response);
+    }
+    match last {
+        Some(response) => Ok(response?),
+        None => unreachable!("two requests were sent"),
     }
 }
 
@@ -194,20 +276,24 @@ mod tests {
     }
 
     #[test]
-    fn finds_files_on_bmclapi() {
+    fn finds_files_on_fallbacks() {
         assert_eq!(
-            bmclapi_of("https://maven.neoforged.net/releases/net/neoforged/neoforge/a.jar")
+            fallback_of("https://maven.neoforged.net/releases/net/neoforged/neoforge/a.jar")
                 .as_deref(),
             Some("https://bmclapi2.bangbang93.com/maven/net/neoforged/neoforge/a.jar")
         );
         assert_eq!(
-            bmclapi_of("https://resources.download.minecraft.net/ab/abcd").as_deref(),
+            fallback_of("https://resources.download.minecraft.net/ab/abcd").as_deref(),
             Some("https://bmclapi2.bangbang93.com/assets/ab/abcd")
         );
         assert_eq!(
-            bmclapi_of("https://maven2.fabricmc.net/net/fabricmc/a.jar").as_deref(),
+            fallback_of("https://maven2.fabricmc.net/net/fabricmc/a.jar").as_deref(),
             Some("https://bmclapi2.bangbang93.com/maven/net/fabricmc/a.jar")
         );
-        assert_eq!(bmclapi_of("https://cdn.modrinth.com/a.jar"), None);
+        assert_eq!(
+            fallback_of("https://api.modrinth.com/v2/project/abc").as_deref(),
+            Some("https://mod.mcimirror.top/modrinth/v2/project/abc")
+        );
+        assert_eq!(fallback_of("https://example.com/a.jar"), None);
     }
 }

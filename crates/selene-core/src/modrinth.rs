@@ -6,9 +6,9 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::Result;
 use crate::loader::Loader;
 use crate::mods::{CatalogSort, ContentKind, RemoteFile};
+use crate::{Result, http};
 
 const API_URL: &str = "https://api.modrinth.com/v2";
 
@@ -255,20 +255,20 @@ pub async fn search(client: &Client, query: &SearchQuery<'_>) -> Result<SearchRe
         CatalogSort::Updated => "updated",
     };
 
-    let results = client
-        .get(format!("{API_URL}/search"))
-        .query(&[
+    let results = http::send(
+        client,
+        client.get(format!("{API_URL}/search")).query(&[
             ("query", query.text),
             ("facets", &serde_json::to_string(&facets)?),
             ("index", index),
             ("offset", &query.offset.to_string()),
             ("limit", &query.limit.to_string()),
-        ])
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+        ]),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
     Ok(results)
 }
 
@@ -285,33 +285,36 @@ pub async fn compatible_versions(
     if !target.loaders.is_empty() {
         query.push(("loaders", serde_json::to_string(target.loaders)?));
     }
-    let versions = client
-        .get(format!("{API_URL}/project/{project_id}/version"))
-        .query(&query)
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let mut versions: Vec<Version> = http::send(
+        client,
+        client
+            .get(format!("{API_URL}/project/{project_id}/version"))
+            .query(&query),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
+    newest_first(&mut versions);
     Ok(versions)
 }
 
 /// Every version of a project, newest first, for picking an older one.
 pub async fn all_versions(client: &Client, project_id: &str) -> Result<Vec<Version>> {
-    let versions = client
-        .get(format!("{API_URL}/project/{project_id}/version"))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let mut versions: Vec<Version> = http::send(
+        client,
+        client.get(format!("{API_URL}/project/{project_id}/version")),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
+    newest_first(&mut versions);
     Ok(versions)
 }
 
 pub async fn project(client: &Client, id: &str) -> Result<ProjectDetails> {
-    let project = client
-        .get(format!("{API_URL}/project/{id}"))
-        .send()
+    let project = http::send(client, client.get(format!("{API_URL}/project/{id}")))
         .await?
         .error_for_status()?
         .json()
@@ -328,13 +331,12 @@ pub async fn categories(client: &Client, kind: ContentKind) -> Result<Vec<Catego
         kind => ProjectType::from(kind),
     }
     .as_str();
-    let categories: Vec<Category> = client
-        .get(format!("{API_URL}/tag/category"))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let categories: Vec<Category> =
+        http::send(client, client.get(format!("{API_URL}/tag/category")))
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
     Ok(categories
         .into_iter()
         .filter(|category| category.project_type == project_type && category.header == "categories")
@@ -342,13 +344,14 @@ pub async fn categories(client: &Client, kind: ContentKind) -> Result<Vec<Catego
 }
 
 pub async fn version(client: &Client, version_id: &str) -> Result<Version> {
-    let version = client
-        .get(format!("{API_URL}/version/{version_id}"))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let version = http::send(
+        client,
+        client.get(format!("{API_URL}/version/{version_id}")),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
     Ok(version)
 }
 
@@ -356,14 +359,16 @@ pub async fn projects(client: &Client, ids: &[String]) -> Result<Vec<Project>> {
     if ids.is_empty() {
         return Ok(Vec::new());
     }
-    let projects = client
-        .get(format!("{API_URL}/projects"))
-        .query(&[("ids", serde_json::to_string(ids)?)])
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let projects = http::send(
+        client,
+        client
+            .get(format!("{API_URL}/projects"))
+            .query(&[("ids", serde_json::to_string(ids)?)]),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
     Ok(projects)
 }
 
@@ -375,14 +380,16 @@ pub async fn versions_by_hash(
     if sha1s.is_empty() {
         return Ok(HashMap::new());
     }
-    let versions = client
-        .post(format!("{API_URL}/version_files"))
-        .json(&json!({ "hashes": sha1s, "algorithm": "sha1" }))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let versions = http::send(
+        client,
+        client
+            .post(format!("{API_URL}/version_files"))
+            .json(&json!({ "hashes": sha1s, "algorithm": "sha1" })),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
     Ok(versions)
 }
 
@@ -403,23 +410,30 @@ pub async fn updates_by_hash<S: BuildHasher>(
     }
     let mut updates = HashMap::new();
     for (channels, sha1s) in by_channel {
-        let found: HashMap<String, Version> = client
-            .post(format!("{API_URL}/version_files/update"))
-            .json(&json!({
-                "hashes": sha1s,
-                "algorithm": "sha1",
-                "loaders": target.loaders,
-                "game_versions": [target.game_version],
-                "version_types": channels,
-            }))
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let found: HashMap<String, Version> = http::send(
+            client,
+            client
+                .post(format!("{API_URL}/version_files/update"))
+                .json(&json!({
+                    "hashes": sha1s,
+                    "algorithm": "sha1",
+                    "loaders": target.loaders,
+                    "game_versions": [target.game_version],
+                    "version_types": channels,
+                })),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         updates.extend(found);
     }
     Ok(updates)
+}
+
+/// The API lists newest first, but its mirror keeps no order.
+fn newest_first(versions: &mut [Version]) {
+    versions.sort_by_key(|version| std::cmp::Reverse(version.date_published));
 }
 
 /// Channels at least as stable as `version_type`.
@@ -516,13 +530,14 @@ async fn project_kind(client: &Client, project_id: &str) -> Result<Option<Conten
     struct ProjectType {
         project_type: String,
     }
-    let project: ProjectType = client
-        .get(format!("{API_URL}/project/{project_id}"))
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
+    let project: ProjectType = http::send(
+        client,
+        client.get(format!("{API_URL}/project/{project_id}")),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
     Ok(match project.project_type.as_str() {
         "mod" => Some(ContentKind::Mod),
         "resourcepack" => Some(ContentKind::ResourcePack),

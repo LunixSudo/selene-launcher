@@ -3,9 +3,9 @@ use std::collections::{HashMap, HashSet};
 use reqwest::{Client, Method, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
-use crate::Result;
 use crate::loader::Loader;
 use crate::mods::{CatalogSort, ContentKind, RemoteFile};
+use crate::{Result, http};
 
 const API_URL: &str = "https://api.curseforge.com/v1";
 const MINECRAFT_GAME_ID: u32 = 432;
@@ -245,14 +245,12 @@ impl CurseForge {
         if !query.categories.is_empty() {
             params.push(("categoryIds", serde_json::to_string(query.categories)?));
         }
-        let response: Response<Vec<Mod>> = self
-            .get("/mods/search")
-            .query(&params)
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<Vec<Mod>> =
+            http::send(&self.client, self.get("/mods/search").query(&params))
+                .await?
+                .error_for_status()?
+                .json()
+                .await?;
         Ok(SearchResults {
             total: response
                 .pagination
@@ -272,38 +270,38 @@ impl CurseForge {
         if let Some(loader) = loader {
             params.push(("modLoaderType", loader_type(loader).to_string()));
         }
-        let response: Response<Vec<File>> = self
-            .get(&format!("/mods/{mod_id}/files"))
-            .query(&params)
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<Vec<File>> = http::send(
+            &self.client,
+            self.get(&format!("/mods/{mod_id}/files")).query(&params),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         Ok(response.data)
     }
 
     pub async fn mod_info(&self, mod_id: u32) -> Result<Mod> {
-        let response: Response<Mod> = self
-            .get(&format!("/mods/{mod_id}"))
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<Mod> =
+            http::send(&self.client, self.get(&format!("/mods/{mod_id}")))
+                .await?
+                .error_for_status()?
+                .json()
+                .await?;
         Ok(response.data)
     }
 
     /// Top-level category tags for one kind of project.
     pub async fn categories(&self, kind: ContentKind) -> Result<Vec<Category>> {
-        let response: Response<Vec<Category>> = self
-            .get("/categories")
-            .query(&[("gameId", MINECRAFT_GAME_ID), ("classId", class_id(kind))])
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<Vec<Category>> = http::send(
+            &self.client,
+            self.get("/categories")
+                .query(&[("gameId", MINECRAFT_GAME_ID), ("classId", class_id(kind))]),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         Ok(response
             .data
             .into_iter()
@@ -314,25 +312,27 @@ impl CurseForge {
 
     /// The project's description as HTML.
     pub async fn description(&self, mod_id: u32) -> Result<String> {
-        let response: Response<String> = self
-            .get(&format!("/mods/{mod_id}/description"))
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<String> = http::send(
+            &self.client,
+            self.get(&format!("/mods/{mod_id}/description")),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         Ok(response.data)
     }
 
     /// A file's changelog as HTML.
     pub async fn changelog(&self, mod_id: u32, file_id: u32) -> Result<String> {
-        let response: Response<String> = self
-            .get(&format!("/mods/{mod_id}/files/{file_id}/changelog"))
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<String> = http::send(
+            &self.client,
+            self.get(&format!("/mods/{mod_id}/files/{file_id}/changelog")),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         Ok(response.data)
     }
 
@@ -341,14 +341,15 @@ impl CurseForge {
         if mod_ids.is_empty() {
             return Ok(Vec::new());
         }
-        let response: Response<Vec<Mod>> = self
-            .request(Method::POST, "/mods")
-            .json(&serde_json::json!({ "modIds": mod_ids }))
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<Vec<Mod>> = http::send(
+            &self.client,
+            self.request(Method::POST, "/mods")
+                .json(&serde_json::json!({ "modIds": mod_ids })),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         Ok(response.data)
     }
 
@@ -357,14 +358,15 @@ impl CurseForge {
         if file_ids.is_empty() {
             return Ok(Vec::new());
         }
-        let response: Response<Vec<File>> = self
-            .request(Method::POST, "/mods/files")
-            .json(&serde_json::json!({ "fileIds": file_ids }))
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<Vec<File>> = http::send(
+            &self.client,
+            self.request(Method::POST, "/mods/files")
+                .json(&serde_json::json!({ "fileIds": file_ids })),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         Ok(response.data)
     }
 
@@ -376,14 +378,15 @@ impl CurseForge {
         if fingerprints.is_empty() {
             return Ok(HashMap::new());
         }
-        let response: Response<FingerprintMatches> = self
-            .request(Method::POST, &format!("/fingerprints/{MINECRAFT_GAME_ID}"))
-            .json(&serde_json::json!({ "fingerprints": fingerprints }))
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
+        let response: Response<FingerprintMatches> = http::send(
+            &self.client,
+            self.request(Method::POST, &format!("/fingerprints/{MINECRAFT_GAME_ID}"))
+                .json(&serde_json::json!({ "fingerprints": fingerprints })),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
         Ok(response
             .data
             .exact_matches
