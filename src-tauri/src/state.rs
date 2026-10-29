@@ -10,6 +10,7 @@ use selene_core::game::GameDirs;
 use selene_core::instance::Instances;
 use selene_core::manifest::VersionManifest;
 use selene_core::skins::SkinLibrary;
+use serde::Serialize;
 use tokio::sync::{OnceCell, oneshot};
 
 use crate::account::Accounts;
@@ -31,15 +32,32 @@ pub struct Launcher {
     manifest: OnceCell<VersionManifest>,
     /// Instances being prepared or played.
     running: Mutex<HashMap<String, Run>>,
-    logs: Mutex<HashMap<String, VecDeque<String>>>,
+    logs: Mutex<HashMap<String, Log>>,
     startup_launch: Mutex<Option<String>>,
     /// Crashes of games that ended while the window was closed, shown once it opens again.
     missed_crashes: Mutex<HashMap<String, CrashReport>>,
 }
 
+#[derive(Default)]
+struct Log {
+    lines: VecDeque<String>,
+    /// Lines pushed this session, dropped and cleared ones included.
+    end: u64,
+}
+
+/// The kept lines of a game's log and the number of the line after the last one.
+#[derive(Serialize)]
+pub struct LogSnapshot {
+    pub lines: Vec<String>,
+    pub end: u64,
+}
+
 struct Run {
     /// Cancels the download, or stops the game once it has started.
     stop: Option<oneshot::Sender<()>>,
+    /// The game will start once the download is done; a plain download does not keep the
+    /// launcher open.
+    launch: bool,
     playing: bool,
 }
 
@@ -92,7 +110,7 @@ impl Launcher {
 
     /// Marks an instance as being prepared. Returns `None` if it already was busy, otherwise
     /// a receiver that fires when the download is cancelled.
-    pub fn start_running(&self, id: &str) -> Option<oneshot::Receiver<()>> {
+    pub fn start_running(&self, id: &str, launch: bool) -> Option<oneshot::Receiver<()>> {
         let mut running = self.running_map();
         if running.contains_key(id) {
             return None;
@@ -102,6 +120,7 @@ impl Launcher {
             id.to_owned(),
             Run {
                 stop: Some(stop),
+                launch,
                 playing: false,
             },
         );
@@ -169,8 +188,11 @@ impl Launcher {
             .collect()
     }
 
+    /// Whether a game is running or about to start.
     pub fn any_running(&self) -> bool {
-        !self.running_map().is_empty()
+        self.running_map()
+            .values()
+            .any(|run| run.launch || run.playing)
     }
 
     pub fn miss_crash(&self, id: &str, crash: CrashReport) {
@@ -189,27 +211,39 @@ impl Launcher {
     }
 
     /// Forgets the previous run's output.
+    /// Empties the log but keeps counting, so line numbers never repeat in a session.
     pub fn clear_log(&self, id: &str) {
-        self.log_map().remove(id);
+        if let Some(log) = self.log_map().get_mut(id) {
+            log.lines.clear();
+        }
     }
 
-    pub fn push_log(&self, id: &str, line: String) {
+    /// Adds a line and returns its number.
+    pub fn push_log(&self, id: &str, line: String) -> u64 {
         let mut logs = self.log_map();
         let log = logs.entry(id.to_owned()).or_default();
-        if log.len() == LOG_LINES {
-            log.pop_front();
+        if log.lines.len() == LOG_LINES {
+            log.lines.pop_front();
         }
-        log.push_back(line);
+        log.lines.push_back(line);
+        log.end += 1;
+        log.end - 1
     }
 
-    pub fn log(&self, id: &str) -> Vec<String> {
-        self.log_map()
-            .get(id)
-            .map(|log| log.iter().cloned().collect())
-            .unwrap_or_default()
+    pub fn log(&self, id: &str) -> LogSnapshot {
+        self.log_map().get(id).map_or(
+            LogSnapshot {
+                lines: Vec::new(),
+                end: 0,
+            },
+            |log| LogSnapshot {
+                lines: log.lines.iter().cloned().collect(),
+                end: log.end,
+            },
+        )
     }
 
-    fn log_map(&self) -> std::sync::MutexGuard<'_, HashMap<String, VecDeque<String>>> {
+    fn log_map(&self) -> std::sync::MutexGuard<'_, HashMap<String, Log>> {
         self.logs
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)

@@ -300,9 +300,20 @@ export interface GameExited {
   crash: CrashReport | null;
 }
 
+export interface LogLine {
+  number: number;
+  text: string;
+}
+
 export interface GameLog {
   instanceId: string;
+  lines: LogLine[];
+}
+
+export interface LogSnapshot {
   lines: string[];
+  /** The number the next line will get. */
+  end: number;
 }
 
 export function isCommandError(value: unknown): value is CommandError {
@@ -363,7 +374,7 @@ export const api = {
   removeSkin: (id: string) => invoke<void>("remove_skin", { id }),
   setDiscordPresence: (presence: DiscordPresence | null) =>
     invoke<void>("set_discord_presence", { presence }),
-  gameLog: (instanceId: string) => invoke<string[]>("game_log", { instanceId }),
+  gameLog: (instanceId: string) => invoke<LogSnapshot>("game_log", { instanceId }),
   openInstanceFolder: (id: string) => invoke<void>("open_instance_folder", { id }),
   deleteInstance: (id: string) => invoke<void>("delete_instance", { id }),
   memoryInfo: (instanceId: string) => invoke<MemoryInfo>("memory_info", { instanceId }),

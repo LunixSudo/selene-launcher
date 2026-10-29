@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { api } from "$lib/api";
+  import { api, type LogLine } from "$lib/api";
   import { t } from "$lib/i18n/index.svelte";
   import { onGameLog } from "$lib/state/instances.svelte";
 
@@ -24,19 +24,45 @@
 
   $effect(() => {
     const id = instanceId;
+    let stale = false;
+    // Batches that arrive before the saved log; the saved log may already hold some of them.
+    let early: LogLine[] | null = [];
+    let savedEnd = 0;
+
+    function append(entries: LogLine[]) {
+      const fresh = entries.filter((entry) => entry.number >= savedEnd);
+      if (fresh.length > 0) {
+        lines = lines.concat(toLines(fresh.map((entry) => entry.text))).slice(-MAX_LINES);
+      }
+    }
+
     void api.gameLog(id).then(async (saved) => {
-      lines = toLines(saved).slice(-MAX_LINES);
+      if (stale) {
+        return;
+      }
+      lines = toLines(saved.lines).slice(-MAX_LINES);
+      savedEnd = saved.end;
+      append(early ?? []);
+      early = null;
       await scrollToEnd();
     });
-    return onGameLog(async (log) => {
+    const unsubscribe = onGameLog(async (log) => {
       if (log.instanceId !== id) {
         return;
       }
-      lines = lines.concat(toLines(log.lines)).slice(-MAX_LINES);
+      if (early) {
+        early.push(...log.lines);
+        return;
+      }
+      append(log.lines);
       if (followTail) {
         await scrollToEnd();
       }
     });
+    return () => {
+      stale = true;
+      unsubscribe();
+    };
   });
 
   async function scrollToEnd() {

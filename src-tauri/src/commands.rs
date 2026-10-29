@@ -37,7 +37,7 @@ use crate::account::{Account, AccountList};
 use crate::config::Config;
 use crate::discord::Presence;
 use crate::error::{CommandError, CommandResult};
-use crate::state::Launcher;
+use crate::state::{Launcher, LogSnapshot};
 
 /// Placeholder tokens like the offline "0" would blank out every matching character.
 const MIN_HIDDEN_TOKEN_LEN: usize = 8;
@@ -82,7 +82,15 @@ struct GameExited {
 #[serde(rename_all = "camelCase")]
 struct GameLog<'a> {
     instance_id: &'a str,
-    lines: &'a [String],
+    lines: &'a [LogLine],
+}
+
+/// A line with its number in the log, so a console that read the saved log can skip the lines
+/// it already has.
+#[derive(Debug, Clone, Serialize)]
+struct LogLine {
+    number: u64,
+    text: String,
 }
 
 #[tauri::command]
@@ -332,13 +340,17 @@ pub async fn launch_instance(
         .await
         .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
     let account = launcher.accounts.launch_account(&launcher.client).await?;
-    let Some(cancelled) = launcher.start_running(&id) else {
+    let Some(cancelled) = launcher.start_running(&id, true) else {
         return Err(CommandError::AlreadyRunning(id));
     };
 
     let result = start_game(&app, &launcher, instance, account, server, cancelled).await;
     if result.is_err() {
         launcher.stop_running(&id);
+        // The window may have been closed while the game was being prepared.
+        if app.get_webview_window(crate::MAIN_WINDOW).is_none() && !launcher.any_running() {
+            app.exit(0);
+        }
     }
     result
 }
@@ -359,7 +371,7 @@ pub async fn prepare_instance(
         .get(&id)
         .await
         .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
-    let Some(cancelled) = launcher.start_running(&id) else {
+    let Some(cancelled) = launcher.start_running(&id, false) else {
         return Ok(());
     };
     let result = tokio::select! {
@@ -577,7 +589,8 @@ async fn watch_game(
     launcher.stop_running(&instance_id);
     add_play_time(&launcher, &instance_id, started.elapsed().as_secs()).await;
 
-    let crash = (!killed && code != Some(0)).then(|| crash::analyze(&launcher.log(&instance_id)));
+    let crash =
+        (!killed && code != Some(0)).then(|| crash::analyze(&launcher.log(&instance_id).lines));
     if app.get_webview_window(crate::MAIN_WINDOW).is_none() {
         // The player closed the launcher for the game; it opens again now.
         if let Some(crash) = crash {
@@ -627,8 +640,8 @@ async fn forward_log(
                         line.replace(&token, "<hidden>")
                     };
                     buffer.clear();
-                    app.state::<Launcher>().push_log(&instance_id, line.clone());
-                    pending.push(line);
+                    let number = app.state::<Launcher>().push_log(&instance_id, line.clone());
+                    pending.push(LogLine { number, text: line });
                 }
                 if ended {
                     break;
@@ -642,7 +655,7 @@ async fn forward_log(
     emit_log(&app, &instance_id, &mut pending);
 }
 
-fn emit_log(app: &AppHandle, instance_id: &str, lines: &mut Vec<String>) {
+fn emit_log(app: &AppHandle, instance_id: &str, lines: &mut Vec<LogLine>) {
     if lines.is_empty() {
         return;
     }
@@ -666,7 +679,7 @@ async fn add_play_time(launcher: &Launcher, id: &str, seconds: u64) {
 
 /// What the game printed during its last run.
 #[tauri::command]
-pub fn game_log(launcher: State<'_, Launcher>, instance_id: String) -> Vec<String> {
+pub fn game_log(launcher: State<'_, Launcher>, instance_id: String) -> LogSnapshot {
     launcher.log(&instance_id)
 }
 
