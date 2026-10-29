@@ -45,6 +45,8 @@ pub struct Mod {
     pub links: Links,
     #[serde(default)]
     pub screenshots: Vec<Screenshot>,
+    #[serde(default)]
+    pub class_id: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -175,6 +177,16 @@ fn class_id(kind: ContentKind) -> u32 {
         ContentKind::ResourcePack => 12,
         ContentKind::ShaderPack => 6552,
         ContentKind::DataPack => 6945,
+    }
+}
+
+/// The kind of content a project of `class_id` is. Data packs need a world, so a pack's data
+/// packs are not told apart from mods.
+pub fn kind_of_class(class_id: u32) -> ContentKind {
+    match class_id {
+        12 => ContentKind::ResourcePack,
+        6552 => ContentKind::ShaderPack,
+        _ => ContentKind::Mod,
     }
 }
 

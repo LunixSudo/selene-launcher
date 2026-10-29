@@ -1,6 +1,7 @@
 //! CurseForge modpack zips: `manifest.json` lists mods by project and file id, everything else
 //! sits in `overrides/`.
 
+use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
@@ -129,19 +130,43 @@ pub async fn install(
         .filter(|file| file.required)
         .map(|file| file.file_id)
         .collect();
-    let mut remote = Vec::new();
+    let files = curseforge.files(&ids).await?;
+    let mod_ids: Vec<u32> = files.iter().map(|file| file.mod_id).collect();
+    let kinds: HashMap<u32, ContentKind> = curseforge
+        .mods(&mod_ids)
+        .await?
+        .into_iter()
+        .map(|project| {
+            let kind = project
+                .class_id
+                .map_or(ContentKind::Mod, curseforge::kind_of_class);
+            (project.id, kind)
+        })
+        .collect();
+
+    let mut remote: HashMap<ContentKind, Vec<_>> = HashMap::new();
     let mut manual = Vec::new();
-    for file in curseforge.files(&ids).await? {
+    for file in files {
         match file.remote_file() {
-            Some(found) => remote.push(found),
+            Some(found) => {
+                let kind = kinds.get(&file.mod_id).copied().unwrap_or(ContentKind::Mod);
+                remote.entry(kind).or_default().push(found);
+            }
             None => manual.push(file.mod_id),
         }
     }
-    mods::install(client, game_dir, ContentKind::Mod, &remote).await?;
+    for (kind, files) in remote {
+        mods::install(client, game_dir, kind, &files).await?;
+    }
 
     let pack = pack.to_owned();
     let target = game_dir.to_owned();
-    tokio::task::spawn_blocking(move || mrpack::extract_overrides(&pack, &target))
+    let overrides = if manifest.overrides.is_empty() {
+        mrpack::OVERRIDES.to_owned()
+    } else {
+        manifest.overrides.trim_matches('/').to_owned()
+    };
+    tokio::task::spawn_blocking(move || mrpack::extract_overrides(&pack, &target, &[&overrides]))
         .await
         .map_err(|err| Error::io(game_dir, std::io::Error::other(err)))??;
     Ok(manual)

@@ -17,7 +17,7 @@ use crate::mods::ContentKind;
 use crate::{Error, Result, modrinth, mods};
 
 const INDEX_FILE: &str = "modrinth.index.json";
-const OVERRIDES: &str = "overrides";
+pub(crate) const OVERRIDES: &str = "overrides";
 const CLIENT_OVERRIDES: &str = "client-overrides";
 const DOWNLOAD_CONCURRENCY: usize = 8;
 /// Hosts the format allows in `downloads`; anything else has to travel in `overrides`.
@@ -152,9 +152,11 @@ pub async fn install(
 
     let pack = pack.to_owned();
     let game_dir = game_dir.to_owned();
-    tokio::task::spawn_blocking(move || extract_overrides(&pack, &game_dir))
-        .await
-        .map_err(|err| Error::io(OVERRIDES, std::io::Error::other(err)))?
+    tokio::task::spawn_blocking(move || {
+        extract_overrides(&pack, &game_dir, &[OVERRIDES, CLIENT_OVERRIDES])
+    })
+    .await
+    .map_err(|err| Error::io(OVERRIDES, std::io::Error::other(err)))?
 }
 
 /// Writes a pack of the instance. Mods Modrinth knows are linked; everything else, including
@@ -295,7 +297,8 @@ fn collect_files(dir: &Path, root: &Path, out: &mut Vec<PathBuf>) -> Result<()> 
     Ok(())
 }
 
-pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
+/// Unpacks every file under one of the `folders` of the pack into the game folder.
+pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path, folders: &[&str]) -> Result<()> {
     let mut archive = open(pack)?;
     for index in 0..archive.len() {
         let mut entry = archive
@@ -305,10 +308,10 @@ pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path) -> Result<()> {
             .name()
             .map_err(|err| Error::io(pack, err.into()))?
             .into_owned();
-        let Some(relative) = name
-            .strip_prefix(&format!("{OVERRIDES}/"))
-            .or_else(|| name.strip_prefix(&format!("{CLIENT_OVERRIDES}/")))
-        else {
+        let Some(relative) = folders.iter().find_map(|folder| {
+            name.strip_prefix(folder)
+                .and_then(|rest| rest.strip_prefix('/'))
+        }) else {
             continue;
         };
         if entry.is_dir() || relative.is_empty() {
@@ -451,7 +454,7 @@ mod tests {
         let read = read_index(&pack).unwrap();
         assert_eq!(read.name, "Pack");
         let target = dir.path().join("imported");
-        extract_overrides(&pack, &target).unwrap();
+        extract_overrides(&pack, &target, &[OVERRIDES, CLIENT_OVERRIDES]).unwrap();
         assert_eq!(
             std::fs::read_to_string(target.join("config/sub/a.toml")).unwrap(),
             "x = 1"
