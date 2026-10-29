@@ -20,6 +20,7 @@
   let renaming = $state<World | null>(null);
   let renameOpen = $state(false);
   let newName = $state("");
+  let renameError = $state<string | null>(null);
 
   const launch = $derived(library.launches[instanceId]);
   const busy = $derived(launch !== undefined && launch.status !== "failed");
@@ -64,6 +65,7 @@
   function askRename(world: World) {
     renaming = world;
     newName = world.name;
+    renameError = null;
     renameOpen = true;
   }
 
@@ -71,13 +73,13 @@
     if (!renaming) {
       return;
     }
-    error = null;
+    renameError = null;
     try {
       await api.renameWorld(instanceId, renaming.folder, newName);
       renameOpen = false;
       await load();
     } catch (err) {
-      error = describeError(err);
+      renameError = describeError(err);
     }
   }
 
@@ -175,15 +177,22 @@
     <span>{t("worlds.name")}</span>
     <input bind:value={newName} required maxlength="64" spellcheck="false">
   </label>
+  {#if renameError}
+    <p class="error" role="alert">{renameError}</p>
+  {/if}
 
   {#snippet actions()}
     <button type="button" onclick={() => (renameOpen = false)}>{t("create.cancel")}</button>
-    <button type="submit" class="primary">{t("servers.save")}</button>
+    <button type="submit" class="primary" disabled={!newName.trim()}>
+      {t("servers.save")}
+    </button>
   {/snippet}
 </Dialog>
 
 <style>
   .error {
+    margin: 0;
     color: var(--danger);
+    font-size: 13px;
   }
 </style>

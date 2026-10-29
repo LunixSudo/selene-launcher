@@ -224,7 +224,7 @@
         <p class="caption">{t("skins.empty")}</p>
       {/if}
       {#if profile && (profile.capes.length || activeCape)}
-        <fieldset class="capes" onwheel={scrollCapes}>
+        <fieldset class="capes" onwheel={scrollCapes} onpointerleave={() => (hoveredCape = null)}>
           <legend class="sr-only">{t("skins.cape")}</legend>
           <button
             type="button"

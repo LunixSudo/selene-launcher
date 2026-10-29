@@ -23,6 +23,28 @@
   let animations = $state<typeof import("skinview3d")>();
   let unsupported = $state(false);
 
+  /**
+   * Loads a picture and hands it over unless a newer one was asked for meanwhile, so quick
+   * hovering over capes never ends on the wrong one.
+   */
+  function whenLoaded(url: string, apply: (image: HTMLImageElement) => void): () => void {
+    let stale = false;
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.src = url;
+    image
+      .decode()
+      .then(() => {
+        if (!stale) {
+          apply(image);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      stale = true;
+    };
+  }
+
   $effect(() => {
     let disposed = false;
     let created: SkinViewer | undefined;
@@ -72,11 +94,12 @@
     if (!viewer) {
       return;
     }
-    if (skin) {
-      void viewer.loadSkin(skin, { model: variant === "slim" ? "slim" : "default" });
-    } else {
+    if (!skin) {
       viewer.resetSkin();
+      return;
     }
+    const model = variant === "slim" ? "slim" : "default";
+    return whenLoaded(skin, (image) => viewer?.loadSkin(image, { model }));
   });
 
   $effect(() => {
@@ -85,11 +108,11 @@
     }
     // Flying looks right with wings, the way the game shows a cape on an elytra.
     const backEquipment = animation === "fly" ? "elytra" : "cape";
-    if (cape) {
-      void viewer.loadCape(cape, { backEquipment });
-    } else {
+    if (!cape) {
       viewer.resetCape();
+      return;
     }
+    return whenLoaded(cape, (image) => viewer?.loadCape(image, { backEquipment }));
   });
 
   $effect(() => {

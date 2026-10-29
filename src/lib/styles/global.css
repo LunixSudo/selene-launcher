@@ -338,10 +338,12 @@ textarea:focus-visible {
     transition-duration: 1ms !important;
   }
 
+  /* A looping animation squeezed into 1ms would flicker, so it plays once and rests. */
   *:not(.spinner),
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 

@@ -48,16 +48,16 @@
       canvas.width = canvas.clientWidth * ratio;
       canvas.height = canvas.clientHeight * ratio;
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      // Resizing clears the canvas, and a still sky is not redrawn on its own.
+      if (still) {
+        frame = requestAnimationFrame(draw);
+      }
     };
-    resize();
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-
     const draw = (now: number) => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       // Reading styles every frame is costly; once a second still follows a theme switch.
-      if (drawn++ % 60 === 0) {
+      if (still || drawn++ % 60 === 0) {
         color = getComputedStyle(canvas).color;
       }
       context.clearRect(0, 0, width, height);
@@ -99,7 +99,12 @@
         frame = requestAnimationFrame(draw);
       }
     };
-    frame = requestAnimationFrame(draw);
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    if (!still) {
+      frame = requestAnimationFrame(draw);
+    }
 
     return () => {
       cancelAnimationFrame(frame);
