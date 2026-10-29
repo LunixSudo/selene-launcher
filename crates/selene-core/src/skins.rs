@@ -141,39 +141,45 @@ pub async fn upload_skin(
     png: Vec<u8>,
 ) -> Result<Profile> {
     check_skin(&png)?;
-    let file = Part::bytes(png)
-        .file_name("skin.png")
-        .mime_str("image/png")?;
-    let form = Form::new()
-        .text("variant", variant.api_name())
-        .part("file", file);
-    let response = client
-        .post(format!("{MINECRAFT_PROFILE_URL}/skins"))
-        .bearer_auth(token)
-        .multipart(form)
-        .send()
-        .await?;
+    // A multipart body can only be sent once, so every attempt builds its own.
+    let response = auth::send_to_services(|| {
+        let file = Part::bytes(png.clone())
+            .file_name("skin.png")
+            .mime_str("image/png")?;
+        let form = Form::new()
+            .text("variant", variant.api_name())
+            .part("file", file);
+        Ok(client
+            .post(format!("{MINECRAFT_PROFILE_URL}/skins"))
+            .bearer_auth(token)
+            .multipart(form))
+    })
+    .await?;
     auth::parse_response(response, SERVICE).await
 }
 
 /// Goes back to the default skin the game picks for the account.
 pub async fn reset_skin(client: &Client, token: &str) -> Result<Profile> {
-    let response = client
-        .delete(format!("{MINECRAFT_PROFILE_URL}/skins/active"))
-        .bearer_auth(token)
-        .send()
-        .await?;
+    let response = auth::send_to_services(|| {
+        Ok(client
+            .delete(format!("{MINECRAFT_PROFILE_URL}/skins/active"))
+            .bearer_auth(token))
+    })
+    .await?;
     auth::parse_response(response, SERVICE).await
 }
 
 /// Shows one of the capes the account owns, or hides the cape with `None`.
 pub async fn set_cape(client: &Client, token: &str, cape_id: Option<&str>) -> Result<Profile> {
     let url = format!("{MINECRAFT_PROFILE_URL}/capes/active");
-    let request = match cape_id {
-        Some(id) => client.put(url).json(&json!({ "capeId": id })),
-        None => client.delete(url),
-    };
-    let response = request.bearer_auth(token).send().await?;
+    let response = auth::send_to_services(|| {
+        let request = match cape_id {
+            Some(id) => client.put(&url).json(&json!({ "capeId": id })),
+            None => client.delete(&url),
+        };
+        Ok(request.bearer_auth(token))
+    })
+    .await?;
     auth::parse_response(response, SERVICE).await
 }
 

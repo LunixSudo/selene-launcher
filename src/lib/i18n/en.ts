@@ -468,7 +468,8 @@ export const en: Messages = {
     childAccount: "A child account must be added to a Microsoft family first.",
     gameNotOwned: "This account does not own Minecraft: Java Edition.",
     sessionExpired: "The saved sign-in has expired. Sign in to this account again.",
-    authService: "The sign-in service returned an error. Try again later.",
+    authService: "The Minecraft service returned an error. Try again in a moment.",
+    rateLimited: "Mojang asks to slow down: wait a minute and try again.",
     appNotApproved:
       "Mojang has not approved Selene Launcher for sign-in yet. The request is under review; sign-in will work once it is approved.",
     keyring: "Could not save the sign-in to the system credential store.",

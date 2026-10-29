@@ -55,8 +55,12 @@
       .catch(() => {});
   });
 
+  // Keyed by id: reloading the account list after each change hands out new objects, and
+  // reacting to those would ask Mojang for the profile again and again.
+  const accountId = $derived(account?.id);
+
   $effect(() => {
-    if (!account) {
+    if (!accountId) {
       profile = null;
       return;
     }

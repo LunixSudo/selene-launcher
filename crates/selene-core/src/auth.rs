@@ -5,7 +5,7 @@ use std::time::{Duration, SystemTime};
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use reqwest::{Client, Response, StatusCode};
+use reqwest::{Client, RequestBuilder, Response, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -18,6 +18,8 @@ use crate::{Error, Result};
 
 pub const CLIENT_ID: &str = "e193bac3-0149-4777-bd09-91afa62cd0f3";
 const CALLBACK_READ_TIMEOUT: Duration = Duration::from_secs(5);
+const SERVICE_RETRIES: u32 = 3;
+const SERVICE_MAX_WAIT: Duration = Duration::from_secs(8);
 
 const AUTHORIZE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
 const TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
@@ -52,6 +54,8 @@ pub enum AuthError {
     GameNotOwned,
     #[error("the saved sign-in has expired or was revoked")]
     SessionExpired,
+    #[error("Minecraft Services asked to slow down")]
+    RateLimited,
     #[error("{service} returned {status}")]
     Service {
         service: &'static str,
@@ -368,11 +372,12 @@ pub async fn minecraft_login(
 
 /// A missing profile means the account has never owned the game.
 pub async fn fetch_profile(client: &Client, minecraft_access_token: &str) -> Result<Profile> {
-    let response = client
-        .get(MINECRAFT_PROFILE_URL)
-        .bearer_auth(minecraft_access_token)
-        .send()
-        .await?;
+    let response = send_to_services(|| {
+        Ok(client
+            .get(MINECRAFT_PROFILE_URL)
+            .bearer_auth(minecraft_access_token))
+    })
+    .await?;
     if response.status() == StatusCode::NOT_FOUND {
         return Err(AuthError::GameNotOwned.into());
     }
@@ -451,10 +456,46 @@ pub(crate) async fn parse_response<T: DeserializeOwned>(
     service: &'static str,
 ) -> Result<T> {
     let status = response.status();
+    if status == StatusCode::TOO_MANY_REQUESTS {
+        return Err(AuthError::RateLimited.into());
+    }
     if !status.is_success() {
         return Err(AuthError::Service { service, status }.into());
     }
     Ok(response.json().await?)
+}
+
+/// Minecraft Services answers a burst of requests with 429 and now and then fails with a
+/// 5xx. Such answers are tried again a few times, waiting as long as the server asks.
+pub(crate) async fn send_to_services(
+    request: impl Fn() -> Result<RequestBuilder>,
+) -> Result<Response> {
+    let mut attempt = 0;
+    loop {
+        let response = request()?.send().await?;
+        let status = response.status();
+        let busy = status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error();
+        if !busy || attempt == SERVICE_RETRIES {
+            return Ok(response);
+        }
+        attempt += 1;
+        let wait = retry_after(&response)
+            .unwrap_or(Duration::from_secs(1 << attempt))
+            .min(SERVICE_MAX_WAIT);
+        tokio::time::sleep(wait).await;
+    }
+}
+
+fn retry_after(response: &Response) -> Option<Duration> {
+    let seconds = response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)?
+        .to_str()
+        .ok()?
+        .trim()
+        .parse()
+        .ok()?;
+    Some(Duration::from_secs(seconds))
 }
 
 /// Pulls the authorization code out of the redirect's request line, e.g.
@@ -570,5 +611,29 @@ mod tests {
                 .unwrap()
                 .starts_with("http://localhost:")
         );
+    }
+
+    #[tokio::test]
+    async fn retries_when_services_are_busy() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let url = format!("http://{}/", listener.local_addr().unwrap());
+        tokio::spawn(async move {
+            let answers = [
+                "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 0\r\nContent-Length: 0\r\n\r\n",
+                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+            ];
+            for answer in answers {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut request = [0; 1024];
+                let _ = tokio::io::AsyncReadExt::read(&mut stream, &mut request).await;
+                stream.write_all(answer.as_bytes()).await.unwrap();
+                stream.shutdown().await.unwrap();
+            }
+        });
+
+        let client = Client::new();
+        let response = send_to_services(|| Ok(client.get(&url))).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }

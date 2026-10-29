@@ -80,6 +80,7 @@ impl CommandError {
                 AuthError::ChildAccount => "childAccount",
                 AuthError::GameNotOwned => "gameNotOwned",
                 AuthError::SessionExpired => "sessionExpired",
+                AuthError::RateLimited => "rateLimited",
                 // Mojang answers 403 until it has approved the app's Azure client ID.
                 AuthError::Service {
                     service: "Minecraft Services",

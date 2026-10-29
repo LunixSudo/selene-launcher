@@ -114,8 +114,9 @@ pub async fn add_skin(
 /// Copies the skin the account wears now into the library.
 #[tauri::command]
 pub async fn save_current_skin(launcher: State<'_, Launcher>) -> CommandResult<LibrarySkin> {
-    let session = launcher.accounts.session(&launcher.client).await?;
-    let profile = auth::fetch_profile(&launcher.client, &session.access_token).await?;
+    // The session keeps the profile from the last sign-in or skin change, which is what the
+    // skins page shows.
+    let profile = launcher.accounts.session(&launcher.client).await?.profile;
     let skin = profile
         .skins
         .iter()
