@@ -62,9 +62,15 @@ async fn import_mrpack(
     )
     .await?;
     let game_dir = launcher.instances.game_dir(&instance.id);
-    if let Err(err) = mrpack::install(&launcher.client, &path, &index, &game_dir).await {
+    let installed = while_importing(
+        launcher,
+        &instance.id,
+        mrpack::install(&launcher.client, &path, &index, &game_dir),
+    )
+    .await;
+    if let Err(err) = installed {
         let _ = launcher.instances.delete(&instance.id).await;
-        return Err(err.into());
+        return Err(err);
     }
     Ok(ImportResult {
         instance,
@@ -94,8 +100,12 @@ async fn import_curseforge(
     )
     .await?;
     let game_dir = launcher.instances.game_dir(&instance.id);
-    let installed =
-        cfpack::install(&launcher.client, curseforge, &path, &manifest, &game_dir).await;
+    let installed = while_importing(
+        launcher,
+        &instance.id,
+        cfpack::install(&launcher.client, curseforge, &path, &manifest, &game_dir),
+    )
+    .await;
     match installed {
         Ok(manual) => Ok(ImportResult {
             instance,
@@ -103,9 +113,27 @@ async fn import_curseforge(
         }),
         Err(err) => {
             let _ = launcher.instances.delete(&instance.id).await;
-            Err(err.into())
+            Err(err)
         }
     }
+}
+
+/// Runs a pack's download as the instance's download in progress, so deleting the instance
+/// meanwhile cancels it instead of racing it.
+async fn while_importing<T>(
+    launcher: &Launcher,
+    id: &str,
+    install: impl Future<Output = selene_core::Result<T>>,
+) -> CommandResult<T> {
+    let Some(cancelled) = launcher.start_running(id, false) else {
+        return Err(CommandError::AlreadyRunning(id.to_owned()));
+    };
+    let result = tokio::select! {
+        result = install => result.map_err(Into::into),
+        _ = cancelled => Err(CommandError::Cancelled),
+    };
+    launcher.stop_running(id);
+    result
 }
 
 /// The instance shows up in the list right away, while its files are still downloading.

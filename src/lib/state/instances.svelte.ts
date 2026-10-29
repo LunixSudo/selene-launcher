@@ -81,7 +81,10 @@ export async function importPack(path: string) {
     library.importManual = result.manual;
     void notify(t("notify.imported"), t("notify.importedBody", { name: result.instance.name }));
   } catch (error) {
-    library.importError = isCommandError(error) ? error : UNKNOWN_ERROR;
+    // Deleting the instance while it imports cancels the import; that is no error.
+    if (!isCommandError(error) || error.kind !== "cancelled") {
+      library.importError = isCommandError(error) ? error : UNKNOWN_ERROR;
+    }
   } finally {
     library.importing--;
     // Reread from disk: the list on screen may have been loaded while the import was running.
