@@ -1,4 +1,5 @@
 import { type Account, api, type CommandError, isCommandError } from "$lib/api";
+import { prepareAll } from "./instances.svelte";
 
 export const session = $state({
   accounts: [] as Account[],
@@ -23,6 +24,8 @@ export async function signIn() {
   try {
     await api.signIn();
     await loadAccounts();
+    // Instances added before signing in could not download their game yet.
+    void prepareAll();
   } catch (error) {
     if (!isCommandError(error) || error.kind !== "signInCancelled") {
       session.error = isCommandError(error) ? error : { kind: "core", message: String(error) };

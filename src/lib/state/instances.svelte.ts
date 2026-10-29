@@ -86,6 +86,19 @@ export function prepare(id: string) {
   preparing.set(id, task);
 }
 
+/** Downloads the games of all instances one after another, for when an account just signed in. */
+export async function prepareAll() {
+  if (!library.loaded) {
+    await loadInstances();
+  }
+  for (const { id } of [...library.instances]) {
+    if (!preparing.has(id) && !library.launches[id] && !library.tasks[id]) {
+      prepare(id);
+      await preparing.get(id);
+    }
+  }
+}
+
 export function isPreparing(id: string): boolean {
   return preparing.has(id);
 }
