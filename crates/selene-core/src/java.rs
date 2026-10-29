@@ -154,9 +154,15 @@ fn platform_key(os: &str, arch: &str) -> Option<&'static str> {
     Some(key)
 }
 
-/// The list of Java runtimes, from the copy in `runtimes_dir` when offline.
+/// The list of Java runtimes, from the copy in `runtimes_dir` when offline. It is fetched once
+/// per session, so launching an installed game does not wait on the network for it.
 pub async fn fetch_index(client: &Client, runtimes_dir: &Path) -> Result<RuntimeIndex> {
-    cache::get_json(client, RUNTIME_INDEX_URL, &runtimes_dir.join("index.json")).await
+    static INDEX: tokio::sync::OnceCell<RuntimeIndex> = tokio::sync::OnceCell::const_new();
+    let path = runtimes_dir.join("index.json");
+    INDEX
+        .get_or_try_init(|| cache::get_json(client, RUNTIME_INDEX_URL, &path))
+        .await
+        .cloned()
 }
 
 pub fn find_release<'a>(
