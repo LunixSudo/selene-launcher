@@ -219,26 +219,26 @@ pub async fn resolved_patch(
         loader.loader.id(),
         loader.version
     ));
-    if let Ok(bytes) = tokio::fs::read(&path).await
-        && let Ok(patch) = serde_json::from_slice::<VersionPatch>(&bytes)
-        && patch.libraries.iter().all(|library| library.sha1.is_some())
-    {
-        return patch.resolve(client).await;
-    }
-
-    let mut profile: serde_json::Value =
-        http::get_json(client, &profile_url(loader, game_version)).await?;
+    let saved = tokio::fs::read(&path)
+        .await
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok());
+    let fresh = saved.is_none();
+    let mut profile = match saved {
+        Some(profile) => profile,
+        None => http::get_json(client, &profile_url(loader, game_version)).await?,
+    };
+    let mut filled = false;
     if let Some(libraries) = profile
         .get_mut("libraries")
         .and_then(serde_json::Value::as_array_mut)
     {
-        fill_hashes(client, libraries).await?;
+        filled = fill_hashes(client, libraries).await?;
     }
-    let bytes = serde_json::to_vec(&profile)?;
-    let _ = crate::fs::write_atomic(&path, &bytes).await;
-    serde_json::from_value::<VersionPatch>(profile)?
-        .resolve(client)
-        .await
+    if fresh || filled {
+        let _ = crate::fs::write_atomic(&path, &serde_json::to_vec(&profile)?).await;
+    }
+    Ok(serde_json::from_value::<VersionPatch>(profile)?.resolve())
 }
 
 fn profile_url(loader: &LoaderVersion, game_version: &str) -> String {
@@ -249,7 +249,8 @@ fn profile_url(loader: &LoaderVersion, game_version: &str) -> String {
     )
 }
 
-async fn fill_hashes(client: &Client, libraries: &mut [serde_json::Value]) -> Result<()> {
+/// Adds the hashes the profile lacks and tells whether it found any.
+async fn fill_hashes(client: &Client, libraries: &mut [serde_json::Value]) -> Result<bool> {
     let missing: Vec<(usize, String)> = libraries
         .iter()
         .enumerate()
@@ -269,27 +270,28 @@ async fn fill_hashes(client: &Client, libraries: &mut [serde_json::Value]) -> Re
         .try_collect()
         .await?;
     // A missing hash is not saved, so the next start asks for it again.
+    let mut filled = false;
     for (index, sha1) in hashes.into_iter().filter(|(_, sha1)| !sha1.is_empty()) {
         libraries[index]["sha1"] = sha1.into();
+        filled = true;
     }
-    Ok(())
+    Ok(filled)
 }
 
 impl VersionPatch {
     /// Turns Maven libraries into regular ones so the game version can download and launch
-    /// them like its own. Libraries without a hash get it from the `.sha1` file next to the jar.
-    pub async fn resolve(self, client: &Client) -> Result<ResolvedPatch> {
-        let libraries = stream::iter(self.libraries)
-            .map(|library| library.resolve(client))
-            .buffered(HASH_CONCURRENCY)
-            .try_collect()
-            .await?;
-        Ok(ResolvedPatch {
+    /// them like its own.
+    pub fn resolve(self) -> ResolvedPatch {
+        ResolvedPatch {
             main_class: self.main_class,
             arguments: self.arguments,
             minecraft_arguments: None,
-            libraries,
-        })
+            libraries: self
+                .libraries
+                .into_iter()
+                .map(MavenLibrary::resolve)
+                .collect(),
+        }
     }
 }
 
@@ -303,19 +305,15 @@ pub struct ResolvedPatch {
 }
 
 impl MavenLibrary {
-    async fn resolve(self, client: &Client) -> Result<Library> {
+    fn resolve(self) -> Library {
         let path = maven_path(&self.name).unwrap_or_default();
         let url = format!("{}/{path}", self.url.trim_end_matches('/'));
-        let sha1 = match self.sha1 {
-            Some(sha1) => sha1,
-            None => fetch_sha1(client, &url).await,
-        };
-        Ok(Library {
+        Library {
             name: self.name,
             downloads: LibraryDownloads {
                 artifact: Some(Artifact {
                     path: Some(path),
-                    sha1,
+                    sha1: self.sha1.unwrap_or_default(),
                     size: self.size.unwrap_or(0),
                     url,
                 }),
@@ -323,7 +321,7 @@ impl MavenLibrary {
             },
             rules: Vec::new(),
             natives: std::collections::HashMap::new(),
-        })
+        }
     }
 }
 
