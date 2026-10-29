@@ -389,6 +389,11 @@ export const ru = {
     upToDate: "У вас последняя версия",
   },
   skins: {
+    animation: "Анимация",
+    animations: { idle: "Стоит", walk: "Идёт", run: "Бежит", fly: "Летит", wave: "Машет" },
+    saveCurrent: "Сохранить в мои скины",
+    saving: "Сохраняем…",
+    saved: "Сохранён в моих скинах",
     title: "Скины",
     classic: "Классические",
     slim: "Тонкие",

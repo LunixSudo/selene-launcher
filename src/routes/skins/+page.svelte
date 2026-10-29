@@ -16,6 +16,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { scrollFade } from "$lib/scroll-fade";
   import { activeAccount, loadAccounts } from "$lib/state/accounts.svelte";
+  import { SKIN_ANIMATIONS, settings } from "$lib/state/settings.svelte";
   import { tooltip } from "$lib/tooltip";
 
   let profile = $state<SkinProfile | null>(null);
@@ -24,10 +25,22 @@
   let selected = $state<string | null>(null);
   let busy = $state(false);
   let actionError = $state<CommandError | null>(null);
+  let hoveredCape = $state<string | null>(null);
+  let saving = $state(false);
+  let savedUrl = $state<string | null>(null);
 
   const account = $derived(activeAccount());
   const preview = $derived(library.find((skin) => skin.id === selected));
   const activeCape = $derived(profile?.capes.find((cape) => cape.active) ?? null);
+  const shownCape = $derived(
+    hoveredCape === "none"
+      ? null
+      : (profile?.capes.find((cape) => cape.id === hoveredCape)?.url ?? activeCape?.url ?? null),
+  );
+  const savedCurrent = $derived(savedUrl !== null && savedUrl === profile?.skin?.url);
+  const animationOptions = $derived(
+    SKIN_ANIMATIONS.map((value) => ({ value, label: t(`skins.animations.${value}`) })),
+  );
   const variants = $derived([
     { value: "classic" as const, label: t("skins.classic") },
     { value: "slim" as const, label: t("skins.slim") },
@@ -106,6 +119,20 @@
     }
   }
 
+  async function saveCurrent() {
+    saving = true;
+    actionError = null;
+    try {
+      const saved = await api.saveCurrentSkin();
+      library = [saved, ...library.filter((skin) => skin.id !== saved.id)];
+      savedUrl = profile?.skin?.url ?? null;
+    } catch (error) {
+      actionError = asError(error);
+    } finally {
+      saving = false;
+    }
+  }
+
   async function setVariant(skin: SavedSkin, variant: SkinVariant) {
     skin.variant = variant;
     await api.setSkinVariant(skin.id, variant);
@@ -134,8 +161,24 @@
       <SkinViewer
         skin={preview?.image ?? profile?.skin?.url ?? null}
         variant={preview?.variant ?? profile?.skin?.variant ?? "classic"}
-        cape={activeCape?.url ?? null}
+        cape={shownCape}
+        animation={settings.skinAnimation}
+        name={profile?.name ?? null}
       />
+      <fieldset class="animations">
+        <legend class="sr-only">{t("skins.animation")}</legend>
+        {#each animationOptions as option (option.value)}
+          <label>
+            <input
+              type="radio"
+              name="skin-animation"
+              value={option.value}
+              bind:group={settings.skinAnimation}
+            >
+            <span>{option.label}</span>
+          </label>
+        {/each}
+      </fieldset>
       {#if preview}
         <p class="caption">{t("skins.previewing", { name: preview.name })}</p>
         <Segmented
@@ -159,8 +202,53 @@
         </div>
       {:else if profile}
         <p class="caption">{t("skins.current", { name: profile.name })}</p>
+        {#if profile.skin}
+          <button
+            type="button"
+            class="pill-button"
+            disabled={saving || savedCurrent}
+            onclick={saveCurrent}
+          >
+            {savedCurrent ? t("skins.saved") : saving ? t("skins.saving") : t("skins.saveCurrent")}
+          </button>
+        {/if}
       {:else if !library.length}
         <p class="caption">{t("skins.empty")}</p>
+      {/if}
+      {#if profile && (profile.capes.length || activeCape)}
+        <fieldset class="capes">
+          <legend class="sr-only">{t("skins.cape")}</legend>
+          <button
+            type="button"
+            class="cape"
+            class:selected={!activeCape}
+            disabled={busy}
+            aria-label={t("skins.noCape")}
+            {@attach tooltip(t("skins.noCape"))}
+            onpointerenter={() => (hoveredCape = "none")}
+            onpointerleave={() => (hoveredCape = null)}
+            onclick={() => change(() => api.setCape(null))}
+          >
+            <span class="cape-art none" aria-hidden="true"></span>
+          </button>
+          {#each profile.capes as cape (cape.id)}
+            <button
+              type="button"
+              class="cape"
+              class:selected={cape.active}
+              disabled={busy}
+              aria-label={cape.name}
+              {@attach tooltip(cape.name)}
+              onpointerenter={() => (hoveredCape = cape.id)}
+              onpointerleave={() => (hoveredCape = null)}
+              onclick={() => change(() => api.setCape(cape.id))}
+            >
+              <span class="cape-art">
+                <TextureCrop src={cape.url} x={1} y={1} width={10} height={16} />
+              </span>
+            </button>
+          {/each}
+        </fieldset>
       {/if}
     </aside>
 
@@ -205,39 +293,6 @@
       </section>
 
       {#if profile}
-        <section class="panel">
-          <h2 class="panel-title">{t("skins.cape")}</h2>
-          <div class="capes">
-            <button
-              type="button"
-              class="cape"
-              class:selected={!activeCape}
-              disabled={busy}
-              onclick={() => change(() => api.setCape(null))}
-            >
-              <span class="cape-art none" aria-hidden="true"></span>
-              <span class="tile-name">{t("skins.noCape")}</span>
-            </button>
-            {#each profile.capes as cape (cape.id)}
-              <button
-                type="button"
-                class="cape"
-                class:selected={cape.active}
-                disabled={busy}
-                onclick={() => change(() => api.setCape(cape.id))}
-              >
-                <span class="cape-art">
-                  <TextureCrop src={cape.url} x={1} y={1} width={10} height={16} />
-                </span>
-                <span class="tile-name">{cape.name}</span>
-              </button>
-            {/each}
-          </div>
-          {#if !profile.capes.length}
-            <p class="hint">{t("skins.noCapes")}</p>
-          {/if}
-        </section>
-
         <section class="panel">
           <div class="row">
             <div>
@@ -344,20 +399,104 @@
     font-size: 13px;
   }
 
-  .skins,
-  .capes {
+  .skins {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     gap: 8px;
     padding: 0 14px;
   }
 
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .animations {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .animations input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .animations span {
+    display: grid;
+    place-items: center;
+    height: 26px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 999px;
+    background: var(--field);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    transition:
+      background 150ms var(--ease),
+      color 150ms var(--ease);
+  }
+
+  .animations label {
+    cursor: pointer;
+  }
+
+  .animations label:hover span {
+    color: var(--text);
+  }
+
+  .animations input:checked + span {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .animations input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .capes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
   .tile {
     position: relative;
   }
 
-  .pick,
   .cape {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 58px;
+    padding: 0;
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--field);
+    transition:
+      border-color 150ms var(--ease),
+      transform 150ms var(--ease);
+  }
+
+  .cape:hover:enabled {
+    border-color: var(--border);
+    transform: translateY(-2px);
+  }
+
+  .cape.selected {
+    border-color: var(--accent);
+  }
+
+  .pick {
     display: grid;
     justify-items: center;
     gap: 8px;
@@ -369,13 +508,11 @@
     transition: border-color 150ms var(--ease);
   }
 
-  .pick:hover,
-  .cape:hover:enabled {
+  .pick:hover {
     border-color: var(--border);
   }
 
-  .selected .pick,
-  .cape.selected {
+  .selected .pick {
     border-color: var(--accent);
   }
 

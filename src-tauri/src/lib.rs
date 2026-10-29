@@ -40,18 +40,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .on_page_load(|webview, _| backdrop::keep_backdrop(&webview.window()))
-        .setup(|app| {
-            let data_dir = match portable_data_dir() {
-                Some(dir) => dir,
-                None => app.path().data_dir()?.join("SeleneLauncher"),
-            };
-            // World icons and screenshots are shown straight from the instance folders.
-            app.asset_protocol_scope()
-                .allow_directory(&data_dir, true)?;
-            let args: Vec<String> = std::env::args().collect();
-            app.manage(Launcher::new(&data_dir, launch_arg(&args))?);
-            Ok(())
-        })
+        .setup(setup)
         .invoke_handler(tauri::generate_handler![
             commands::accounts,
             commands::sign_in,
@@ -83,6 +72,7 @@ pub fn run() {
             commands::skins::set_cape,
             commands::skins::saved_skins,
             commands::skins::add_skin,
+            commands::skins::save_current_skin,
             commands::skins::set_skin_variant,
             commands::skins::remove_skin,
             commands::set_config,
@@ -130,6 +120,19 @@ pub fn run() {
         Ok(app) => app.run(keep_alive_while_playing),
         Err(err) => report_startup_error(&err),
     }
+}
+
+fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let data_dir = match portable_data_dir() {
+        Some(dir) => dir,
+        None => app.path().data_dir()?.join("SeleneLauncher"),
+    };
+    // World icons and screenshots are shown straight from the instance folders.
+    app.asset_protocol_scope()
+        .allow_directory(&data_dir, true)?;
+    let args: Vec<String> = std::env::args().collect();
+    app.manage(Launcher::new(&data_dir, launch_arg(&args))?);
+    Ok(())
 }
 
 /// Without a window there is nowhere else to say why the launcher did not open. The usual

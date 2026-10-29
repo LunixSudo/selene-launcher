@@ -352,6 +352,7 @@ export const api = {
   resetSkin: () => invoke<SkinProfile>("reset_skin"),
   setCape: (id: string | null) => invoke<SkinProfile>("set_cape", { id }),
   savedSkins: () => invoke<SavedSkin[]>("saved_skins"),
+  saveCurrentSkin: () => invoke<SavedSkin>("save_current_skin"),
   addSkin: (path: string, variant: SkinVariant) => invoke<SavedSkin>("add_skin", { path, variant }),
   setSkinVariant: (id: string, variant: SkinVariant) =>
     invoke<void>("set_skin_variant", { id, variant }),

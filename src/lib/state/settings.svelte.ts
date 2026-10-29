@@ -6,12 +6,16 @@ export type Accent = "violet" | "blue" | "green" | "pink" | "orange";
 export type Font = "rounded" | "modern" | "rubik" | "system";
 export type AfterLaunch = "keep" | "minimize" | "close";
 export type SortOrder = "lastPlayed" | "name" | "playTime" | "created";
+export type Backdrop = "none" | "halo" | "rays" | "stars" | "aurora";
+export type SkinAnimation = "idle" | "walk" | "run" | "fly" | "wave";
 
 export const THEMES: Theme[] = ["system", "light", "dark"];
 export const STYLES: Style[] = ["glass", "mica", "solid"];
 export const FONTS: Font[] = ["rounded", "modern", "rubik", "system"];
 export const AFTER_LAUNCH: AfterLaunch[] = ["keep", "minimize", "close"];
 export const SORT_ORDERS: SortOrder[] = ["lastPlayed", "name", "playTime", "created"];
+export const BACKDROPS: Backdrop[] = ["none", "halo", "rays", "stars", "aurora"];
+export const SKIN_ANIMATIONS: SkinAnimation[] = ["idle", "walk", "run", "fly", "wave"];
 export const ACCENTS: Record<Accent, string> = {
   violet: "#6b5bff",
   blue: "#0f6cbd",
@@ -34,6 +38,15 @@ interface Settings {
   notifications: boolean;
   checkUpdates: boolean;
   discordStatus: boolean;
+  /** An animated background behind the whole window. */
+  backdrop: Backdrop;
+  /** Page transitions, hover lifts and the glowing play button. */
+  motion: boolean;
+  /** The instance page shows its cover, blurred, behind everything. */
+  coverBackdrop: boolean;
+  skinAnimation: SkinAnimation;
+  /** Whether the first-start question about looks or speed was answered. */
+  setupDone: boolean;
 }
 
 const DEFAULTS: Settings = {
@@ -48,6 +61,19 @@ const DEFAULTS: Settings = {
   notifications: true,
   checkUpdates: true,
   discordStatus: true,
+  backdrop: "none",
+  motion: false,
+  coverBackdrop: false,
+  skinAnimation: "walk",
+  setupDone: false,
+};
+
+/** What "make it beautiful" on the first start turns on. */
+export const BEAUTIFUL: Partial<Settings> = {
+  style: "glass",
+  backdrop: "halo",
+  motion: true,
+  coverBackdrop: true,
 };
 
 export const settings = $state<Settings>(load());
@@ -75,6 +101,11 @@ function load(): Settings {
     notifications: oneOf(saved.notifications, [true, false], DEFAULTS.notifications),
     checkUpdates: oneOf(saved.checkUpdates, [true, false], DEFAULTS.checkUpdates),
     discordStatus: oneOf(saved.discordStatus, [true, false], DEFAULTS.discordStatus),
+    backdrop: oneOf(saved.backdrop, BACKDROPS, DEFAULTS.backdrop),
+    motion: oneOf(saved.motion, [true, false], DEFAULTS.motion),
+    coverBackdrop: oneOf(saved.coverBackdrop, [true, false], DEFAULTS.coverBackdrop),
+    skinAnimation: oneOf(saved.skinAnimation, SKIN_ANIMATIONS, DEFAULTS.skinAnimation),
+    setupDone: oneOf(saved.setupDone, [true, false], DEFAULTS.setupDone),
   };
 }
 
@@ -84,6 +115,7 @@ export function applySettings() {
   root.dataset.theme = settings.theme;
   root.dataset.style = settings.style;
   root.dataset.font = settings.font;
+  root.dataset.motion = settings.motion ? "on" : "off";
   root.style.setProperty("--accent", ACCENTS[settings.accent]);
 
   try {

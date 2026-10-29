@@ -391,6 +391,11 @@ export const en: Messages = {
     upToDate: "You have the latest version",
   },
   skins: {
+    animation: "Animation",
+    animations: { idle: "Idle", walk: "Walk", run: "Run", fly: "Fly", wave: "Wave" },
+    saveCurrent: "Save to my skins",
+    saving: "Saving…",
+    saved: "Saved to my skins",
     title: "Skins",
     classic: "Classic",
     slim: "Slim",

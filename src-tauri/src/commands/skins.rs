@@ -3,12 +3,15 @@ use std::path::PathBuf;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use selene_core::auth::{self, Profile};
+use selene_core::http;
 use selene_core::skins::{self, SavedSkin, Variant};
 use serde::Serialize;
 use tauri::State;
 
 use crate::error::CommandResult;
 use crate::state::Launcher;
+
+const TEXTURES_URL: &str = "https://textures.minecraft.net/";
 
 /// The skin and capes the active account has on its Minecraft profile.
 #[derive(Debug, Clone, Serialize)]
@@ -106,6 +109,30 @@ pub async fn add_skin(
     let png = tokio::fs::read(&path).await?;
     let skin = launcher.skins.add(&png, &name, variant)?;
     library_skin(&launcher, skin)
+}
+
+/// Copies the skin the account wears now into the library.
+#[tauri::command]
+pub async fn save_current_skin(launcher: State<'_, Launcher>) -> CommandResult<LibrarySkin> {
+    let session = launcher.accounts.session(&launcher.client).await?;
+    let profile = auth::fetch_profile(&launcher.client, &session.access_token).await?;
+    let skin = profile
+        .skins
+        .iter()
+        .find(|skin| skin.state == "ACTIVE")
+        .filter(|skin| skin.url.starts_with(TEXTURES_URL))
+        .ok_or(selene_core::Error::InvalidSkin)?;
+    let png = http::get(&launcher.client, &skin.url)
+        .await?
+        .error_for_status()
+        .map_err(selene_core::Error::from)?
+        .bytes()
+        .await
+        .map_err(selene_core::Error::from)?;
+    let saved = launcher
+        .skins
+        .add(&png, &profile.name, Variant::from_api(&skin.variant))?;
+    library_skin(&launcher, saved)
 }
 
 #[tauri::command]
