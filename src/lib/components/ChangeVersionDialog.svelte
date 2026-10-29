@@ -9,6 +9,7 @@
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
   import { hasHiddenBetas, LOADER_NAMES, preferredRelease, releaseOptions } from "$lib/loaders";
+  import { scrollFade } from "$lib/scroll-fade";
   import { replaceInstance } from "$lib/state/instances.svelte";
   import Dialog from "./Dialog.svelte";
   import Select from "./Select.svelte";
@@ -165,7 +166,7 @@
     {#if change.updated.length > 0}
       <section>
         <h3>{t("changeVersion.updated", { count: change.updated.length })}</h3>
-        <ul>
+        <ul {@attach scrollFade}>
           {#each change.updated as update (update.fileName)}
             <li>{update.title} <span class="muted">→ {update.to}</span></li>
           {/each}
@@ -178,7 +179,7 @@
           {t("changeVersion.incompatible", { count: change.incompatible.length })}
         </h3>
         <p class="muted">{t("changeVersion.incompatibleHint")}</p>
-        <ul>
+        <ul {@attach scrollFade}>
           {#each change.incompatible as title (title)}
             <li>{title}</li>
           {/each}
@@ -188,7 +189,7 @@
     {#if change.unknown.length > 0}
       <section>
         <h3>{t("changeVersion.unknown", { count: change.unknown.length })}</h3>
-        <ul>
+        <ul {@attach scrollFade}>
           {#each change.unknown as title (title)}
             <li>{title}</li>
           {/each}

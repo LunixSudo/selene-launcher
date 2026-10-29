@@ -28,12 +28,18 @@ All notable changes to this project are documented here. The format follows
   title bar. The character can idle, walk, run, fly with elytra or wave, and the capes sit in
   one row under it: the mouse wheel scrolls them and hovering one tries it on.
 - Saving the skin the account wears now into the skin library.
-- Effects in the settings, all off by default: live backgrounds drawn on the GPU (glowing
-  rings that wobble and run through the colours, prism light rays with drifting dust, a starry
-  sky and northern lights), smooth page, card and dialog animations with a glowing Play
-  button, and a soft click sound like the iOS keyboard. Each instance can use the launcher's
-  background, its own animated cover or any of the live ones.
+- Effects in the settings, all off by default: ten live backgrounds drawn on the GPU (glowing
+  rings that run through the colours, prism light rays with drifting dust, northern lights,
+  liquid glass, out-of-focus lights, a nebula, silky waves, a moon whose phase slowly changes
+  and a starry sky with shooting stars), smooth page, card and dialog animations with a
+  glowing Play button, and a soft click sound like the iOS keyboard. The settings preview each
+  background as it really looks, and each instance can use the launcher's background, its own
+  animated cover or any of the live ones.
 - On the first start the launcher asks whether to favour speed or looks.
+- Style presets in the settings: "Faster" and "Prettier" are built in, and the current theme,
+  colour, font, background and effects can be saved under a name of your own.
+- A setting for the faded edges of scrolling lists, which now also cover project pages,
+  dropdowns and the version dialogs.
 - Discord status "Playing Selene Launcher".
 - Launcher updates from GitHub Releases, checked against the SHA-256 digest GitHub publishes.
 - Windows notifications, download speed and parallelism limits, custom Java path.
@@ -88,6 +94,7 @@ All notable changes to this project are documented here. The format follows
   turns animations off.
 - The game console stays light with thousands of lines.
 - New instances start the game in fullscreen.
+- "Prettier" now picks Mica and the northern lights.
 - Worlds are no longer started from the launcher, which was unreliable across game versions;
   joining a server straight from the launcher stays.
 - An imported modpack shows up in the list right away, while its files download.
@@ -117,6 +124,8 @@ All notable changes to this project are documented here. The format follows
   skin or changing a cape fail. Busy answers from Minecraft Services are tried again, and
   "too many requests" gets its own message.
 - The 3D model turns smoothly and fits small screens, so the capes under it stay in view.
+- Live backgrounds no longer show colour streaks over Mica and the solid style, and hovering an
+  instance no longer draws a square around it on some graphics cards.
 - Loader versions, NeoForge's especially, load more reliably: a failed request is tried
   again, then the list saved last time is shown.
 - Hovering buttons in the solid style is visible in the dark theme.

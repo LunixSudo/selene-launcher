@@ -4,6 +4,7 @@
   import { externalLinks } from "$lib/external-links";
   import { locale, t } from "$lib/i18n/index.svelte";
   import { renderMarkup } from "$lib/markup";
+  import { scrollFade } from "$lib/scroll-fade";
   import privacyEn from "../../../PRIVACY.md?raw";
   import privacyRu from "../../../PRIVACY.ru.md?raw";
 
@@ -53,7 +54,7 @@
 <dialog bind:this={dialog} aria-labelledby={titleId} oncancel={(event) => event.preventDefault()}>
   <h2 id={titleId}>{t("privacy.title")}</h2>
   <p class="lead">{updated ? t("privacy.updated") : t("privacy.lead")}</p>
-  <div class="policy" {@attach externalLinks}>{@html policy}</div>
+  <div class="policy" {@attach externalLinks} {@attach scrollFade}>{@html policy}</div>
   <div class="actions">
     <button type="button" onclick={() => getCurrentWindow().close()}>{t("privacy.decline")}</button>
     <button type="button" class="primary" disabled={saving} onclick={accept}>

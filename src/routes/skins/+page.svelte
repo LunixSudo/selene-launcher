@@ -169,7 +169,7 @@
   </header>
 
   <div class="layout">
-    <aside class="stage">
+    <aside class="stage" {@attach scrollFade}>
       <SkinViewer
         skin={preview?.image ?? profile?.skin?.url ?? null}
         variant={preview?.variant ?? profile?.skin?.variant ?? "classic"}

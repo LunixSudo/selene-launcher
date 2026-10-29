@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends string">
   import { tick } from "svelte";
+  import { scrollFade } from "$lib/scroll-fade";
 
   type Props = { options: { value: T; label: string }[]; id?: string; placeholder?: string } & (
     | { multiple?: false; value: T }
@@ -147,6 +148,7 @@
 {#if open}
   <div
     class="list"
+    {@attach scrollFade}
     bind:this={list}
     {@attach lift}
     role="listbox"

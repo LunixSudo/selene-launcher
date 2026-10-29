@@ -12,6 +12,7 @@
   import { relativeTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { renderMarkup } from "$lib/markup";
+  import { scrollFade } from "$lib/scroll-fade";
   import Dialog from "./Dialog.svelte";
   import Segmented from "./Segmented.svelte";
 
@@ -123,7 +124,7 @@
     <p class="error" role="alert">{error}</p>
   {/if}
 
-  <div class="scroll" {@attach externalLinks}>
+  <div class="scroll" {@attach externalLinks} {@attach scrollFade}>
     {#if view === "about"}
       {#if page}
         {#if page.gallery.length > 0}

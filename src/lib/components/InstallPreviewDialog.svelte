@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { InstallPreview } from "$lib/api";
   import { t } from "$lib/i18n/index.svelte";
+  import { scrollFade } from "$lib/scroll-fade";
   import Dialog from "./Dialog.svelte";
 
   let {
@@ -39,7 +40,7 @@
   {#if requested.length > 0}
     <section>
       <h3>{t("install.requested", { count: requested.length })}</h3>
-      <ul>
+      <ul {@attach scrollFade}>
         {#each requested as planned (planned.title)}
           <li>{planned.title}</li>
         {/each}
@@ -51,7 +52,7 @@
     <section>
       <h3>{t("install.dependencies", { count: dependencies.length })}</h3>
       <p class="hint">{t("install.dependenciesHint")}</p>
-      <ul>
+      <ul {@attach scrollFade}>
         {#each dependencies as planned (planned.title)}
           <li class="dependency">{planned.title}</li>
         {/each}
@@ -63,7 +64,7 @@
     <section>
       <h3>{t("install.manual")}</h3>
       <p class="hint">{t("instance.manualDownload")}</p>
-      <ul>
+      <ul {@attach scrollFade}>
         {#each preview.manual as download (download.url)}
           <li class="manual">{download.title}</li>
         {/each}
