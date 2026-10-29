@@ -46,7 +46,11 @@ pub fn write_atomic_blocking(path: &Path, bytes: &[u8]) -> Result<()> {
                 attempt += 1;
                 std::thread::sleep(RENAME_RETRY_DELAY);
             }
-            result => return result.map_err(|err| Error::io(path, err)),
+            Err(err) => {
+                let _ = std::fs::remove_file(&temporary);
+                return Err(Error::io(path, err));
+            }
+            Ok(()) => return Ok(()),
         }
     }
 }
