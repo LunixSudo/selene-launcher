@@ -449,8 +449,8 @@ fn stable_as(version_type: &str) -> &'static [&'static str] {
 /// the requested ones first, then their required dependencies. A dependency can be of
 /// another kind than what it is for, like a mod a resource pack needs; `target_for` says
 /// what each kind has to run on, or `None` when the instance cannot take that kind.
-/// Dependencies pinned to a version get it; one with no fitting version is skipped rather than
-/// failing the install, the way the Modrinth app does.
+/// Dependencies pinned to a version get it when it fits the instance; one with no fitting
+/// version is skipped rather than failing the install.
 pub async fn resolve_install<'a>(
     client: &Client,
     project_ids: &[String],
@@ -473,7 +473,13 @@ pub async fn resolve_install<'a>(
         let found = match pinned {
             Some(version_id) => {
                 let version = version(client, &version_id).await?;
-                Some((kind_of(&version, kind), version))
+                let pinned_kind = kind_of(&version, kind);
+                // A pin made for another game version or loader would not run here.
+                if target_for(pinned_kind).is_some_and(|target| target.accepts(&version)) {
+                    Some((pinned_kind, version))
+                } else {
+                    newest_for_kind(client, &project, kind, &target_for).await?
+                }
             }
             None => newest_for_kind(client, &project, kind, &target_for).await?,
         };
