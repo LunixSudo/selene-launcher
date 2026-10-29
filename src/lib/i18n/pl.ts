@@ -27,6 +27,7 @@ export const pl: Messages = {
     play: "Graj",
     running: "Uruchomiona",
     stop: "Zatrzymaj",
+    stopping: "Zapisywanie i wychodzenie…",
     delete: "Usuń",
     open: "Otwórz",
     openFolder: "Otwórz folder",

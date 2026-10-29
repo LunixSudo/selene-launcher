@@ -25,6 +25,7 @@ export const ru = {
     play: "Играть",
     running: "Запущена",
     stop: "Остановить",
+    stopping: "Сохранение и выход…",
     delete: "Удалить",
     open: "Открыть",
     openFolder: "Открыть папку",

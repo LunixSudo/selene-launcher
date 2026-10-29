@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { api, type Instance } from "$lib/api";
+  import type { Instance } from "$lib/api";
   import { coverOf, iconOf } from "$lib/appearance";
   import { playTime, relativeTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
   import { LOADER_NAMES } from "$lib/loaders";
-  import { activity, type LaunchState, library, play } from "$lib/state/instances.svelte";
+  import { activity, type LaunchState, library, play, stop } from "$lib/state/instances.svelte";
 
   let {
     instance,
@@ -27,8 +27,8 @@
   }
 
   function playLabel(): string {
-    if (running) {
-      return t("instances.stop");
+    if (launch?.status === "running") {
+      return launch.stopping ? t("instances.stopping") : t("instances.stop");
     }
     return busy?.label ?? t("instances.play");
   }
@@ -82,9 +82,9 @@
     type="button"
     class="play"
     class:running
-    disabled={busy !== null}
     style:--progress={busy ? `${busy.percent}%` : "0%"}
-    onclick={() => (running ? api.stopInstance(instance.id) : play(instance.id))}
+    disabled={busy !== null || (launch?.status === "running" && launch.stopping)}
+    onclick={() => (running ? stop(instance.id) : play(instance.id))}
   >
     {#if !busy}
       <svg viewBox="0 0 24 24" aria-hidden="true">

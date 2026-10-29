@@ -23,7 +23,7 @@ import { settings } from "./settings.svelte";
 
 export type LaunchState =
   | { status: "preparing"; stage: LaunchProgress["stage"] | null; percent: number }
-  | { status: "running"; since: number }
+  | { status: "running"; since: number; stopping?: boolean }
   | { status: "failed"; error: CommandError };
 
 /** An add-on download of an instance: an import, an install or an update. */
@@ -169,6 +169,15 @@ export async function play(id: string, server: string | null = null) {
       error: isCommandError(error) ? error : UNKNOWN_ERROR,
     };
   }
+}
+
+/** Asks the game to save and quit; the button says so until it has. */
+export async function stop(id: string) {
+  const launch = library.launches[id];
+  if (launch?.status === "running") {
+    launch.stopping = true;
+  }
+  await api.stopInstance(id);
 }
 
 /** What Discord shows under the launcher's name: the running instance, or nothing much. */

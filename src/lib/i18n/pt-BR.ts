@@ -27,6 +27,7 @@ export const ptBR: Messages = {
     play: "Jogar",
     running: "Em execução",
     stop: "Parar",
+    stopping: "Salvando e saindo…",
     delete: "Excluir",
     open: "Abrir",
     openFolder: "Abrir pasta",

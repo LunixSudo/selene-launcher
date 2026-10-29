@@ -27,6 +27,7 @@ export const en: Messages = {
     play: "Play",
     running: "Running",
     stop: "Stop",
+    stopping: "Saving and quitting…",
     delete: "Delete",
     open: "Open",
     openFolder: "Open folder",

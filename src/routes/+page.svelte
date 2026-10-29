@@ -20,6 +20,7 @@
     library,
     loadInstances,
     play,
+    stop,
   } from "$lib/state/instances.svelte";
   import { SORT_ORDERS, type SortOrder, settings } from "$lib/state/settings.svelte";
 
@@ -43,7 +44,7 @@
         ? {
             label: t("instances.stop"),
             icon: UI_ICONS.stop,
-            action: () => api.stopInstance(instance.id),
+            action: () => stop(instance.id),
           }
         : {
             label: t("instances.play"),

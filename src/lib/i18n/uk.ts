@@ -27,6 +27,7 @@ export const uk: Messages = {
     play: "Грати",
     running: "Запущено",
     stop: "Зупинити",
+    stopping: "Збереження й вихід…",
     delete: "Видалити",
     open: "Відкрити",
     openFolder: "Відкрити папку",

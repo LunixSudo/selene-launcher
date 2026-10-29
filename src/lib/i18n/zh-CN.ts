@@ -27,6 +27,7 @@ export const zhCN: Messages = {
     play: "开始游戏",
     running: "运行中",
     stop: "停止",
+    stopping: "正在保存并退出…",
     delete: "删除",
     open: "打开",
     openFolder: "打开文件夹",

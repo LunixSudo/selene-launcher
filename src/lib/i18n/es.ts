@@ -27,6 +27,7 @@ export const es: Messages = {
     play: "Jugar",
     running: "En ejecución",
     stop: "Detener",
+    stopping: "Guardando y saliendo…",
     delete: "Eliminar",
     open: "Abrir",
     openFolder: "Abrir carpeta",

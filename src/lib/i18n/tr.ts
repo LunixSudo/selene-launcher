@@ -27,6 +27,7 @@ export const tr: Messages = {
     play: "Oyna",
     running: "Çalışıyor",
     stop: "Durdur",
+    stopping: "Kaydediliyor ve çıkılıyor…",
     delete: "Sil",
     open: "Aç",
     openFolder: "Klasörü aç",

@@ -17,7 +17,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { scrollFade } from "$lib/scroll-fade";
-  import { activity, library, loadInstances, play } from "$lib/state/instances.svelte";
+  import { activity, library, loadInstances, play, stop } from "$lib/state/instances.svelte";
 
   type Tab = "content" | "catalog" | "worlds" | "servers" | "screenshots" | "settings" | "logs";
 
@@ -32,6 +32,7 @@
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
   const launch = $derived(instance ? library.launches[instance.id] : undefined);
   const running = $derived(launch?.status === "running");
+  const stopping = $derived(launch?.status === "running" && launch.stopping === true);
   const busy = $derived(instance && !running ? activity(instance.id) : null);
   const COMMON_TABS: Tab[] = ["worlds", "servers", "screenshots", "settings", "logs"];
 
@@ -100,11 +101,17 @@
           type="button"
           class="play"
           class:running
-          disabled={busy !== null}
+          disabled={busy !== null || stopping}
           style:--progress={busy ? `${busy.percent}%` : "0%"}
-          onclick={() => (running ? api.stopInstance(instance.id) : play(instance.id))}
+          onclick={() => (running ? stop(instance.id) : play(instance.id))}
         >
-          <span>{running ? t("instances.stop") : (busy?.label ?? t("instances.play"))}</span>
+          <span>
+            {#if running}
+              {stopping ? t("instances.stopping") : t("instances.stop")}
+            {:else}
+              {busy?.label ?? t("instances.play")}
+            {/if}
+          </span>
         </button>
       </div>
     </header>
