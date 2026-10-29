@@ -143,6 +143,26 @@ All notable changes to this project are documented here. The format follows
 
 - The worlds, servers and screenshots tabs no longer reread their folders on every download
   progress update.
+- The update notice checks again only when the game version or loader changes, not after every
+  settings change.
+- An instance folder copied by hand shows up as its own instance, and two instances created at
+  once never get the same folder.
+- Loading more catalog results no longer breaks when a project shifts between pages.
+- CurseForge modpacks put resource packs and shaders in their own folders and honour a custom
+  overrides folder.
+- Two installs downloading the same file at once no longer write into each other, and failed
+  downloads leave no partial files.
+- A Forge or NeoForge installer that could not be checked is fetched again instead of reused.
+- Clicking a shortcut of a game that is already running keeps its Stop button.
+- The console no longer shows lines twice when opened while the game prints.
+- Closing the window during a plain download quits the launcher instead of leaving it hidden.
+- Modrinth packs with extra dependency keys import the same way every time.
+- A dependency pinned to a version for another game version or loader is replaced with one that
+  fits.
+- A loader installed while its checksums were unreachable starts offline too.
+- When Java comes from Temurin or Zulu, later launches reuse it without asking the network.
+- CurseForge file lists are sorted newest first, also when they come from the mirror.
+- CurseForge fingerprints are kept, so content lists no longer reread every mod.
 
 - The current skin and capes show on the skins page: Mojang's texture links are loaded over
   HTTPS.
