@@ -17,7 +17,10 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
   runtime is downloaded for each version. Fabric, Quilt, Forge and NeoForge are supported;
   Forge and NeoForge run their own installer in the background, without any windows. A new
   instance downloads all of it right away, so the first start is quick. If a site is down,
-  the launcher falls back to the official mirrors of Mojang, Fabric and Forge. An installed
+  the launcher falls back to the official mirrors of Mojang, Fabric and Forge, and then to
+  [BMCLAPI](https://bmclapidoc.bangbang93.com/), with checksums from the official index. A
+  download in progress can be cancelled by deleting the instance or changing its version, and
+  a new game starts in the system language. An installed
   game starts without hashing its files again, and without a connection too: an account that
   has signed in before can play single player offline, as in the official launcher.
 - **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts drawn
@@ -38,7 +41,9 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
   and a row of capes under the character to try on.
 - **Launcher.** Updates from GitHub Releases checked against SHA-256, light and dark themes
   with Mica and glass styles, optional live backgrounds, animations and click sounds (also
-  per instance), Russian and English. Data lives in `%APPDATA%\SeleneLauncher`,
+  per instance), a pixel font in the style of Minecraft, and the interface in Russian and
+  English plus machine translations into Ukrainian, German, Spanish, Brazilian Portuguese,
+  Polish, Turkish and Chinese, picked from the system language. Data lives in `%APPDATA%\SeleneLauncher`,
   or next to the executable in portable mode: put an empty `portable.txt` beside it.
 
 ## Download

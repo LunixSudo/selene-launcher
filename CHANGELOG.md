@@ -28,10 +28,10 @@ All notable changes to this project are documented here. The format follows
   title bar. The character can idle, walk, run, fly with elytra or wave, and the capes sit in
   one row under it: the mouse wheel scrolls them and hovering one tries it on.
 - Saving the skin the account wears now into the skin library.
-- Effects in the settings, all off by default: ten live backgrounds drawn on the GPU (glowing
+- Effects in the settings, all off by default: seven live backgrounds drawn on the GPU (glowing
   rings that run through the colours, prism light rays with drifting dust, northern lights,
-  liquid glass, out-of-focus lights, a nebula, silky waves, a moon whose phase slowly changes
-  and a starry sky with shooting stars), smooth page, card and dialog animations with a
+  liquid glass, out-of-focus lights, silky waves and a starry sky with shooting stars that fly
+  in from the edge at different speeds, sometimes several at once), smooth page, card and dialog animations with a
   glowing Play button, and a soft click sound like the iOS keyboard. The settings preview each
   background as it really looks, and each instance can use the launcher's background, its own
   animated cover or any of the live ones.
@@ -73,6 +73,20 @@ All notable changes to this project are documented here. The format follows
 - When Mojang, Fabric or Forge cannot be reached, downloads move on to the official mirrors
   those projects list. Forge and NeoForge libraries are fetched this way before their
   installer runs.
+- When the official hosts and their mirrors all fail, downloads and version lists come from
+  BMCLAPI, the mirror HMCL and PCL use. Files are still checked against the checksums of the
+  official index, and a host that failed is skipped for five minutes so a blocked one does not
+  cost a timeout per file. The privacy policy lists it.
+- Deleting an instance or changing its game version while its game, Java or loader is
+  downloading cancels the download. Mods, resource packs and shaders can be updated meanwhile.
+- Changing the game version can also update resource packs and shaders for the new version
+  and starts downloading it right away.
+- The game starts in the system language the first time, unless the instance or modpack
+  already has its own settings.
+- A pixel font in the style of Minecraft (Pixelify Sans).
+- Machine translations of the interface into Ukrainian, German, Spanish, Brazilian Portuguese,
+  Polish, Turkish and Simplified Chinese. The language follows the system on first start.
+- The Back link in the settings and on the skins page returns to the page you came from.
 
 ### Changed
 
@@ -125,7 +139,10 @@ All notable changes to this project are documented here. The format follows
   "too many requests" gets its own message.
 - The 3D model turns smoothly and fits small screens, so the capes under it stay in view.
 - Live backgrounds no longer show colour streaks over Mica and the solid style, and hovering an
-  instance no longer draws a square around it on some graphics cards.
+  instance no longer draws a square around it on some graphics cards. Over the solid style the
+  rings are drawn opaque and in full precision, which removes darker rectangles around text on
+  older GPUs, and the seam on their left side is gone.
+- Forge build lists no longer fail when Forge's promotions file cannot be loaded.
 - Loader versions, NeoForge's especially, load more reliably: a failed request is tried
   again, then the list saved last time is shown.
 - Hovering buttons in the solid style is visible in the dark theme.
