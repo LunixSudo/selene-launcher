@@ -1,5 +1,5 @@
 //! The Modrinth modpack format: a zip with `modrinth.index.json` listing files to download,
-//! plus `overrides/` with files copied as they are. Prism and the Modrinth app read it too.
+//! plus `overrides/` with files copied as they are.
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -81,22 +81,27 @@ impl PackIndex {
             .ok_or_else(|| Error::InvalidPack("no minecraft version".into()))
     }
 
+    /// The pack's mod loader. A known loader wins over keys this launcher does not know.
     pub fn loader(&self) -> Result<Option<LoaderVersion>> {
-        for (name, version) in &self.dependencies {
-            let loader = match name.as_str() {
-                "minecraft" => continue,
-                "fabric-loader" => Loader::Fabric,
-                "quilt-loader" => Loader::Quilt,
-                "forge" => Loader::Forge,
-                "neoforge" => Loader::NeoForge,
-                other => return Err(Error::UnsupportedLoader(other.to_owned())),
-            };
+        const LOADERS: [(&str, Loader); 4] = [
+            ("fabric-loader", Loader::Fabric),
+            ("quilt-loader", Loader::Quilt),
+            ("forge", Loader::Forge),
+            ("neoforge", Loader::NeoForge),
+        ];
+        if let Some((loader, version)) = LOADERS
+            .iter()
+            .find_map(|(name, loader)| Some((*loader, self.dependencies.get(*name)?)))
+        {
             return Ok(Some(LoaderVersion {
                 loader,
                 version: version.clone(),
             }));
         }
-        Ok(None)
+        match self.dependencies.keys().find(|name| *name != "minecraft") {
+            Some(other) => Err(Error::UnsupportedLoader(other.clone())),
+            None => Ok(None),
+        }
     }
 }
 
