@@ -102,9 +102,9 @@ pub async fn releases(
     match loader {
         Loader::NeoForge if game_version == "1.20.1" => neoforge_1_20_1_releases(client).await,
         Loader::NeoForge => {
-            let list: NeoForgeVersions = http::get_json(client, NEOFORGE_VERSIONS_URL).await?;
-            Ok(list
-                .versions
+            let versions =
+                neoforge_versions(client, NEOFORGE_VERSIONS_URL, NEOFORGE_MAVEN_URL).await?;
+            Ok(versions
                 .into_iter()
                 .rev()
                 .filter(|version| neoforge_game_version(version).as_deref() == Some(game_version))
@@ -122,12 +122,16 @@ pub async fn releases(
 /// Builds that share a number with a Forge build are left out: both would install into the
 /// same `versions/1.20.1-forge-<build>` folder.
 async fn neoforge_1_20_1_releases(client: &Client) -> Result<Vec<LoaderRelease>> {
-    let list: NeoForgeVersions = http::get_json(client, NEOFORGE_1_20_1_VERSIONS_URL).await?;
+    let versions = neoforge_versions(
+        client,
+        NEOFORGE_1_20_1_VERSIONS_URL,
+        NEOFORGE_1_20_1_MAVEN_URL,
+    )
+    .await?;
     let mut forge: HashMap<String, Vec<String>> =
         http::get_json(client, FORGE_METADATA_URL).await?;
     let forge = forge.remove("1.20.1").unwrap_or_default();
-    Ok(list
-        .versions
+    Ok(versions
         .into_iter()
         .rev()
         .filter(|version| version.starts_with("1.20.1-") && !forge.contains(version))
@@ -146,10 +150,14 @@ async fn forge_releases(client: &Client, game_version: &str) -> Result<Vec<Loade
     let Some(builds) = metadata.remove(game_version) else {
         return Ok(Vec::new());
     };
-    let promotions: ForgePromotions = http::get_json(client, FORGE_PROMOTIONS_URL).await?;
-    let recommended = promotions
-        .promos
-        .get(&format!("{game_version}-recommended"));
+    // Only marks the recommended build, so the list does without it when it cannot be had.
+    let promotions: Option<ForgePromotions> =
+        http::get_json(client, FORGE_PROMOTIONS_URL).await.ok();
+    let recommended = promotions.as_ref().and_then(|promotions| {
+        promotions
+            .promos
+            .get(&format!("{game_version}-recommended"))
+    });
 
     let prefix = format!("{game_version}-");
     let builds: Vec<String> = builds
@@ -167,6 +175,36 @@ async fn forge_releases(client: &Client, game_version: &str) -> Result<Vec<Loade
             version,
         })
         .collect())
+}
+
+/// All builds, oldest first. The version API has no copy anywhere else, so when it fails
+/// the list comes from the Maven metadata, which BMCLAPI has.
+async fn neoforge_versions(client: &Client, api_url: &str, maven_url: &str) -> Result<Vec<String>> {
+    let err = match http::get_json::<NeoForgeVersions>(client, api_url).await {
+        Ok(list) => return Ok(list.versions),
+        Err(err) => err,
+    };
+    let metadata: Result<String> = async {
+        let url = format!("{maven_url}/maven-metadata.xml");
+        Ok(http::get(client, &url)
+            .await?
+            .error_for_status()?
+            .text()
+            .await?)
+    }
+    .await;
+    // The API's own error says more than one about the fallback.
+    metadata.map(|text| maven_versions(&text)).map_err(|_| err)
+}
+
+/// The `<version>` entries of a `maven-metadata.xml`, in the order listed.
+fn maven_versions(metadata: &str) -> Vec<String> {
+    metadata
+        .split("<version>")
+        .skip(1)
+        .filter_map(|rest| rest.split_once("</version>"))
+        .map(|(version, _)| version.trim().to_owned())
+        .collect()
 }
 
 /// NeoForge numbers builds after the game: `21.1.77` is for 1.21.1, `21.0.5` for 1.21, and
@@ -443,6 +481,13 @@ impl From<InstalledVersion> for ResolvedPatch {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_maven_metadata() {
+        let metadata = "<metadata><versioning><latest>21.1.2</latest><versions>\
+            <version>21.1.1</version><version>21.1.2</version></versions></versioning></metadata>";
+        assert_eq!(maven_versions(metadata), ["21.1.1", "21.1.2"]);
+    }
 
     #[test]
     fn maps_neoforge_builds_to_game_versions() {

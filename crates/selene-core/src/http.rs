@@ -1,4 +1,5 @@
-use std::time::Duration;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use reqwest::{Client, Response, StatusCode};
 use serde::de::DeserializeOwned;
@@ -40,6 +41,32 @@ const MIRRORS: &[&[&str]] = &[
     ],
 ];
 
+/// BMCLAPI, the copy of the official hosts that HMCL and PCL use. It is often reachable where
+/// they are not, so it is asked once every official host has failed. Files listed with a
+/// checksum are still checked against the one from the official index.
+const BMCLAPI: &str = "https://bmclapi2.bangbang93.com";
+const BMCLAPI_PATHS: &[(&str, &str)] = &[
+    ("https://piston-meta.mojang.com/", "/"),
+    ("https://launchermeta.mojang.com/", "/"),
+    ("https://piston-data.mojang.com/", "/"),
+    ("https://launcher.mojang.com/", "/"),
+    ("https://resources.download.minecraft.net/", "/assets/"),
+    ("https://libraries.minecraft.net/", "/maven/"),
+    ("https://meta.fabricmc.net/", "/fabric-meta/"),
+    ("https://maven.fabricmc.net/", "/maven/"),
+    ("https://meta.quiltmc.org/", "/quilt-meta/"),
+    ("https://maven.quiltmc.org/repository/release/", "/maven/"),
+    ("https://maven.minecraftforge.net/", "/maven/"),
+    ("https://files.minecraftforge.net/maven/", "/maven/"),
+    ("https://files.minecraftforge.net/", "/maven/"),
+    ("https://maven.neoforged.net/releases/", "/maven/"),
+];
+
+/// A host that failed is skipped for a while, so a blocked one does not cost a timeout for
+/// every file of a download.
+const HOST_RETRY_AFTER: Duration = Duration::from_secs(5 * 60);
+static DOWN_HOSTS: Mutex<Vec<(String, Instant)>> = Mutex::new(Vec::new());
+
 pub fn client() -> Result<Client> {
     let client = Client::builder()
         .user_agent(USER_AGENT)
@@ -66,17 +93,70 @@ pub fn mirrors_of(url: &str) -> Vec<String> {
         .collect()
 }
 
-/// Sends a GET to `url`, moving on to its mirrors while the host is unreachable or failing.
-/// Any answer that says something about the file itself, like 404, is returned as is.
+/// The same file as `url` on BMCLAPI, for hosts it copies.
+pub fn bmclapi_of(url: &str) -> Option<String> {
+    let mirrors = mirrors_of(url);
+    std::iter::once(url)
+        .chain(mirrors.iter().map(String::as_str))
+        .find_map(|url| {
+            BMCLAPI_PATHS.iter().find_map(|(host, path)| {
+                url.strip_prefix(host)
+                    .map(|rest| format!("{BMCLAPI}{path}{rest}"))
+            })
+        })
+}
+
+/// Sends a GET to `url`, moving on to its mirrors and then to BMCLAPI while the host is
+/// unreachable or failing. Any answer that says something about the file itself, like 404,
+/// is returned as is.
 pub async fn get(client: &Client, url: &str) -> Result<Response> {
-    let mut result = client.get(url).send().await;
-    for mirror in mirrors_of(url) {
-        if matches!(&result, Ok(response) if !host_failed(response.status())) {
-            break;
+    let mut sources = vec![url.to_owned()];
+    sources.extend(mirrors_of(url));
+    sources.extend(bmclapi_of(url));
+    // Hosts that failed lately go last, still there in case the others fail too.
+    sources.sort_by_key(|source| is_down(source));
+
+    let mut last = None;
+    for source in &sources {
+        let response = client.get(source).send().await;
+        match &response {
+            Ok(answer) if !host_failed(answer.status()) => {
+                // BMCLAPI does not copy everything; a file it lacks may still be upstream.
+                if !(source.starts_with(BMCLAPI) && answer.status() == StatusCode::NOT_FOUND) {
+                    return Ok(response?);
+                }
+            }
+            _ => mark_down(source),
         }
-        result = client.get(&mirror).send().await;
+        last = Some(response);
     }
-    Ok(result?)
+    match last {
+        Some(response) => Ok(response?),
+        None => Ok(client.get(url).send().await?),
+    }
+}
+
+fn host_of(url: &str) -> &str {
+    let rest = url.split_once("://").map_or(url, |(_, rest)| rest);
+    rest.split('/').next().unwrap_or(rest)
+}
+
+fn is_down(url: &str) -> bool {
+    let host = host_of(url);
+    let mut down = DOWN_HOSTS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    down.retain(|(_, since)| since.elapsed() < HOST_RETRY_AFTER);
+    down.iter().any(|(down, _)| down == host)
+}
+
+fn mark_down(url: &str) {
+    let host = host_of(url).to_owned();
+    let mut down = DOWN_HOSTS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    down.retain(|(down, _)| *down != host);
+    down.push((host, Instant::now()));
 }
 
 pub async fn get_json<T: DeserializeOwned>(client: &Client, url: &str) -> Result<T> {
@@ -113,5 +193,23 @@ mod tests {
             mirrors_of("https://cdn.modrinth.com/a.jar"),
             Vec::<String>::new()
         );
+    }
+
+    #[test]
+    fn finds_files_on_bmclapi() {
+        assert_eq!(
+            bmclapi_of("https://maven.neoforged.net/releases/net/neoforged/neoforge/a.jar")
+                .as_deref(),
+            Some("https://bmclapi2.bangbang93.com/maven/net/neoforged/neoforge/a.jar")
+        );
+        assert_eq!(
+            bmclapi_of("https://resources.download.minecraft.net/ab/abcd").as_deref(),
+            Some("https://bmclapi2.bangbang93.com/assets/ab/abcd")
+        );
+        assert_eq!(
+            bmclapi_of("https://maven2.fabricmc.net/net/fabricmc/a.jar").as_deref(),
+            Some("https://bmclapi2.bangbang93.com/maven/net/fabricmc/a.jar")
+        );
+        assert_eq!(bmclapi_of("https://cdn.modrinth.com/a.jar"), None);
     }
 }

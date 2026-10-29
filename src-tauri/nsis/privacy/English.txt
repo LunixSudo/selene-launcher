@@ -1,6 +1,6 @@
 ﻿Selene Launcher Privacy Policy
 
-Effective October 28, 2026.
+Effective October 29, 2026.
 
 Selene Launcher is a free, open-source launcher for Minecraft: Java Edition. It has no servers of its own: its developers do not receive or store any data about you.
 
@@ -16,6 +16,7 @@ What the launcher connects to
 - Microsoft and Xbox Live: signing in. Sent: sign-in tokens.
 - Mojang and Minecraft Services: checking you own the game, downloading the game and Java, skins and capes. Sent: your Minecraft token, the skin you choose.
 - Fabric, Quilt, Forge and NeoForge: mod loaders, the list of builds and the loader itself, which Forge and NeoForge download with their own installer. When a site cannot be reached, the same files come from the official mirrors the project lists, for Forge that is CreeperHost. Sent: the game version.
+- BMCLAPI (bmclapi2.bangbang93.com, run by bangbang93): a spare copy of the game, Java and loader files, used only when the official servers and their mirrors cannot be reached. Files are checked against the official checksums whenever those can be had. Sent: the address of the requested file.
 - Modrinth and CurseForge: the catalog, installing and updating mods. Sent: search queries, and checksums of installed files to recognise them and find updates.
 - GitHub: checking for launcher updates. Sent: nothing beyond the request itself.
 - Discord (the app on your computer): the "Playing Selene Launcher" status. Sent: the game version and instance name. Can be turned off in settings.
