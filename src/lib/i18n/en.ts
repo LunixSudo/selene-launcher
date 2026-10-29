@@ -49,7 +49,6 @@ export const en: Messages = {
     shortcut: "Desktop shortcut",
     duplicate: "Duplicate",
     copyName: "{name} (copy)",
-    continue: "Continue last world",
   },
   instance: {
     back: "Instances",
@@ -278,8 +277,9 @@ export const en: Messages = {
   worlds: {
     empty: "No worlds yet",
     emptyHint: "Create a world in the game and it will show up here.",
-    play: "Play",
-    continue: "Continue “{name}”",
+    rename: "Rename",
+    renameTitle: "Rename world",
+    name: "Name",
     openFolder: "Open folder",
     backup: "Back up",
     backingUp: "Backing up…",
@@ -293,7 +293,6 @@ export const en: Messages = {
       spectator: "Spectator",
       hardcore: "Hardcore",
     },
-    noQuickPlay: "Opening a world straight from the launcher works on 1.20 and newer.",
   },
   servers: {
     empty: "No servers yet",

@@ -1,39 +1,38 @@
 use std::path::{Path, PathBuf};
 
 use selene_core::saves::{self, Screenshot, Server, World};
-use serde::Serialize;
 use tauri::{AppHandle, State};
 use tauri_plugin_opener::OpenerExt;
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WorldList {
-    worlds: Vec<World>,
-    /// Whether this game version can open a world or server right after it starts.
-    quick_play: bool,
-}
-
 #[tauri::command]
 pub async fn worlds(
     launcher: State<'_, Launcher>,
     instance_id: String,
-) -> CommandResult<WorldList> {
-    let instance = launcher
-        .instances
-        .get(&instance_id)
-        .await
-        .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
+) -> CommandResult<Vec<World>> {
     let game_dir = launcher.game_dir(&instance_id)?;
-    let worlds = blocking(move || saves::worlds(&game_dir)).await?;
-    // An offline launch has no manifest; the server list still works without Quick Play.
-    let quick_play = launcher
-        .manifest()
-        .await
-        .is_ok_and(|manifest| manifest.supports_quick_play(&instance.version));
-    Ok(WorldList { worlds, quick_play })
+    blocking(move || saves::worlds(&game_dir)).await
+}
+
+#[tauri::command]
+pub async fn rename_world(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+    folder: String,
+    name: String,
+) -> CommandResult<()> {
+    // The game rewrites level.dat while the world is open.
+    if launcher.is_running(&instance_id) {
+        return Err(CommandError::AlreadyRunning(instance_id));
+    }
+    let name = name.trim().to_owned();
+    if name.is_empty() {
+        return Ok(());
+    }
+    let game_dir = launcher.game_dir(&instance_id)?;
+    blocking(move || saves::rename_world(&game_dir, &folder, &name)).await
 }
 
 #[tauri::command]

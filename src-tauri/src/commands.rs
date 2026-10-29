@@ -22,12 +22,12 @@ use selene_core::crash::{self, CrashReport};
 use selene_core::download::Progress;
 use selene_core::game::{self, Installed, Stage};
 use selene_core::instance::{Instance, WindowSize};
-use selene_core::launch::{self, LaunchAccount, LaunchOptions, QuickPlay};
+use selene_core::launch::{self, LaunchAccount, LaunchOptions};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
 use selene_core::memory;
 use selene_core::mods::{self, ContentKind};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
 use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
@@ -58,23 +58,6 @@ pub struct MemoryInfo {
     total: u64,
     max: u32,
     recommended: u32,
-}
-
-/// Where the game should go right after it starts.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "kind", content = "value", rename_all = "camelCase")]
-pub enum LaunchTarget {
-    World(String),
-    Server(String),
-}
-
-impl From<LaunchTarget> for QuickPlay {
-    fn from(target: LaunchTarget) -> Self {
-        match target {
-            LaunchTarget::World(folder) => Self::Singleplayer(folder),
-            LaunchTarget::Server(address) => Self::Multiplayer(address),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -299,6 +282,12 @@ pub fn take_missed_crashes(launcher: State<'_, Launcher>) -> HashMap<String, Cra
     launcher.take_missed_crashes()
 }
 
+/// Games started before the launcher window was opened again.
+#[tauri::command]
+pub fn running_games(launcher: State<'_, Launcher>) -> Vec<String> {
+    launcher.running_games()
+}
+
 /// The instance a desktop shortcut asked to start, handed out once.
 #[tauri::command]
 pub fn take_startup_launch(launcher: State<'_, Launcher>) -> Option<String> {
@@ -337,7 +326,7 @@ pub async fn launch_instance(
     app: AppHandle,
     launcher: State<'_, Launcher>,
     id: String,
-    target: Option<LaunchTarget>,
+    server: Option<String>,
 ) -> CommandResult<()> {
     let instance = launcher
         .instances
@@ -349,7 +338,7 @@ pub async fn launch_instance(
         return Err(CommandError::AlreadyRunning(id));
     }
 
-    let result = start_game(&app, &launcher, instance, account, target).await;
+    let result = start_game(&app, &launcher, instance, account, server).await;
     if result.is_err() {
         launcher.stop_running(&id);
     }
@@ -391,7 +380,7 @@ async fn start_game(
     launcher: &Launcher,
     instance: Instance,
     account: LaunchAccount,
-    target: Option<LaunchTarget>,
+    server: Option<String>,
 ) -> CommandResult<()> {
     if launcher.config.get().auto_update_mods && instance.loader.is_some() {
         let _ = app.emit(
@@ -433,7 +422,7 @@ async fn start_game(
         },
         resolution: instance.window.map(|size| (size.width, size.height)),
         fullscreen: instance.fullscreen,
-        quick_play: target.map(QuickPlay::from),
+        server,
         extra_jvm_args: instance
             .java_args
             .split_whitespace()

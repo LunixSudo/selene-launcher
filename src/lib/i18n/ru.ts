@@ -47,7 +47,6 @@ export const ru = {
     shortcut: "Ярлык на рабочий стол",
     duplicate: "Создать копию",
     copyName: "{name} (копия)",
-    continue: "Продолжить последний мир",
   },
   instance: {
     back: "Сборки",
@@ -276,8 +275,9 @@ export const ru = {
   worlds: {
     empty: "Миров пока нет",
     emptyHint: "Создайте мир в игре, и он появится здесь.",
-    play: "Играть",
-    continue: "Продолжить «{name}»",
+    rename: "Переименовать",
+    renameTitle: "Переименовать мир",
+    name: "Название",
     openFolder: "Открыть папку",
     backup: "Резервная копия",
     backingUp: "Копирование…",
@@ -291,7 +291,6 @@ export const ru = {
       spectator: "Наблюдатель",
       hardcore: "Хардкор",
     },
-    noQuickPlay: "Сразу открыть мир из лаунчера можно в версиях 1.20 и новее.",
   },
   servers: {
     empty: "Серверов пока нет",

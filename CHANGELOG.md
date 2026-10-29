@@ -19,7 +19,8 @@ All notable changes to this project are documented here. The format follows
 - Warnings in the mod list when a mod needs another one or conflicts with one.
 - Changing an instance's game version, with a check of which mods have a matching build.
 - Modpack import and export (`.mrpack` and CurseForge `.zip`).
-- Worlds, servers and screenshots tabs; joining a world or server straight from the launcher.
+- Worlds, servers and screenshots tabs; renaming worlds; joining a server straight from the
+  launcher.
 - Game console, crash analysis, play time and a button that stops a hung game.
 - Search, sorting and groups on the home screen; copying an instance.
 - Desktop shortcuts that start an instance.
@@ -98,6 +99,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- The current skin and capes show on the skins page: Mojang's texture links are loaded over
+  HTTPS.
+- Opening the launcher again while a game runs that it started shows the Stop button.
 - Loader versions, NeoForge's especially, load more reliably: a failed request is tried
   again, then the list saved last time is shown.
 - Hovering buttons in the solid style is visible in the dark theme.

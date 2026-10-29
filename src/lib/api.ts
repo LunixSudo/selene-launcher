@@ -44,8 +44,6 @@ export interface WindowSize {
   height: number;
 }
 
-export type LaunchTarget = { kind: "world"; value: string } | { kind: "server"; value: string };
-
 export type GameMode = "survival" | "creative" | "adventure" | "spectator" | "hardcore";
 
 export interface World {
@@ -54,11 +52,6 @@ export interface World {
   lastPlayed: string | null;
   gameMode: GameMode | null;
   icon: string | null;
-}
-
-export interface WorldList {
-  worlds: World[];
-  quickPlay: boolean;
 }
 
 export interface Server {
@@ -349,6 +342,7 @@ export const api = {
   createShortcut: (id: string, icon: number[][]) => invoke<void>("create_shortcut", { id, icon }),
   updateShortcut: (id: string, icon: number[][]) => invoke<void>("update_shortcut", { id, icon }),
   takeStartupLaunch: () => invoke<string | null>("take_startup_launch"),
+  runningGames: () => invoke<string[]>("running_games"),
   takeMissedCrashes: () => invoke<Record<string, CrashReport>>("take_missed_crashes"),
   checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),
   installUpdate: () => invoke<void>("install_update"),
@@ -373,10 +367,12 @@ export const api = {
   canUninstall: () => invoke<boolean>("can_uninstall"),
   uninstallLauncher: () => invoke<void>("uninstall_launcher"),
   prepareInstance: (id: string) => invoke<void>("prepare_instance", { id }),
-  launchInstance: (id: string, target: LaunchTarget | null = null) =>
-    invoke<void>("launch_instance", { id, target }),
+  launchInstance: (id: string, server: string | null = null) =>
+    invoke<void>("launch_instance", { id, server }),
   stopInstance: (id: string) => invoke<boolean>("stop_instance", { id }),
-  worlds: (instanceId: string) => invoke<WorldList>("worlds", { instanceId }),
+  worlds: (instanceId: string) => invoke<World[]>("worlds", { instanceId }),
+  renameWorld: (instanceId: string, folder: string, name: string) =>
+    invoke<void>("rename_world", { instanceId, folder, name }),
   openWorldFolder: (instanceId: string, folder: string) =>
     invoke<void>("open_world_folder", { instanceId, folder }),
   backUpWorld: (instanceId: string, folder: string) =>

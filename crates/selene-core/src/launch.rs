@@ -30,7 +30,8 @@ pub struct LaunchOptions {
     pub max_memory_mb: u32,
     pub resolution: Option<(u32, u32)>,
     pub fullscreen: bool,
-    pub quick_play: Option<QuickPlay>,
+    /// A server to join right after the game starts.
+    pub server: Option<String>,
     pub extra_jvm_args: Vec<String>,
 }
 
@@ -40,12 +41,6 @@ pub struct LaunchAccount {
     pub uuid: String,
     pub access_token: String,
     pub xuid: Option<String>,
-}
-
-#[derive(Debug, Clone)]
-pub enum QuickPlay {
-    Singleplayer(String),
-    Multiplayer(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,14 +55,7 @@ impl LaunchOptions {
         Features {
             has_custom_resolution: Some(self.resolution.is_some()),
             has_quick_plays_support: Some(false),
-            is_quick_play_singleplayer: Some(matches!(
-                self.quick_play,
-                Some(QuickPlay::Singleplayer(_))
-            )),
-            is_quick_play_multiplayer: Some(matches!(
-                self.quick_play,
-                Some(QuickPlay::Multiplayer(_))
-            )),
+            is_quick_play_multiplayer: Some(self.server.is_some()),
             ..Features::default()
         }
     }
@@ -119,7 +107,7 @@ fn build_command_for(
             ]);
         }
     }
-    if let Some(QuickPlay::Multiplayer(address)) = &options.quick_play
+    if let Some(address) = &options.server
         && !args.iter().any(|arg| arg == "--quickPlayMultiplayer")
     {
         args.extend(legacy_server_args(address));
@@ -237,11 +225,6 @@ fn variables(
 ) -> HashMap<&'static str, String> {
     let account = &options.account;
     let (width, height) = options.resolution.unwrap_or((854, 480));
-    let (singleplayer, multiplayer) = match &options.quick_play {
-        Some(QuickPlay::Singleplayer(world)) => (world.clone(), String::new()),
-        Some(QuickPlay::Multiplayer(address)) => (String::new(), address.clone()),
-        None => (String::new(), String::new()),
-    };
     let display = |path: &Path| path.display().to_string();
 
     HashMap::from([
@@ -270,8 +253,11 @@ fn variables(
         ("launcher_version", env!("CARGO_PKG_VERSION").into()),
         ("resolution_width", width.to_string()),
         ("resolution_height", height.to_string()),
-        ("quickPlaySingleplayer", singleplayer),
-        ("quickPlayMultiplayer", multiplayer),
+        ("quickPlaySingleplayer", String::new()),
+        (
+            "quickPlayMultiplayer",
+            options.server.clone().unwrap_or_default(),
+        ),
         ("quickPlayPath", String::new()),
         ("quickPlayRealms", String::new()),
     ])
@@ -357,7 +343,7 @@ mod tests {
             max_memory_mb: 4096,
             resolution: None,
             fullscreen: false,
-            quick_play: None,
+            server: None,
             extra_jvm_args: Vec::new(),
         }
     }
@@ -411,7 +397,7 @@ mod tests {
     #[test]
     fn joins_servers_on_old_versions() {
         let mut options = options();
-        options.quick_play = Some(QuickPlay::Multiplayer("mc.example.com:25570".into()));
+        options.server = Some("mc.example.com:25570".into());
         let args = command(LEGACY, &options);
 
         assert_eq!(
@@ -432,7 +418,7 @@ mod tests {
     fn adds_optional_arguments_when_enabled() {
         let mut options = options();
         options.resolution = Some((1280, 720));
-        options.quick_play = Some(QuickPlay::Multiplayer("mc.example.com".into()));
+        options.server = Some("mc.example.com".into());
         let args = command(MODERN, &options);
 
         let tail = &args[args.len() - 6..];

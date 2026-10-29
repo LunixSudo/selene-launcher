@@ -113,6 +113,15 @@ impl Launcher {
         self.running_map().contains_key(id)
     }
 
+    /// Instances whose game process is up, not just being prepared.
+    pub fn running_games(&self) -> Vec<String> {
+        self.running_map()
+            .iter()
+            .filter(|(_, stop)| stop.is_some())
+            .map(|(id, _)| id.clone())
+            .collect()
+    }
+
     pub fn any_running(&self) -> bool {
         !self.running_map().is_empty()
     }

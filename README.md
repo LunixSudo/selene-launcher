@@ -32,8 +32,8 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
   Data packs go into the world you pick.
 - **Modpacks.** Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the
   window.
-- **Playing.** Worlds, servers and screenshots per instance, joining a world or server in one
-  click, a game console, crash analysis, play time and a Discord status.
+- **Playing.** Worlds (with renaming and backups), servers and screenshots per instance,
+  joining a server in one click, a game console, crash analysis, play time and a Discord status.
 - **Skins.** A 3D preview, a library of saved skins and cape selection.
 - **Launcher.** Updates from GitHub Releases checked against SHA-256, light and dark themes
   with Mica and glass styles, Russian and English. Data lives in `%APPDATA%\SeleneLauncher`,

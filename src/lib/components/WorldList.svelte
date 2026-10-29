@@ -1,21 +1,25 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
-  import { api, type World, type WorldList } from "$lib/api";
+  import { api, type World } from "$lib/api";
   import { describeError } from "$lib/errors";
   import { relativeTime } from "$lib/format";
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
-  import { library, play } from "$lib/state/instances.svelte";
+  import { library } from "$lib/state/instances.svelte";
   import { tooltip } from "$lib/tooltip";
   import ConfirmDialog from "./ConfirmDialog.svelte";
+  import Dialog from "./Dialog.svelte";
 
   let { instanceId }: { instanceId: string } = $props();
 
-  let list = $state<WorldList | null>(null);
+  let worlds = $state<World[] | null>(null);
   let error = $state<string | null>(null);
   let backingUp = $state<string | null>(null);
   let deleting = $state<World | null>(null);
   let confirming = $state(false);
+  let renaming = $state<World | null>(null);
+  let renameOpen = $state(false);
+  let newName = $state("");
 
   const launch = $derived(library.launches[instanceId]);
   const busy = $derived(launch !== undefined && launch.status !== "failed");
@@ -29,7 +33,7 @@
 
   async function load() {
     try {
-      list = await api.worlds(instanceId);
+      worlds = await api.worlds(instanceId);
     } catch (err) {
       error = describeError(err);
     }
@@ -57,6 +61,26 @@
     await load();
   }
 
+  function askRename(world: World) {
+    renaming = world;
+    newName = world.name;
+    renameOpen = true;
+  }
+
+  async function rename() {
+    if (!renaming) {
+      return;
+    }
+    error = null;
+    try {
+      await api.renameWorld(instanceId, renaming.folder, newName);
+      renameOpen = false;
+      await load();
+    } catch (err) {
+      error = describeError(err);
+    }
+  }
+
   function details(world: World): string {
     const parts = [];
     if (world.gameMode) {
@@ -73,17 +97,14 @@
   <p class="error" role="alert">{error}</p>
 {/if}
 
-{#if list && list.worlds.length === 0}
+{#if worlds && worlds.length === 0}
   <div class="empty-state">
     <h3>{t("worlds.empty")}</h3>
     <p>{t("worlds.emptyHint")}</p>
   </div>
-{:else if list}
-  {#if !list.quickPlay}
-    <p class="hint">{t("worlds.noQuickPlay")}</p>
-  {/if}
+{:else if worlds}
   <ul class="rows">
-    {#each list.worlds as world (world.folder)}
+    {#each worlds as world (world.folder)}
       <li class="row-item">
         {#if world.icon}
           <img class="row-icon" src={convertFileSrc(world.icon)} alt="">
@@ -94,6 +115,16 @@
           <span class="row-title">{world.name}</span>
           <span class="row-meta">{details(world)}</span>
         </div>
+        <button
+          type="button"
+          class="icon-button"
+          {@attach tooltip(t("worlds.rename"))}
+          aria-label={t("worlds.rename")}
+          disabled={busy}
+          onclick={() => askRename(world)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d={UI_ICONS.edit} /></svg>
+        </button>
         <button
           type="button"
           class="icon-button"
@@ -123,16 +154,6 @@
         >
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d={UI_ICONS.delete} /></svg>
         </button>
-        {#if list.quickPlay}
-          <button
-            type="button"
-            class="pill-button primary"
-            disabled={busy}
-            onclick={() => play(instanceId, { kind: "world", value: world.folder })}
-          >
-            {t("worlds.play")}
-          </button>
-        {/if}
       </li>
     {/each}
   </ul>
@@ -149,13 +170,19 @@
   />
 {/if}
 
-<style>
-  .hint {
-    margin: 0 0 10px;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
+<Dialog bind:open={renameOpen} title={t("worlds.renameTitle")} onsubmit={rename}>
+  <label class="form-field">
+    <span>{t("worlds.name")}</span>
+    <input bind:value={newName} required maxlength="64" spellcheck="false">
+  </label>
 
+  {#snippet actions()}
+    <button type="button" onclick={() => (renameOpen = false)}>{t("create.cancel")}</button>
+    <button type="submit" class="primary">{t("servers.save")}</button>
+  {/snippet}
+</Dialog>
+
+<style>
   .error {
     color: var(--danger);
   }

@@ -10,7 +10,6 @@ import {
   type Instance,
   isCommandError,
   type LaunchProgress,
-  type LaunchTarget,
   type LoaderVersion,
   type ManualDownload,
 } from "$lib/api";
@@ -102,12 +101,13 @@ export async function deleteInstance(id: string) {
   delete library.launches[id];
 }
 
-export async function play(id: string, target: LaunchTarget | null = null) {
+/** Starts the game, joining `server` right away when given. */
+export async function play(id: string, server: string | null = null) {
   await preparing.get(id);
   library.launches[id] = { status: "preparing", stage: null, percent: 0 };
   delete library.crashes[id];
   try {
-    await api.launchInstance(id, target);
+    await api.launchInstance(id, server);
   } catch (error) {
     library.launches[id] = {
       status: "failed",
@@ -189,6 +189,9 @@ export async function listenToGames(): Promise<() => void> {
     }),
   ]);
   Object.assign(library.crashes, await api.takeMissedCrashes());
+  for (const id of await api.runningGames()) {
+    library.launches[id] ??= { status: "running", since: Date.now() };
+  }
   const requested = await api.takeStartupLaunch();
   if (requested) {
     void play(requested);

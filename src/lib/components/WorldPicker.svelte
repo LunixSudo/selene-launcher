@@ -15,9 +15,9 @@
     api
       .worlds(instanceId)
       .then((list) => {
-        worlds = list.worlds;
-        if (!list.worlds.some((world) => world.folder === value)) {
-          value = list.worlds[0]?.folder ?? null;
+        worlds = list;
+        if (!list.some((world) => world.folder === value)) {
+          value = list[0]?.folder ?? null;
         }
       })
       .catch(() => {

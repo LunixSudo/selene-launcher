@@ -120,7 +120,7 @@
           type="button"
           class="pill-button primary"
           disabled={busy}
-          onclick={() => play(instanceId, { kind: "server", value: server.address })}
+          onclick={() => play(instanceId, server.address)}
         >
           {t("servers.join")}
         </button>

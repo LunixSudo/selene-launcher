@@ -8,7 +8,9 @@ use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Utc};
 use fastnbt::Value;
+use flate2::Compression;
 use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
 use serde::{Deserialize, Serialize};
 use zip::write::SimpleFileOptions;
 
@@ -168,6 +170,29 @@ pub fn back_up_world(game_dir: &Path, folder: &str) -> Result<PathBuf> {
     Ok(out)
 }
 
+/// Changes the name the game shows for a world; the folder stays as it is.
+pub fn rename_world(game_dir: &Path, folder: &str, name: &str) -> Result<()> {
+    let path = world_dir(game_dir, folder)?.join("level.dat");
+    let mut bytes = Vec::new();
+    GzDecoder::new(File::open(&path).map_err(|err| Error::io(&path, err))?)
+        .read_to_end(&mut bytes)
+        .map_err(|err| Error::io(&path, err))?;
+    let mut level: Value = fastnbt::from_bytes(&bytes)?;
+    let Value::Compound(root) = &mut level else {
+        return Err(Error::io(&path, std::io::ErrorKind::InvalidData.into()));
+    };
+    let Some(Value::Compound(data)) = root.get_mut("Data") else {
+        return Err(Error::io(&path, std::io::ErrorKind::InvalidData.into()));
+    };
+    data.insert("LevelName".into(), Value::String(name.to_owned()));
+
+    let mut gz = GzEncoder::new(Vec::new(), Compression::default());
+    gz.write_all(&fastnbt::to_bytes(&level)?)
+        .map_err(|err| Error::io(&path, err))?;
+    let bytes = gz.finish().map_err(|err| Error::io(&path, err))?;
+    crate::fs::write_atomic_blocking(&path, &bytes)
+}
+
 /// Resolves a world folder, refusing names that would point outside `saves`.
 pub fn world_dir(game_dir: &Path, folder: &str) -> Result<PathBuf> {
     let valid =
@@ -305,9 +330,6 @@ pub fn screenshot_path(game_dir: &Path, name: &str) -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use flate2::Compression;
-    use flate2::write::GzEncoder;
-
     use super::*;
 
     fn write_level(dir: &Path, name: &str, last_played: i64, game_type: i32) {
@@ -356,6 +378,19 @@ mod tests {
             .map(|name| name.unwrap().into_owned())
             .collect();
         assert_eq!(names, ["home/level.dat"]);
+    }
+
+    #[test]
+    fn renames_worlds() {
+        let dir = tempfile::tempdir().unwrap();
+        write_level(&dir.path().join("saves/home"), "Home", 0, 0);
+
+        rename_world(dir.path(), "home", "Castle").unwrap();
+
+        let worlds = worlds(dir.path()).unwrap();
+        assert_eq!(worlds[0].name, "Castle");
+        assert_eq!(worlds[0].folder, "home");
+        assert_eq!(worlds[0].game_mode, Some(GameMode::Survival));
     }
 
     #[test]

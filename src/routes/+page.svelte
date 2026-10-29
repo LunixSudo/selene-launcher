@@ -52,12 +52,6 @@
             action: () => play(instance.id),
           },
       {
-        label: t("instances.continue"),
-        icon: UI_ICONS.resume,
-        disabled: busy || !instance.lastPlayed,
-        action: () => continueLastWorld(instance.id),
-      },
-      {
         label: t("instances.open"),
         icon: UI_ICONS.open,
         action: () => goto(`/instance/${instance.id}`),
@@ -136,12 +130,6 @@
     settings.collapsedGroups = settings.collapsedGroups.includes(name)
       ? settings.collapsedGroups.filter((group) => group !== name)
       : [...settings.collapsedGroups, name];
-  }
-
-  async function continueLastWorld(id: string) {
-    const { worlds, quickPlay } = await api.worlds(id);
-    const last = worlds[0];
-    await play(id, quickPlay && last ? { kind: "world", value: last.folder } : null);
   }
 
   async function duplicate(instance: Instance) {
