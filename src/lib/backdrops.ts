@@ -1,4 +1,23 @@
-export type ShaderBackdrop = "halo" | "rays" | "aurora";
+export type ShaderBackdrop =
+  | "halo"
+  | "rays"
+  | "aurora"
+  | "liquid"
+  | "bokeh"
+  | "nebula"
+  | "waves"
+  | "moon";
+
+export const SHADER_BACKDROPS: ShaderBackdrop[] = [
+  "halo",
+  "rays",
+  "aurora",
+  "liquid",
+  "bokeh",
+  "nebula",
+  "waves",
+  "moon",
+];
 
 /** The canvas renders at this share of the window size; soft light needs no more. */
 const RENDER_SCALE = 0.5;
@@ -49,13 +68,14 @@ vec3 spectrum(float t) {
   return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67)));
 }
 
-// Light themes get the same colours, a little deeper, laid over the page instead of glowing.
+// Light themes get the same colours, a little softer, laid over the page instead of glowing.
+// The output is premultiplied, so light adds up the way a glow does.
 void finish(vec3 color) {
-  color = mix(color, color * 0.8, u_light);
-  float alpha = clamp(max(color.r, max(color.g, color.b)), 0.0, 1.0);
-  // Without premultiplied alpha the page blends this as colour * alpha, so dividing first
-  // lets the light add up the way a glow does.
-  gl_FragColor = vec4(min(color / max(alpha, 0.001), 1.0), alpha * mix(1.0, 0.75, u_light));
+  color = min(color, 1.0) * mix(1.0, 0.7, u_light);
+  float alpha = max(color.r, max(color.g, color.b));
+  // A touch of noise hides the steps an 8-bit screen makes of soft gradients.
+  float dither = (hash(gl_FragCoord.xy + fract(u_time)) - 0.5) / 255.0;
+  gl_FragColor = clamp(vec4(color + dither, alpha + dither), 0.0, 1.0);
 }
 `;
 
@@ -143,7 +163,132 @@ void main() {
 }
 `;
 
-const FRAGMENTS: Record<ShaderBackdrop, string> = { halo: HALO, rays: RAYS, aurora: AURORA };
+/** A slow flowing mesh of colour, like liquid glass. */
+const LIQUID = `
+void main() {
+  float aspect = u_resolution.x / u_resolution.y;
+  vec2 uv = gl_FragCoord.xy / u_resolution.y;
+  float t = u_time * 0.12;
+  vec3 colors[4];
+  colors[0] = u_accent;
+  colors[1] = mix(vec3(1.0, 0.3, 0.65), spectrum(t * 0.1 + 0.9), 0.3);
+  colors[2] = vec3(0.1, 0.8, 0.95);
+  colors[3] = mix(vec3(1.0, 0.6, 0.25), spectrum(t * 0.1 + 0.3), 0.3);
+  vec3 color = vec3(0.0);
+  float total = 0.0;
+  for (int i = 0; i < 4; i++) {
+    float fi = float(i);
+    vec2 center = vec2(
+      (0.5 + 0.42 * sin(t * (0.7 + fi * 0.13) + fi * 1.9)) * aspect,
+      0.5 + 0.42 * cos(t * (0.6 + fi * 0.17) + fi * 2.7)
+    );
+    vec2 warped = uv + 0.08 * vec2(sin(uv.y * 3.0 + t), cos(uv.x * 3.0 - t));
+    float weight = 1.0 / (0.002 + pow(length(warped - center), 4.0));
+    color += colors[i] * weight;
+    total += weight;
+  }
+  finish(color / total * 0.5);
+}
+`;
+
+/** Out-of-focus lights drifting up, as in a night photo. */
+const BOKEH = `
+void main() {
+  float aspect = u_resolution.x / u_resolution.y;
+  vec2 uv = gl_FragCoord.xy / u_resolution.y;
+  float t = u_time;
+  vec3 color = vec3(0.0);
+  for (int i = 0; i < 26; i++) {
+    float fi = float(i);
+    float h1 = hash(vec2(fi, 1.7));
+    float h2 = hash(vec2(fi, 4.1));
+    float h3 = hash(vec2(fi, 8.3));
+    float size = 0.03 + 0.08 * h3;
+    vec2 center = vec2(
+      fract(h1 + 0.02 * sin(t * 0.2 + fi)) * aspect,
+      fract(h2 * 7.0 + t * (0.008 + 0.02 * h2)) * 1.4 - 0.2
+    );
+    float d = length(uv - center);
+    float disc = smoothstep(size, size * 0.7, d) * (0.6 + 0.4 * smoothstep(size * 0.3, size, d));
+    float twinkle = 0.75 + 0.25 * sin(t * (0.5 + h2) + fi);
+    vec3 tint = mix(spectrum(h3 + t * 0.01), u_accent, 0.35);
+    color += tint * disc * twinkle * (0.18 + 0.2 * h1);
+  }
+  finish(color);
+}
+`;
+
+/** Clouds of coloured gas with faint stars behind them. */
+const NEBULA = `
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_resolution.y;
+  float t = u_time * 0.02;
+  float gas = fbm(uv * 1.8 + vec2(t, -t * 0.5) + fbm(uv * 3.0 - t) * 0.8);
+  float tint = fbm(uv * 2.5 - vec2(t * 0.7, t) + 4.0);
+  vec3 color = mix(vec3(0.45, 0.12, 0.7), u_accent, tint) * smoothstep(0.3, 0.8, gas) * 1.1;
+  color += vec3(0.1, 0.5, 0.85) * smoothstep(0.5, 0.9, tint) * smoothstep(0.3, 0.7, gas) * 0.4;
+  vec2 g = gl_FragCoord.xy / 9.0;
+  vec2 cell = floor(g);
+  vec2 jitter = vec2(hash(cell), hash(cell + 3.1)) - 0.5;
+  float dot = smoothstep(0.16, 0.0, length(fract(g) - 0.5 - jitter * 0.6));
+  float star = step(0.93, hash(cell + 11.0)) * dot;
+  star *= 0.55 + 0.45 * sin(u_time * 2.0 + hash(cell + 1.0) * 50.0);
+  finish(color + vec3(star) * 0.8);
+}
+`;
+
+/** Silky lines of light that ripple across the window. */
+const WAVES = `
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_resolution;
+  float t = u_time * 0.25;
+  vec3 color = vec3(0.0);
+  for (int i = 0; i < 5; i++) {
+    float fi = float(i);
+    float y = 0.42 + fi * 0.045
+      + 0.09 * sin(uv.x * (2.2 + fi * 0.35) + t * (1.0 + fi * 0.2) + fi * 1.3)
+      + 0.05 * sin(uv.x * 5.1 - t * 0.7 + fi * 2.1);
+    float d = abs(uv.y - y);
+    float line = exp(-d * d / 0.00006) * 0.7 + exp(-d * 18.0) * 0.22;
+    vec3 tint = mix(u_accent, spectrum(fi * 0.12 + uv.x * 0.3 + t * 0.05), 0.55);
+    color += tint * line;
+  }
+  finish(color);
+}
+`;
+
+/** A large moon whose phase slowly changes, with thin clouds passing by. */
+const MOON = `
+void main() {
+  vec2 p = (gl_FragCoord.xy - vec2(0.8, 0.3) * u_resolution) / u_resolution.y;
+  float t = u_time;
+  float size = 0.17;
+  float r = length(p);
+  vec3 color = mix(vec3(0.75, 0.8, 1.0), u_accent, 0.35) * exp(-max(r - size, 0.0) * 6.0) * 0.3;
+  if (r < size) {
+    vec3 normal = vec3(p / size, sqrt(1.0 - (r / size) * (r / size)));
+    vec3 sun = normalize(vec3(cos(t * 0.03), 0.25, 0.7 + 0.3 * sin(t * 0.03)));
+    float lit = smoothstep(-0.05, 0.25, dot(normal, sun));
+    float craters = fbm(p * 14.0 + 3.0) * 0.5 + fbm(p * 40.0) * 0.2;
+    vec3 surface = vec3(0.92, 0.93, 1.0) * (0.72 + 0.38 * craters);
+    color = mix(color, surface * (0.06 + 0.9 * lit), smoothstep(size, size - 0.004, r));
+  }
+  vec2 uv = gl_FragCoord.xy / u_resolution.y;
+  float cloud = smoothstep(0.55, 0.85, fbm(uv * vec2(2.0, 5.0) + vec2(t * 0.02, 0.0)));
+  finish(color + vec3(0.6, 0.65, 0.85) * cloud * 0.06);
+}
+`;
+
+const FRAGMENTS: Record<ShaderBackdrop, string> = {
+  halo: HALO,
+  rays: RAYS,
+  aurora: AURORA,
+  liquid: LIQUID,
+  bokeh: BOKEH,
+  nebula: NEBULA,
+  waves: WAVES,
+  moon: MOON,
+};
 
 function compile(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
   const shader = gl.createShader(type);
@@ -155,8 +300,8 @@ function compile(gl: WebGLRenderingContext, type: number, source: string): WebGL
   return gl.getShaderParameter(shader, gl.COMPILE_STATUS) ? shader : null;
 }
 
-function accentColor(element: HTMLElement): [number, number, number] {
-  const value = getComputedStyle(element).getPropertyValue("--accent").trim();
+function accentColor(): [number, number, number] {
+  const value = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
   const hex = /^#([0-9a-f]{6})$/i.exec(value)?.[1] ?? "6b5bff";
   return [0, 2, 4].map((at) => Number.parseInt(hex.slice(at, at + 2), 16) / 255) as [
     number,
@@ -172,12 +317,14 @@ function isLight(): boolean {
   );
 }
 
-/**
- * Draws an animated background into `canvas` until the returned function is called. Returns
- * null when the PC has no WebGL.
- */
-export function startShader(canvas: HTMLCanvasElement, kind: ShaderBackdrop): (() => void) | null {
-  const gl = canvas.getContext("webgl", { premultipliedAlpha: false, antialias: false });
+interface Renderer {
+  /** Draws a frame at `seconds`; `restyle` reads the accent colour and theme again. */
+  draw(seconds: number, restyle: boolean): void;
+  dispose(): void;
+}
+
+function createRenderer(canvas: HTMLCanvasElement, kind: ShaderBackdrop): Renderer | null {
+  const gl = canvas.getContext("webgl", { antialias: false, preserveDrawingBuffer: false });
   const vertex = gl && compile(gl, gl.VERTEX_SHADER, VERTEX);
   const fragment = gl && compile(gl, gl.FRAGMENT_SHADER, COMMON + FRAGMENTS[kind]);
   const program = gl?.createProgram();
@@ -203,30 +350,50 @@ export function startShader(canvas: HTMLCanvasElement, kind: ShaderBackdrop): ((
   const accent = gl.getUniformLocation(program, "u_accent");
   const light = gl.getUniformLocation(program, "u_light");
 
+  return {
+    draw(seconds, restyle) {
+      if (restyle) {
+        gl.uniform3fv(accent, accentColor());
+        gl.uniform1f(light, isLight() ? 1 : 0);
+      }
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform2f(resolution, canvas.width, canvas.height);
+      gl.uniform1f(time, seconds);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    },
+    dispose() {
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
+    },
+  };
+}
+
+/**
+ * Draws an animated background into `canvas` until the returned function is called. Returns
+ * null when the PC has no WebGL.
+ */
+export function startShader(canvas: HTMLCanvasElement, kind: ShaderBackdrop): (() => void) | null {
+  const renderer = createRenderer(canvas, kind);
+  if (!renderer) {
+    return null;
+  }
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // Each start picks up somewhere else in the animation, so it never opens on the same frame.
   const offset = Math.random() * 1000;
   let frame = 0;
   let drawn = 0;
 
-  const resize = () => {
-    canvas.width = Math.max(1, Math.round(canvas.clientWidth * RENDER_SCALE));
-    canvas.height = Math.max(1, Math.round(canvas.clientHeight * RENDER_SCALE));
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    if (still) {
+  const draw = (now: number) => {
+    // Reading styles every frame is costly; once a second still follows a theme switch.
+    renderer.draw(offset + (still ? 0 : now / 1000), still || drawn++ % 60 === 0);
+    if (!still) {
       frame = requestAnimationFrame(draw);
     }
   };
-  const draw = (now: number) => {
-    // Reading styles every frame is costly; once a second still follows a theme switch.
-    if (still || drawn++ % 60 === 0) {
-      gl.uniform3fv(accent, accentColor(canvas));
-      gl.uniform1f(light, isLight() ? 1 : 0);
-    }
-    gl.uniform2f(resolution, canvas.width, canvas.height);
-    gl.uniform1f(time, offset + (still ? 0 : now / 1000));
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    if (!still) {
+  const resize = () => {
+    canvas.width = Math.max(1, Math.round(canvas.clientWidth * RENDER_SCALE));
+    canvas.height = Math.max(1, Math.round(canvas.clientHeight * RENDER_SCALE));
+    // Resizing clears the canvas, and a still picture is not redrawn on its own.
+    if (still) {
       frame = requestAnimationFrame(draw);
     }
   };
@@ -241,6 +408,29 @@ export function startShader(canvas: HTMLCanvasElement, kind: ShaderBackdrop): ((
   return () => {
     cancelAnimationFrame(frame);
     observer.disconnect();
-    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    renderer.dispose();
   };
+}
+
+const previews = new Map<string, string>();
+
+/** One frame of a background as a picture for the settings, or null without WebGL. */
+export function previewImage(kind: ShaderBackdrop): string | null {
+  const key = `${kind} ${accentColor().join()} ${isLight()}`;
+  const cached = previews.get(key);
+  if (cached) {
+    return cached;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = 208;
+  canvas.height = 128;
+  const renderer = createRenderer(canvas, kind);
+  if (!renderer) {
+    return null;
+  }
+  renderer.draw(40, true);
+  const image = canvas.toDataURL();
+  renderer.dispose();
+  previews.set(key, image);
+  return image;
 }

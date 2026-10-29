@@ -173,6 +173,14 @@ export const en: Messages = {
   },
   settings: {
     effects: "Effects",
+    presets: "Style",
+    presetsHint: "Ready-made sets and your own: theme, colour, font, background and effects.",
+    savePreset: "Save current",
+    savePresetConfirm: "Save",
+    presetName: "Style name",
+    deletePreset: "Delete the “{name}” style",
+    scrollFade: "Fade list edges",
+    scrollFadeHint: "Scrolling lists fade out at their edges.",
     backdrop: "Live background",
     backdropHint:
       "An animated background behind the window. Pretty, but it costs the GPU a little.",
@@ -409,6 +417,11 @@ export const en: Messages = {
     rays: "Rays",
     stars: "Stars",
     aurora: "Aurora",
+    liquid: "Liquid glass",
+    bokeh: "Lights",
+    nebula: "Nebula",
+    waves: "Waves",
+    moon: "Moon",
   },
   welcome: {
     title: "Welcome to Selene",
@@ -416,7 +429,7 @@ export const en: Messages = {
     fast: "Faster",
     fastHint: "Nothing extra: no live background or animations. Best for older PCs.",
     beautiful: "Prettier",
-    beautifulHint: "Glass, a live background, smooth animations and click sounds.",
+    beautifulHint: "Mica, the aurora background, smooth animations and click sounds.",
     later: "Background, animations and sound live under Effects in the settings.",
   },
   skins: {

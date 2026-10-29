@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends string">
+  import { previewImage, SHADER_BACKDROPS, type ShaderBackdrop } from "$lib/backdrops";
   import { t } from "$lib/i18n/index.svelte";
   import { settings } from "$lib/state/settings.svelte";
 
@@ -14,6 +15,21 @@
   function art(option: string): string {
     return option === "app" ? settings.backdrop : option;
   }
+
+  /** Shader backgrounds show a real frame of themselves; it follows the accent and theme. */
+  function picture(option: string): string | undefined {
+    const kind = art(option);
+    if (kind === "cover") {
+      return cover ?? undefined;
+    }
+    if (!SHADER_BACKDROPS.includes(kind as ShaderBackdrop)) {
+      return undefined;
+    }
+    void settings.accent;
+    void settings.theme;
+    const image = previewImage(kind as ShaderBackdrop);
+    return image ? `url(${image})` : undefined;
+  }
 </script>
 
 <fieldset class="backdrops">
@@ -23,7 +39,7 @@
       <input type="radio" {name} value={option} bind:group={value}>
       <span
         class="preview {art(option)}"
-        style:background-image={option === "cover" ? cover : undefined}
+        style:background-image={picture(option)}
         aria-hidden="true"
       ></span>
       <span class="name">{t(`backdrops.${option as "none"}`)}</span>
@@ -67,23 +83,6 @@
     background-color: var(--background);
   }
 
-  .preview.halo {
-    background-image:
-      radial-gradient(circle at 48% 52%, transparent 26%, #34e0d2 31%, transparent 38%),
-      radial-gradient(circle at 55% 48%, transparent 30%, #ff4fd8 35%, transparent 42%),
-      radial-gradient(circle at 52% 50%, transparent 33%, var(--accent) 38%, transparent 45%);
-  }
-
-  .preview.rays {
-    background-image: repeating-conic-gradient(
-      from 190deg at 20% 0%,
-      transparent 0deg,
-      color-mix(in srgb, var(--accent) 55%, transparent) 4deg,
-      transparent 9deg,
-      transparent 16deg
-    );
-  }
-
   .preview.stars {
     background-image:
       radial-gradient(circle at 20% 30%, #fff 1px, transparent 1.5px),
@@ -97,17 +96,6 @@
         color-mix(in srgb, var(--accent) 45%, transparent),
         transparent 55%
       );
-  }
-
-  .preview.aurora {
-    background-image:
-      radial-gradient(ellipse at 20% 15%, rgb(47 224 162 / 0.7), transparent 55%),
-      radial-gradient(
-        ellipse at 85% 30%,
-        color-mix(in srgb, var(--accent) 75%, transparent),
-        transparent 55%
-      ),
-      radial-gradient(ellipse at 50% 100%, rgb(63 140 255 / 0.7), transparent 60%);
   }
 
   .backdrop:has(input:checked) .preview {

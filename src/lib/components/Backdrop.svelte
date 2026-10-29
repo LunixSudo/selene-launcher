@@ -1,10 +1,11 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { startShader } from "$lib/backdrops";
+  import { SHADER_BACKDROPS, type ShaderBackdrop, startShader } from "$lib/backdrops";
   import type { Backdrop } from "$lib/state/settings.svelte";
 
   const STAR_COUNT = 170;
   const SHOOTING_STAR_EVERY_MS = 7000;
+  const SHOOTING_STAR_SPEED = 700;
 
   let { kind, cover = null }: { kind: Backdrop | "cover"; cover?: string | null } = $props();
 
@@ -17,10 +18,14 @@
     if (kind === "stars") {
       return drawStars(canvas);
     }
-    if (kind === "halo" || kind === "rays" || kind === "aurora") {
+    if (isShader(kind)) {
       return startShader(canvas, kind) ?? undefined;
     }
   });
+
+  function isShader(kind: string): kind is ShaderBackdrop {
+    return SHADER_BACKDROPS.includes(kind as ShaderBackdrop);
+  }
 
   interface Star {
     x: number;
@@ -83,16 +88,17 @@
         lastShooting = now;
       }
       if (shooting) {
-        const age = (now - shooting.born) / 900;
-        if (age >= 1) {
+        // It flies at a steady speed until its tail has left the window.
+        const seconds = (now - shooting.born) / 1000;
+        const headX = shooting.x * width - seconds * SHOOTING_STAR_SPEED;
+        const headY = shooting.y * height + seconds * SHOOTING_STAR_SPEED * 0.58;
+        if (headX < -140 || headY > height + 80) {
           shooting = null;
         } else {
-          const headX = (shooting.x - age * 0.35) * width;
-          const headY = (shooting.y + age * 0.2) * height;
           const trail = context.createLinearGradient(headX, headY, headX + 120, headY - 70);
           trail.addColorStop(0, color);
           trail.addColorStop(1, "transparent");
-          context.globalAlpha = 1 - age;
+          context.globalAlpha = Math.min(1, seconds * 6);
           context.strokeStyle = trail;
           context.lineWidth = 1.6;
           context.beginPath();
@@ -122,7 +128,7 @@
 
 {#key kind}
   <div class="backdrop {kind}" aria-hidden="true" transition:fade={{ duration: 400 }}>
-    {#if kind === "halo" || kind === "rays" || kind === "aurora" || kind === "stars"}
+    {#if kind === "stars" || isShader(kind)}
       <canvas bind:this={canvas}></canvas>
     {:else if kind === "cover" && cover}
       <span class="cover" style:background-image={cover}></span>
