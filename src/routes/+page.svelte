@@ -357,12 +357,13 @@
     width: 210px;
   }
 
+  /* Reaches into the page padding so the lifted cards' shadows are not cut off at its edge. */
   .scroll {
     flex: 1;
     min-height: 0;
-    margin: -6px;
+    margin: -14px -24px -24px;
     overflow-y: auto;
-    padding: 6px 6px 10px;
+    padding: 14px 24px 24px;
   }
 
   .group {

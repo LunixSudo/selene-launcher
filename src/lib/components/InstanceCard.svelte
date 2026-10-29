@@ -123,7 +123,7 @@
 
   .card:hover {
     top: -2px;
-    box-shadow: 0 14px 36px rgb(0 0 0 / 0.16);
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
   }
 
   .cover {
