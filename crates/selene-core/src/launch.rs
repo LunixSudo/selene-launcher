@@ -285,9 +285,81 @@ fn substitute(template: &str, variables: &HashMap<&'static str, String>) -> Stri
     out
 }
 
+/// Regions to assume for a language given without one, where the code is not doubled.
+const LANGUAGE_REGIONS: &[(&str, &str)] = &[
+    ("en", "us"),
+    ("uk", "ua"),
+    ("be", "by"),
+    ("kk", "kz"),
+    ("pt", "br"),
+    ("zh", "cn"),
+    ("ja", "jp"),
+    ("ko", "kr"),
+    ("cs", "cz"),
+    ("sv", "se"),
+    ("da", "dk"),
+    ("el", "gr"),
+    ("he", "il"),
+    ("hi", "in"),
+    ("vi", "vn"),
+    ("et", "ee"),
+    ("ka", "ge"),
+    ("hy", "am"),
+    ("sr", "sp"),
+];
+
+/// The game's name for a system locale such as `ru-RU` or `de`: `ru_ru`, `de_de`.
+pub fn game_language(locale: &str) -> Option<String> {
+    let mut parts = locale.split(['-', '_', '.', '@']);
+    let language = parts.next()?.to_ascii_lowercase();
+    if language.len() != 2 || !language.bytes().all(|byte| byte.is_ascii_lowercase()) {
+        return None;
+    }
+    // Scripts like `Hans` come before the region in some locales.
+    let region = parts
+        .find(|part| part.len() == 2)
+        .map(str::to_ascii_lowercase)
+        .or_else(|| {
+            LANGUAGE_REGIONS
+                .iter()
+                .find(|(code, _)| *code == language)
+                .map(|(_, region)| (*region).to_owned())
+        })
+        .unwrap_or_else(|| language.clone());
+    Some(format!("{language}_{region}"))
+}
+
+/// Sets the language for a game's first start. A game that already has its own settings,
+/// from an earlier start or a modpack, keeps them.
+pub fn set_first_language(game_dir: &Path, language: &str) -> Result<()> {
+    let options = game_dir.join("options.txt");
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&options)
+    {
+        Ok(mut file) => {
+            use std::io::Write;
+            writeln!(file, "lang:{language}").map_err(|err| Error::io(&options, err))
+        }
+        Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+        Err(err) => Err(Error::io(&options, err)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn maps_system_locales_to_game_languages() {
+        assert_eq!(game_language("ru-RU").as_deref(), Some("ru_ru"));
+        assert_eq!(game_language("de").as_deref(), Some("de_de"));
+        assert_eq!(game_language("uk").as_deref(), Some("uk_ua"));
+        assert_eq!(game_language("zh-Hans-CN").as_deref(), Some("zh_cn"));
+        assert_eq!(game_language("en_GB.UTF-8").as_deref(), Some("en_gb"));
+        assert_eq!(game_language("C"), None);
+    }
 
     const MODERN: &str = r#"{
         "id": "1.21.10",
