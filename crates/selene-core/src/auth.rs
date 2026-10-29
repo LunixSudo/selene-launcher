@@ -87,6 +87,7 @@ pub struct Profile {
 pub struct Skin {
     pub id: String,
     pub state: String,
+    #[serde(deserialize_with = "secure_url")]
     pub url: String,
     pub variant: String,
 }
@@ -95,6 +96,7 @@ pub struct Skin {
 pub struct Cape {
     pub id: String,
     pub state: String,
+    #[serde(deserialize_with = "secure_url")]
     pub url: String,
     pub alias: String,
 }
@@ -395,6 +397,17 @@ async fn xsts_authorize(client: &Client, xbox_token: &str) -> Result<XboxRespons
     parse_response(response, "XSTS").await
 }
 
+/// Mojang hands out texture links over plain HTTP, which the window refuses to load.
+fn secure_url<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<String, D::Error> {
+    let url = String::deserialize(deserializer)?;
+    Ok(match url.strip_prefix("http://") {
+        Some(rest) => format!("https://{rest}"),
+        None => url,
+    })
+}
+
 fn xsts_error(code: u64) -> AuthError {
     match code {
         2_148_916_233 => AuthError::NoXboxAccount,
@@ -484,6 +497,18 @@ fn expires_at(expires_in: u64) -> SystemTime {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn loads_textures_over_https() {
+        let skin: Skin = serde_json::from_value(serde_json::json!({
+            "id": "a",
+            "state": "ACTIVE",
+            "url": "http://textures.minecraft.net/texture/abc",
+            "variant": "CLASSIC",
+        }))
+        .unwrap();
+        assert_eq!(skin.url, "https://textures.minecraft.net/texture/abc");
+    }
 
     #[test]
     fn pkce_matches_rfc_7636_example() {
