@@ -2,6 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
+use chrono::{TimeZone, Utc};
+
 use crate::rules::{self, Environment, Features};
 use crate::version::{Argument, ArgumentValue, VersionInfo};
 use crate::{Error, Result};
@@ -331,7 +333,8 @@ pub fn game_language(locale: &str) -> Option<String> {
 
 /// Sets the language for a game's first start. A game that already has its own settings,
 /// from an earlier start or a modpack, keeps them.
-pub fn set_first_language(game_dir: &Path, language: &str) -> Result<()> {
+pub fn set_first_language(game_dir: &Path, version: &VersionInfo, language: &str) -> Result<()> {
+    let language = language_for(version, language);
     let options = game_dir.join("options.txt");
     match std::fs::OpenOptions::new()
         .write(true)
@@ -347,6 +350,20 @@ pub fn set_first_language(game_dir: &Path, language: &str) -> Result<()> {
     }
 }
 
+/// Versions before snapshot 16w32a (1.11) spell the region in capitals: `ru_RU`.
+fn language_for(version: &VersionInfo, language: &str) -> String {
+    match (
+        version.release_time,
+        Utc.with_ymd_and_hms(2016, 8, 10, 0, 0, 0).single(),
+    ) {
+        (Some(released), Some(since)) if released < since => match language.split_once('_') {
+            Some((code, region)) => format!("{code}_{}", region.to_ascii_uppercase()),
+            None => language.to_owned(),
+        },
+        _ => language.to_owned(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -359,6 +376,15 @@ mod tests {
         assert_eq!(game_language("zh-Hans-CN").as_deref(), Some("zh_cn"));
         assert_eq!(game_language("en_GB.UTF-8").as_deref(), Some("en_gb"));
         assert_eq!(game_language("C"), None);
+    }
+
+    #[test]
+    fn spells_old_regions_in_capitals() {
+        let mut version: VersionInfo = serde_json::from_str(MODERN).unwrap();
+        version.release_time = Utc.with_ymd_and_hms(2015, 12, 9, 0, 0, 0).single();
+        assert_eq!(language_for(&version, "ru_ru"), "ru_RU");
+        version.release_time = Utc.with_ymd_and_hms(2016, 11, 14, 0, 0, 0).single();
+        assert_eq!(language_for(&version, "ru_ru"), "ru_ru");
     }
 
     const MODERN: &str = r#"{

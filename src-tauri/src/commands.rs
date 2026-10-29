@@ -474,7 +474,7 @@ async fn run_game(
     if let Some(language) =
         sys_locale::get_locale().and_then(|locale| launch::game_language(&locale))
     {
-        launch::set_first_language(&options.game_dir, &language)?;
+        launch::set_first_language(&options.game_dir, &installed.version, &language)?;
     }
 
     let child = tokio::process::Command::from(
