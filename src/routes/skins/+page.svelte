@@ -119,6 +119,14 @@
     }
   }
 
+  /** The capes sit in one row; the mouse wheel moves along it. */
+  function scrollCapes(event: WheelEvent & { currentTarget: HTMLElement }) {
+    if (event.deltaY !== 0 && event.currentTarget.scrollWidth > event.currentTarget.clientWidth) {
+      event.preventDefault();
+      event.currentTarget.scrollBy({ left: event.deltaY, behavior: "smooth" });
+    }
+  }
+
   async function saveCurrent() {
     saving = true;
     actionError = null;
@@ -216,7 +224,7 @@
         <p class="caption">{t("skins.empty")}</p>
       {/if}
       {#if profile && (profile.capes.length || activeCape)}
-        <fieldset class="capes">
+        <fieldset class="capes" onwheel={scrollCapes}>
           <legend class="sr-only">{t("skins.cape")}</legend>
           <button
             type="button"
@@ -461,12 +469,12 @@
 
   .capes {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 6px;
     width: 100%;
-    padding-top: 10px;
+    padding: 14px 4px 6px;
+    overflow-x: auto;
     border-top: 1px solid var(--border);
+    scrollbar-width: thin;
   }
 
   .tile {
@@ -474,6 +482,7 @@
   }
 
   .cape {
+    flex: none;
     display: grid;
     place-items: center;
     width: 42px;
@@ -489,7 +498,7 @@
 
   .cape:hover:enabled {
     border-color: var(--border);
-    transform: translateY(-2px);
+    transform: translateY(-5px);
   }
 
   .cape.selected {

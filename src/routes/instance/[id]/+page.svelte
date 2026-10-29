@@ -137,47 +137,49 @@
       {/each}
     </div>
 
-    <div class="content" role="tabpanel" {@attach scrollFade}>
-      {#if tab === "content"}
-        <div class="kinds">
-          <Segmented
-            bind:value={() => kind, (value) => (chosenKind = value)}
-            options={kindOptions}
-            name="content-kind"
-            label={t("instance.content")}
-          />
-        </div>
-        {#if kind === "dataPack"}
-          <WorldPicker instanceId={instance.id} bind:value={world} />
-          {#if world}
-            <ContentList instanceId={instance.id} {kind} {world} {refresh} />
+    {#key tab}
+      <div class="content" role="tabpanel" {@attach scrollFade}>
+        {#if tab === "content"}
+          <div class="kinds">
+            <Segmented
+              bind:value={() => kind, (value) => (chosenKind = value)}
+              options={kindOptions}
+              name="content-kind"
+              label={t("instance.content")}
+            />
+          </div>
+          {#if kind === "dataPack"}
+            <WorldPicker instanceId={instance.id} bind:value={world} />
+            {#if world}
+              <ContentList instanceId={instance.id} {kind} {world} {refresh} />
+            {/if}
+          {:else}
+            <ContentList instanceId={instance.id} {kind} {refresh} />
           {/if}
+        {:else if tab === "catalog"}
+          <ContentCatalog
+            instanceId={instance.id}
+            {kinds}
+            bind:kind={chosenKind}
+            bind:world
+            oninstall={() => refresh++}
+          />
+        {:else if tab === "worlds"}
+          <WorldList instanceId={instance.id} />
+        {:else if tab === "servers"}
+          <ServerList instanceId={instance.id} />
+        {:else if tab === "screenshots"}
+          <ScreenshotGallery instanceId={instance.id} />
+        {:else if tab === "logs"}
+          <GameConsole instanceId={instance.id} />
         {:else}
-          <ContentList instanceId={instance.id} {kind} {refresh} />
+          {#if !instance.loader}
+            <p class="muted">{t("instance.noLoader")}</p>
+          {/if}
+          <InstanceSettings {instance} />
         {/if}
-      {:else if tab === "catalog"}
-        <ContentCatalog
-          instanceId={instance.id}
-          {kinds}
-          bind:kind={chosenKind}
-          bind:world
-          oninstall={() => refresh++}
-        />
-      {:else if tab === "worlds"}
-        <WorldList instanceId={instance.id} />
-      {:else if tab === "servers"}
-        <ServerList instanceId={instance.id} />
-      {:else if tab === "screenshots"}
-        <ScreenshotGallery instanceId={instance.id} />
-      {:else if tab === "logs"}
-        <GameConsole instanceId={instance.id} />
-      {:else}
-        {#if !instance.loader}
-          <p class="muted">{t("instance.noLoader")}</p>
-        {/if}
-        <InstanceSettings {instance} />
-      {/if}
-    </div>
+      </div>
+    {/key}
   </section>
 
   <ShareDialog {instance} bind:open={sharing} />

@@ -4,6 +4,7 @@
   import "@fontsource-variable/rubik";
   import "@fontsource-variable/unbounded";
   import "$lib/styles/global.css";
+  import "$lib/styles/motion.css";
   import type { Snippet } from "svelte";
   import { page } from "$app/state";
   import { api } from "$lib/api";
@@ -13,6 +14,7 @@
   import PrivacyDialog from "$lib/components/PrivacyDialog.svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
   import { locale } from "$lib/i18n/index.svelte";
+  import { playClick } from "$lib/sound";
   import { discordPresence, library, listenToGames } from "$lib/state/instances.svelte";
   import { applySettings, settings } from "$lib/state/settings.svelte";
   import { checkForUpdate } from "$lib/state/update.svelte";
@@ -59,6 +61,19 @@
     }
   }
 
+  const CLICKABLE =
+    "button:enabled, a[href], [role='tab'], input[type='checkbox'], label:has(input[type='radio'])";
+
+  function onpointerdown(event: PointerEvent) {
+    if (
+      settings.clickSound &&
+      event.button === 0 &&
+      (event.target as HTMLElement).closest(CLICKABLE)
+    ) {
+      playClick();
+    }
+  }
+
   // Ctrl, Shift or middle click on a link would open a bare webview window.
   function blockNewWindow(event: MouseEvent) {
     const opensWindow = event.button === 1 || event.ctrlKey || event.shiftKey || event.metaKey;
@@ -92,7 +107,13 @@
   });
 </script>
 
-<svelte:window {oncontextmenu} {onkeydown} onclick={blockNewWindow} onauxclick={blockNewWindow} />
+<svelte:window
+  {oncontextmenu}
+  {onkeydown}
+  {onpointerdown}
+  onclick={blockNewWindow}
+  onauxclick={blockNewWindow}
+/>
 
 <Backdrop kind={backdrop} cover={instance ? coverOf(instance.id, instance.cover) : null} />
 <div class="app">
