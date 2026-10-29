@@ -83,8 +83,8 @@
 }
 
 :root[data-motion="on"] dialog[open] {
-  /* No spring here: a big blurred window that overshoots and shrinks back looks like a jolt. */
-  animation: dialog-in 280ms var(--ease);
+  /* Settles from slightly larger, the way iOS shows an alert. */
+  animation: dialog-in 240ms var(--ease);
 }
 
 :root[data-motion="on"] dialog[open]::backdrop {
@@ -148,7 +148,7 @@
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.96);
+    transform: scale(1.08);
   }
 }
 
