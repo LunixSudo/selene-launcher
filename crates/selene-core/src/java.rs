@@ -22,6 +22,11 @@ const ZULU_API: &str = "https://api.azul.com/metadata/v1/zulu/packages/";
 const INSTALL_MARKER: &str = ".selene-runtime.json";
 const DOWNLOAD_CONCURRENCY: usize = 16;
 
+/// Two launches preparing at once must not unpack into the same folder.
+static VENDOR_INSTALL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+const VENDORS: [Vendor; 2] = [Vendor::Temurin, Vendor::Zulu];
+
 /// Runtime releases keyed by platform, then by component (`java-runtime-delta`, `jre-legacy`, ...).
 pub type RuntimeIndex = HashMap<String, HashMap<String, Vec<RuntimeRelease>>>;
 
@@ -281,11 +286,6 @@ impl Vendor {
         }
     }
 }
-
-/// Two launches preparing at once must not unpack into the same folder.
-static VENDOR_INSTALL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-
-const VENDORS: [Vendor; 2] = [Vendor::Temurin, Vendor::Zulu];
 
 /// A JRE zip and where to get it.
 struct Archive {

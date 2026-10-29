@@ -36,6 +36,9 @@ const FIRST_HEADLESS_1_12_2_BUILD: u32 = 2851;
 /// The installers refuse to install a client without the official launcher's profile list.
 const LAUNCHER_PROFILES: &str = "launcher_profiles.json";
 const OUTPUT_TAIL_LINES: usize = 20;
+
+/// Installers write the same libraries and patched jars, so two never run at once.
+static INSTALLING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
@@ -288,6 +291,10 @@ where
     F: Fn(Progress),
 {
     let id = version_id(loader, game_version);
+    if let Some(installed) = read_installed(dirs, &id).await {
+        return Ok(installed.into());
+    }
+    let _guard = INSTALLING.lock().await;
     if let Some(installed) = read_installed(dirs, &id).await {
         return Ok(installed.into());
     }
