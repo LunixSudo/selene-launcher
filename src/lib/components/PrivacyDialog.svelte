@@ -7,6 +7,9 @@
   import privacyEn from "../../../PRIVACY.md?raw";
   import privacyRu from "../../../PRIVACY.ru.md?raw";
 
+  /** `settled` turns true once the policy is known to be accepted. */
+  let { settled = $bindable(false) }: { settled?: boolean } = $props();
+
   const titleId = $props.id();
 
   let dialog: HTMLDialogElement;
@@ -22,6 +25,7 @@
       .then((status) => {
         updated = status.updated;
         open = !status.accepted;
+        settled = status.accepted;
       })
       .catch(() => {});
   });
@@ -39,6 +43,7 @@
     try {
       await api.acceptPrivacy();
       open = false;
+      settled = true;
     } finally {
       saving = false;
     }

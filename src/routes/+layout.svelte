@@ -13,6 +13,7 @@
   import DropOverlay from "$lib/components/DropOverlay.svelte";
   import PrivacyDialog from "$lib/components/PrivacyDialog.svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
+  import WelcomeDialog from "$lib/components/WelcomeDialog.svelte";
   import { locale } from "$lib/i18n/index.svelte";
   import { playClick } from "$lib/sound";
   import { discordPresence, library, listenToGames } from "$lib/state/instances.svelte";
@@ -20,6 +21,8 @@
   import { checkForUpdate } from "$lib/state/update.svelte";
 
   let { children }: { children: Snippet } = $props();
+
+  let privacySettled = $state(false);
 
   const instance = $derived(
     page.route.id === "/instance/[id]"
@@ -123,7 +126,8 @@
   </main>
 </div>
 <DropOverlay />
-<PrivacyDialog />
+<PrivacyDialog bind:settled={privacySettled} />
+<WelcomeDialog open={privacySettled && !settings.setupDone} />
 
 <style>
   .app {

@@ -410,6 +410,15 @@ export const en: Messages = {
     stars: "Stars",
     aurora: "Aurora",
   },
+  welcome: {
+    title: "Welcome to Selene",
+    lead: "How should the launcher look? You can change all of it in the settings.",
+    fast: "Faster",
+    fastHint: "Nothing extra: no live background or animations. Best for older PCs.",
+    beautiful: "Prettier",
+    beautifulHint: "Glass, a live background, smooth animations and click sounds.",
+    later: "Background, animations and sound live under Effects in the settings.",
+  },
   skins: {
     animation: "Animation",
     animations: { idle: "Idle", walk: "Walk", run: "Run", fly: "Fly", wave: "Wave" },
