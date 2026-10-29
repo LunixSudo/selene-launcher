@@ -119,13 +119,15 @@
     border-radius: var(--radius-lg);
     background: var(--surface);
     backdrop-filter: blur(24px) saturate(1.4);
+    top: 0;
+    /* Lifted with top, not a transform: some GPUs then blur a square around the whole shadow. */
     transition:
-      transform 200ms var(--ease),
+      top 200ms var(--ease),
       box-shadow 200ms var(--ease);
   }
 
   .card:hover {
-    transform: translateY(-2px);
+    top: -2px;
     box-shadow: 0 14px 36px rgb(0 0 0 / 0.16);
   }
 

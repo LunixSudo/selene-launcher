@@ -36,12 +36,12 @@
 
 :root[data-motion="on"] .card {
   transition:
-    transform 380ms var(--spring),
+    top 380ms var(--spring),
     box-shadow 380ms var(--ease);
 }
 
 :root[data-motion="on"] .card:hover {
-  transform: translateY(-6px) scale(1.015);
+  top: -6px;
   box-shadow:
     0 22px 50px rgb(0 0 0 / 0.26),
     0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
