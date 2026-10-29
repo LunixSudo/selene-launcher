@@ -33,8 +33,13 @@
   let working = $state(false);
   let error = $state<string | null>(null);
 
+  // Saving any setting replaces the instance object; only these fields call for a new check.
+  const id = $derived(instance.id);
+  const version = $derived(instance.version);
+  const loaderId = $derived(instance.loader?.loader ?? null);
+  const loaderVersion = $derived(instance.loader?.version ?? null);
   const kinds = $derived<ContentKind[]>(
-    instance.loader ? ["mod", "resourcePack", "shaderPack"] : ["resourcePack"],
+    loaderId ? ["mod", "resourcePack", "shaderPack"] : ["resourcePack"],
   );
   const pending = $derived(kinds.filter((kind) => (counts[kind] ?? 0) > 0));
   const chosen = $derived(
@@ -46,7 +51,7 @@
   );
 
   $effect(() => {
-    const { id, version, loader } = instance;
+    const loader = loaderId && loaderVersion ? { loader: loaderId, version: loaderVersion } : null;
     const checked = kinds;
     void refresh;
     if (recheck > 0) {
