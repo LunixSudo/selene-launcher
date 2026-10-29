@@ -302,32 +302,33 @@ fn collect_files(dir: &Path, root: &Path, out: &mut Vec<PathBuf>) -> Result<()> 
     Ok(())
 }
 
-/// Unpacks every file under one of the `folders` of the pack into the game folder.
+/// Unpacks every file under the `folders` of the pack into the game folder. A later folder wins
+/// over an earlier one, whatever order the archive stores them in.
 pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path, folders: &[&str]) -> Result<()> {
     let mut archive = open(pack)?;
-    for index in 0..archive.len() {
-        let mut entry = archive
-            .by_index(index)
-            .map_err(|err| Error::io(pack, err.into()))?;
-        let name = entry
-            .name()
-            .map_err(|err| Error::io(pack, err.into()))?
-            .into_owned();
-        let Some(relative) = folders.iter().find_map(|folder| {
-            name.strip_prefix(folder)
-                .and_then(|rest| rest.strip_prefix('/'))
-        }) else {
-            continue;
-        };
-        if entry.is_dir() || relative.is_empty() {
-            continue;
+    for folder in folders {
+        let prefix = format!("{folder}/");
+        for index in 0..archive.len() {
+            let mut entry = archive
+                .by_index(index)
+                .map_err(|err| Error::io(pack, err.into()))?;
+            let name = entry
+                .name()
+                .map_err(|err| Error::io(pack, err.into()))?
+                .into_owned();
+            let Some(relative) = name.strip_prefix(&prefix) else {
+                continue;
+            };
+            if entry.is_dir() || relative.is_empty() {
+                continue;
+            }
+            let target = game_dir.join(safe_relative_path(relative)?);
+            if let Some(parent) = target.parent() {
+                std::fs::create_dir_all(parent).map_err(|err| Error::io(parent, err))?;
+            }
+            let mut out = File::create(&target).map_err(|err| Error::io(&target, err))?;
+            std::io::copy(&mut entry, &mut out).map_err(|err| Error::io(&target, err))?;
         }
-        let target = game_dir.join(safe_relative_path(relative)?);
-        if let Some(parent) = target.parent() {
-            std::fs::create_dir_all(parent).map_err(|err| Error::io(parent, err))?;
-        }
-        let mut out = File::create(&target).map_err(|err| Error::io(&target, err))?;
-        std::io::copy(&mut entry, &mut out).map_err(|err| Error::io(&target, err))?;
     }
     Ok(())
 }
