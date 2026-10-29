@@ -52,6 +52,7 @@ pub fn run() {
             commands::instances,
             commands::create_instance,
             commands::prepare_instance,
+            commands::prefetch_java,
             commands::update_instance,
             commands::duplicate_instance,
             commands::delete_instance,

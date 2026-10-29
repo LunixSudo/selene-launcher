@@ -400,6 +400,7 @@ export const api = {
   canUninstall: () => invoke<boolean>("can_uninstall"),
   uninstallLauncher: () => invoke<void>("uninstall_launcher"),
   prepareInstance: (id: string) => invoke<void>("prepare_instance", { id }),
+  prefetchJava: () => invoke<void>("prefetch_java"),
   launchInstance: (id: string, server: string | null = null) =>
     invoke<void>("launch_instance", { id, server }),
   stopInstance: (id: string) => invoke<boolean>("stop_instance", { id }),

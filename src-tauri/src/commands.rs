@@ -389,6 +389,21 @@ pub async fn prepare_instance(
     result
 }
 
+/// Downloads the Java of the newest release in the background, the one most new instances
+/// need, so their first start does not wait for it.
+#[tauri::command]
+pub async fn prefetch_java(launcher: State<'_, Launcher>) -> CommandResult<()> {
+    if launcher.accounts.list().active.is_none() {
+        return Ok(());
+    }
+    let manifest = launcher.manifest().await?;
+    let Some(entry) = manifest.get(&manifest.latest.release) else {
+        return Ok(());
+    };
+    download::in_background(game::install_java(&launcher.client, &launcher.dirs, entry)).await?;
+    Ok(())
+}
+
 /// Closes the game as its window would, so it saves the world, and kills it if it hangs.
 #[tauri::command]
 pub fn stop_instance(launcher: State<'_, Launcher>, id: String) -> bool {

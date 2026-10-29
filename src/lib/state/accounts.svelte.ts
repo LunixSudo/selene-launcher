@@ -26,6 +26,7 @@ export async function signIn() {
     await loadAccounts();
     // Instances added before signing in could not download their game yet.
     void prepareAll();
+    void api.prefetchJava().catch(() => {});
   } catch (error) {
     if (!isCommandError(error) || error.kind !== "signInCancelled") {
       session.error = isCommandError(error) ? error : { kind: "core", message: String(error) };

@@ -294,6 +294,8 @@ export async function listenToGames(): Promise<() => void> {
   if (requested) {
     void play(requested);
   }
+  // Offline or not signed in, there simply is nothing to fetch yet.
+  void api.prefetchJava().catch(() => {});
   return () => {
     for (const unlisten of unlisteners) {
       unlisten();

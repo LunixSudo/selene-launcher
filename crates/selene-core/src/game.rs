@@ -61,6 +61,23 @@ impl GameDirs {
     }
 }
 
+/// Downloads the Java a version runs on ahead of time, so its first start does not wait.
+pub async fn install_java(client: &Client, dirs: &GameDirs, entry: &VersionEntry) -> Result<()> {
+    let version = VersionInfo::fetch(client, entry, &dirs.versions()).await?;
+    let (component, major) = java_of(&version);
+    java::install_any(client, component, major, &dirs.runtimes(), |_| {}).await?;
+    Ok(())
+}
+
+fn java_of(version: &VersionInfo) -> (&str, u32) {
+    version
+        .java_version
+        .as_ref()
+        .map_or((LEGACY_JAVA, 8), |java| {
+            (java.component.as_str(), java.major_version)
+        })
+}
+
 /// Downloads everything a version needs to start: client, libraries, assets, Java and the
 /// mod loader if there is one.
 pub async fn install<F>(
@@ -89,12 +106,7 @@ where
     })
     .await?;
 
-    let (component, major) = version
-        .java_version
-        .as_ref()
-        .map_or((LEGACY_JAVA, 8), |java| {
-            (java.component.as_str(), java.major_version)
-        });
+    let (component, major) = java_of(&version);
     let java = java::install_any(client, component, major, &dirs.runtimes(), |progress| {
         on_progress(Stage::Java, progress);
     })
