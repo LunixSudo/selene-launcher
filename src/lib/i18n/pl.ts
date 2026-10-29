@@ -462,6 +462,7 @@ export const pl: Messages = {
     later: "Tło, animacje i dźwięk znajdziesz w ustawieniach, w sekcji Efekty.",
   },
   skins: {
+    dragHint: "Przeciągnij, aby obrócić",
     animation: "Animacja",
     animations: { idle: "Stoi", walk: "Idzie", run: "Biegnie", fly: "Leci", wave: "Macha" },
     saveCurrent: "Zapisz w moich skinach",

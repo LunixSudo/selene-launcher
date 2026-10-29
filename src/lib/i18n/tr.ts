@@ -463,6 +463,7 @@ export const tr: Messages = {
     later: "Arka plan, animasyonlar ve ses, ayarlarda Efektler bölümünde.",
   },
   skins: {
+    dragHint: "Döndürmek için sürükleyin",
     animation: "Animasyon",
     animations: {
       idle: "Duruyor",

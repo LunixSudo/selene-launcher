@@ -458,6 +458,7 @@ export const uk: Messages = {
     later: "Фон, анімації та звук — у налаштуваннях, розділ «Ефекти».",
   },
   skins: {
+    dragHint: "Перетягніть, щоб повернути",
     animation: "Анімація",
     animations: { idle: "Стоїть", walk: "Іде", run: "Біжить", fly: "Летить", wave: "Махає" },
     saveCurrent: "Зберегти до моїх скінів",

@@ -470,6 +470,7 @@ export const es: Messages = {
     later: "El fondo, las animaciones y el sonido están en Ajustes, sección Efectos.",
   },
   skins: {
+    dragHint: "Arrastra para girar",
     animation: "Animación",
     animations: { idle: "Quieto", walk: "Andar", run: "Correr", fly: "Volar", wave: "Saludar" },
     saveCurrent: "Guardar en mis skins",

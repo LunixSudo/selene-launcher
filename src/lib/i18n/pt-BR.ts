@@ -465,6 +465,7 @@ export const ptBR: Messages = {
     later: "Fundo, animações e som ficam em Configurações, na seção Efeitos.",
   },
   skins: {
+    dragHint: "Arraste para girar",
     animation: "Animação",
     animations: { idle: "Parado", walk: "Andar", run: "Correr", fly: "Voar", wave: "Acenar" },
     saveCurrent: "Salvar nas minhas skins",

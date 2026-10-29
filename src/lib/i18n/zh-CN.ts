@@ -446,6 +446,7 @@ export const zhCN: Messages = {
     later: "背景、动画和声音都在设置的“效果”中。",
   },
   skins: {
+    dragHint: "拖动以旋转",
     animation: "动作",
     animations: { idle: "站立", walk: "行走", run: "奔跑", fly: "飞行", wave: "挥手" },
     saveCurrent: "保存到我的皮肤",

@@ -458,6 +458,7 @@ export const en: Messages = {
     later: "Background, animations and sound live under Effects in the settings.",
   },
   skins: {
+    dragHint: "Drag to turn",
     animation: "Animation",
     animations: { idle: "Idle", walk: "Walk", run: "Run", fly: "Fly", wave: "Wave" },
     saveCurrent: "Save to my skins",

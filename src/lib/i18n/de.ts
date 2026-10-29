@@ -474,6 +474,7 @@ export const de: Messages = {
     later: "Hintergrund, Animationen und Sound findest du in den Einstellungen unter „Effekte“.",
   },
   skins: {
+    dragHint: "Zum Drehen ziehen",
     animation: "Animation",
     animations: { idle: "Stehen", walk: "Gehen", run: "Rennen", fly: "Fliegen", wave: "Winken" },
     saveCurrent: "In meinen Skins speichern",
