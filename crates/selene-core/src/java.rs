@@ -14,9 +14,10 @@ use crate::{Error, Result, cache, http};
 /// Index of every Java runtime Mojang ships, the same one the official launcher reads.
 pub const RUNTIME_INDEX_URL: &str = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json";
 
-/// Eclipse Temurin builds, used when Mojang's runtimes cannot be downloaded.
+/// Eclipse Temurin and Azul Zulu builds, used when Mojang's runtimes cannot be downloaded.
 const ADOPTIUM_API: &str = "https://api.adoptium.net/v3/assets/latest/";
 const ADOPTIUM_MIRROR: &str = "https://mirrors.tuna.tsinghua.edu.cn/Adoptium/";
+const ZULU_API: &str = "https://api.azul.com/metadata/v1/zulu/packages/";
 
 const INSTALL_MARKER: &str = ".selene-runtime.json";
 const DOWNLOAD_CONCURRENCY: usize = 16;
@@ -82,6 +83,20 @@ struct AdoptiumPackage {
     checksum: String,
     link: String,
     name: String,
+    size: u64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ZuluPackage {
+    package_uuid: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ZuluDetails {
+    name: String,
+    download_url: String,
+    java_version: Vec<u32>,
+    sha256_hash: String,
     size: u64,
 }
 
@@ -196,7 +211,8 @@ where
     Ok(runtime)
 }
 
-/// Mojang's runtime from the official hosts, then Temurin, then Mojang's runtime from BMCLAPI.
+/// Mojang's runtime from the official hosts, then Temurin and Zulu, then Mojang's runtime from
+/// BMCLAPI.
 pub async fn install_any<F>(
     client: &Client,
     component: &str,
@@ -219,16 +235,100 @@ where
     if official.is_ok() {
         return official;
     }
-    if let Ok(runtime) = install_temurin(client, major, runtimes_dir, &on_progress).await {
-        return Ok(runtime);
+    for vendor in [Vendor::Temurin, Vendor::Zulu] {
+        if let Ok(runtime) = install_vendor(client, vendor, major, runtimes_dir, &on_progress).await
+        {
+            return Ok(runtime);
+        }
     }
     let index = fetch_index(client, runtimes_dir).await?;
     install(client, &index, component, runtimes_dir, on_progress).await
 }
 
-/// Installs the latest Temurin JRE of `major` into `runtimes_dir/temurin-<major>`.
-pub async fn install_temurin<F>(
+/// Other vendors' Java, used when Mojang's runtimes cannot be downloaded.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Vendor {
+    Temurin,
+    Zulu,
+}
+
+impl Vendor {
+    fn component(self, major: u32) -> String {
+        match self {
+            Self::Temurin => format!("temurin-{major}"),
+            Self::Zulu => format!("zulu-{major}"),
+        }
+    }
+
+    async fn latest(self, client: &Client, major: u32, arch: &str) -> Result<Option<Archive>> {
+        match self {
+            Self::Temurin => latest_temurin(client, major, arch).await,
+            Self::Zulu => latest_zulu(client, major, arch).await,
+        }
+    }
+}
+
+/// A JRE zip and where to get it.
+struct Archive {
+    name: String,
+    version: String,
+    sha256: String,
+    size: u64,
+    urls: Vec<String>,
+}
+
+async fn latest_temurin(client: &Client, major: u32, arch: &str) -> Result<Option<Archive>> {
+    let url = format!(
+        "{ADOPTIUM_API}{major}/hotspot?architecture={arch}&image_type=jre&os=windows&vendor=eclipse"
+    );
+    let assets: Vec<AdoptiumAsset> = http::get_json(client, &url).await?;
+    Ok(assets.into_iter().next().map(|asset| {
+        let package = asset.binary.package;
+        let mirror = format!(
+            "{ADOPTIUM_MIRROR}{major}/jre/{arch}/windows/{}",
+            package.name
+        );
+        Archive {
+            version: asset.release_name,
+            sha256: package.checksum,
+            size: package.size,
+            urls: vec![package.link, mirror],
+            name: package.name,
+        }
+    }))
+}
+
+async fn latest_zulu(client: &Client, major: u32, arch: &str) -> Result<Option<Archive>> {
+    let url = format!(
+        "{ZULU_API}?java_version={major}&os=windows&arch={arch}&archive_type=zip\
+         &java_package_type=jre&javafx_bundled=false&crac_supported=false&latest=true\
+         &release_status=ga&availability_types=CA&certifications=tck&page_size=1"
+    );
+    let packages: Vec<ZuluPackage> = http::get_json(client, &url).await?;
+    let Some(package) = packages.into_iter().next() else {
+        return Ok(None);
+    };
+    let details: ZuluDetails =
+        http::get_json(client, &format!("{ZULU_API}{}", package.package_uuid)).await?;
+    let version = details
+        .java_version
+        .iter()
+        .map(u32::to_string)
+        .collect::<Vec<_>>()
+        .join(".");
+    Ok(Some(Archive {
+        name: details.name,
+        version,
+        sha256: details.sha256_hash,
+        size: details.size,
+        urls: vec![details.download_url],
+    }))
+}
+
+/// Installs the latest JRE of `major` from `vendor` into `runtimes_dir/<vendor>-<major>`.
+pub async fn install_vendor<F>(
     client: &Client,
+    vendor: Vendor,
     major: u32,
     runtimes_dir: &Path,
     on_progress: F,
@@ -236,17 +336,14 @@ pub async fn install_temurin<F>(
 where
     F: Fn(Progress) + Sync,
 {
-    let component = format!("temurin-{major}");
-    let arch = adoptium_arch(std::env::consts::OS, std::env::consts::ARCH)
+    let component = vendor.component(major);
+    let arch = vendor_arch(std::env::consts::OS, std::env::consts::ARCH)
         .ok_or(Error::UnsupportedPlatform)?;
     let home = runtimes_dir.join(&component);
     let installed = read_marker(&home).await;
 
-    let url = format!(
-        "{ADOPTIUM_API}{major}/hotspot?architecture={arch}&image_type=jre&os=windows&vendor=eclipse"
-    );
-    let asset = match http::get_json::<Vec<AdoptiumAsset>>(client, &url).await {
-        Ok(assets) => assets.into_iter().next(),
+    let archive = match vendor.latest(client, major, arch).await {
+        Ok(archive) => archive,
         // Offline, a build installed earlier is still good.
         Err(err) => match installed {
             Some(marker)
@@ -263,19 +360,18 @@ where
             _ => return Err(err),
         },
     };
-    let asset = asset.ok_or_else(|| Error::JavaUnavailable {
+    let archive = archive.ok_or_else(|| Error::JavaUnavailable {
         component: component.clone(),
         platform: format!("windows-{arch}"),
     })?;
-    let package = &asset.binary.package;
     let runtime = JavaRuntime {
         component,
-        version: asset.release_name.clone(),
+        version: archive.version.clone(),
         home,
     };
     let marker = InstallMarker {
-        version: asset.release_name.clone(),
-        manifest_sha1: package.checksum.clone(),
+        version: archive.version.clone(),
+        manifest_sha1: archive.sha256.clone(),
     };
     if installed.as_ref() == Some(&marker)
         && fs::try_exists(runtime.executable()).await.unwrap_or(false)
@@ -283,17 +379,10 @@ where
         return Ok(runtime);
     }
 
-    let archive = runtimes_dir.join(&package.name);
-    let sources = [
-        package.link.clone(),
-        format!(
-            "{ADOPTIUM_MIRROR}{major}/jre/{arch}/windows/{}",
-            package.name
-        ),
-    ];
+    let path = runtimes_dir.join(&archive.name);
     let mut result = Ok(());
-    for source in &sources {
-        result = fetch_archive(client, source, package, &archive, &on_progress).await;
+    for url in &archive.urls {
+        result = fetch_archive(client, url, &archive, &path, &on_progress).await;
         if result.is_ok() {
             break;
         }
@@ -302,21 +391,21 @@ where
 
     let home = runtime.home.clone();
     let extracted = tokio::task::spawn_blocking({
-        let archive = archive.clone();
-        move || extract_archive(&archive, &home)
+        let path = path.clone();
+        move || extract_archive(&path, &home)
     })
     .await
-    .map_err(|err| Error::io(&archive, std::io::Error::other(err)))?;
-    let _ = fs::remove_file(&archive).await;
+    .map_err(|err| Error::io(&path, std::io::Error::other(err)))?;
+    let _ = fs::remove_file(&path).await;
     extracted?;
     write_marker(&runtime.home, &marker).await?;
 
     Ok(runtime)
 }
 
-/// Adoptium's name for the architecture. Only Windows builds are used, since the other
+/// The vendors' name for the architecture. Only Windows builds are used, since the other
 /// platforms ship as tarballs or app bundles.
-fn adoptium_arch(os: &str, arch: &str) -> Option<&'static str> {
+fn vendor_arch(os: &str, arch: &str) -> Option<&'static str> {
     match (os, arch) {
         ("windows", "x86_64") => Some("x64"),
         ("windows", "aarch64") => Some("aarch64"),
@@ -327,7 +416,7 @@ fn adoptium_arch(os: &str, arch: &str) -> Option<&'static str> {
 async fn fetch_archive<F>(
     client: &Client,
     url: &str,
-    package: &AdoptiumPackage,
+    archive: &Archive,
     path: &Path,
     on_progress: F,
 ) -> Result<()>
@@ -357,17 +446,17 @@ where
         done += chunk.len() as u64;
         on_progress(Progress {
             bytes_done: done,
-            bytes_total: package.size,
+            bytes_total: archive.size,
         });
     }
     file.flush().await.map_err(|err| Error::io(path, err))?;
 
     let actual = download::hex(&hasher.finalize());
-    if !actual.eq_ignore_ascii_case(&package.checksum) {
+    if !actual.eq_ignore_ascii_case(&archive.sha256) {
         let _ = fs::remove_file(path).await;
         return Err(Error::ChecksumMismatch {
             url: url.to_owned(),
-            expected: package.checksum.clone(),
+            expected: archive.sha256.clone(),
             actual,
         });
     }
@@ -577,10 +666,10 @@ mod tests {
     }
 
     #[test]
-    fn maps_adoptium_architectures() {
-        assert_eq!(adoptium_arch("windows", "x86_64"), Some("x64"));
-        assert_eq!(adoptium_arch("windows", "aarch64"), Some("aarch64"));
-        assert_eq!(adoptium_arch("linux", "x86_64"), None);
+    fn maps_vendor_architectures() {
+        assert_eq!(vendor_arch("windows", "x86_64"), Some("x64"));
+        assert_eq!(vendor_arch("windows", "aarch64"), Some("aarch64"));
+        assert_eq!(vendor_arch("linux", "x86_64"), None);
     }
 
     #[test]

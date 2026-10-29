@@ -83,8 +83,8 @@ All notable changes to this project are documented here. The format follows
   CurseForge, when those sites cannot be reached. Mod files keep the catalog checksums, and the
   CurseForge key is never sent to the copy.
 - When Mojang's Java cannot be downloaded, the launcher installs Eclipse Temurin of the same
-  version from Adoptium (or its TUNA mirror), checked against Adoptium's SHA-256, and only
-  then tries Mojang's Java on BMCLAPI.
+  version from Adoptium (or its TUNA mirror), then Azul Zulu, each checked against its
+  vendor's SHA-256, and only then tries Mojang's Java on BMCLAPI.
 - A temporary "Download source" setting that takes everything from BMCLAPI and MCIM, to check
   that the copies work. It goes away before the release.
 - Deleting an instance or changing its game version while its game, Java or loader is

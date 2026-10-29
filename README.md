@@ -19,7 +19,8 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
   instance downloads all of it right away, so the first start is quick. If a site is down,
   the launcher falls back to the official mirrors of Mojang, Fabric and Forge, and then to
   [BMCLAPI](https://bmclapidoc.bangbang93.com/), with checksums from the official index. Java
-  falls back to Eclipse Temurin from [Adoptium](https://adoptium.net/) before BMCLAPI. A
+  falls back to Eclipse Temurin from [Adoptium](https://adoptium.net/) and to
+  [Azul Zulu](https://www.azul.com/downloads/) before BMCLAPI. A
   download in progress can be cancelled by deleting the instance or changing its version, and
   a new game starts in the system language. An installed
   game starts without hashing its files again, and without a connection too: an account that
