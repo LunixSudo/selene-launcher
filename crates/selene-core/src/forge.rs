@@ -14,7 +14,7 @@ use tokio::process::Command;
 
 use crate::download::{self, Download, Progress};
 use crate::game::GameDirs;
-use crate::loader::{Loader, LoaderRelease, LoaderVersion, ResolvedPatch, fetch_sha1};
+use crate::loader::{self, Loader, LoaderRelease, LoaderVersion, ResolvedPatch, fetch_sha1};
 use crate::rules::{Environment, Features};
 use crate::version::{self, Arguments, Library};
 use crate::{Error, Result, http};
@@ -50,6 +50,11 @@ struct ForgePromotions {
 #[derive(Deserialize)]
 struct NeoForgeVersions {
     versions: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct BmclapiNeoForge {
+    version: String,
 }
 
 /// The part of `install_profile.json` used to follow the installer's progress.
@@ -105,8 +110,13 @@ pub async fn releases(
     match loader {
         Loader::NeoForge if game_version == "1.20.1" => neoforge_1_20_1_releases(client).await,
         Loader::NeoForge => {
-            let versions =
-                neoforge_versions(client, NEOFORGE_VERSIONS_URL, NEOFORGE_MAVEN_URL).await?;
+            let versions = neoforge_versions(
+                client,
+                NEOFORGE_VERSIONS_URL,
+                NEOFORGE_MAVEN_URL,
+                game_version,
+            )
+            .await?;
             Ok(versions
                 .into_iter()
                 .rev()
@@ -129,6 +139,7 @@ async fn neoforge_1_20_1_releases(client: &Client) -> Result<Vec<LoaderRelease>>
         client,
         NEOFORGE_1_20_1_VERSIONS_URL,
         NEOFORGE_1_20_1_MAVEN_URL,
+        "1.20.1",
     )
     .await?;
     let mut forge: HashMap<String, Vec<String>> =
@@ -180,13 +191,39 @@ async fn forge_releases(client: &Client, game_version: &str) -> Result<Vec<Loade
         .collect())
 }
 
-/// All builds, oldest first. The version API has no copy anywhere else, so when it fails
-/// the list comes from the Maven metadata, which BMCLAPI has.
-async fn neoforge_versions(client: &Client, api_url: &str, maven_url: &str) -> Result<Vec<String>> {
-    let err = match http::get_json::<NeoForgeVersions>(client, api_url).await {
-        Ok(list) => return Ok(list.versions),
-        Err(err) => err,
-    };
+/// Builds, oldest first. The version API has no copy anywhere else, so when it fails the
+/// list comes from BMCLAPI's own NeoForge list for `game_version`, and then from the Maven
+/// metadata.
+async fn neoforge_versions(
+    client: &Client,
+    api_url: &str,
+    maven_url: &str,
+    game_version: &str,
+) -> Result<Vec<String>> {
+    // A blocked API would cost a timeout on every list, so it waits until its host is back.
+    let mut err = None;
+    if !http::is_down(api_url) {
+        match http::get_json::<NeoForgeVersions>(client, api_url).await {
+            Ok(list) => return Ok(list.versions),
+            Err(api_err) => err = Some(api_err),
+        }
+    }
+    if let Some(url) = http::bmclapi(&format!("neoforge/list/{game_version}"))
+        && let Ok(builds) = http::get_json::<Vec<BmclapiNeoForge>>(client, &url).await
+        && !builds.is_empty()
+    {
+        let mut versions: Vec<String> = builds
+            .into_iter()
+            // The 1.20.1 builds were named after the game version, like Forge's, which the
+            // list gives for some builds and leaves out for others.
+            .map(|build| match game_version {
+                "1.20.1" => format!("1.20.1-{}", build.version.trim_start_matches("1.20.1-")),
+                _ => build.version,
+            })
+            .collect();
+        versions.sort_by(|a, b| loader::compare_versions(a, b));
+        return Ok(versions);
+    }
     let metadata: Result<String> = async {
         let url = format!("{maven_url}/maven-metadata.xml");
         Ok(http::get(client, &url)
@@ -197,7 +234,9 @@ async fn neoforge_versions(client: &Client, api_url: &str, maven_url: &str) -> R
     }
     .await;
     // The API's own error says more than one about the fallback.
-    metadata.map(|text| maven_versions(&text)).map_err(|_| err)
+    metadata
+        .map(|text| maven_versions(&text))
+        .map_err(|metadata_err| err.unwrap_or(metadata_err))
 }
 
 /// The `<version>` entries of a `maven-metadata.xml`, in the order listed.

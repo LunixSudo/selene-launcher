@@ -196,6 +196,11 @@ pub fn fallback_of(url: &str) -> Option<String> {
         })
 }
 
+/// `path` on BMCLAPI, for its own APIs that have no official counterpart to map from.
+pub fn bmclapi(path: &str) -> Option<String> {
+    (only() != Some(Only::Official)).then(|| format!("{BMCLAPI}{path}"))
+}
+
 fn is_fallback(url: &str) -> bool {
     url.starts_with(BMCLAPI) || url.starts_with(MCIM)
 }
@@ -282,7 +287,8 @@ fn host_of(url: &str) -> &str {
     rest.split('/').next().unwrap_or(rest)
 }
 
-fn is_down(url: &str) -> bool {
+/// Whether the host of `url` failed in the last few minutes.
+pub fn is_down(url: &str) -> bool {
     let host = host_of(url);
     let mut down = DOWN_HOSTS
         .lock()

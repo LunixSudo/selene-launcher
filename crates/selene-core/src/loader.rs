@@ -168,7 +168,7 @@ async fn profile_releases(
 
 /// Orders versions like `0.30.0-beta.10` by their numbers, with a pre-release before the
 /// release it leads to.
-fn compare_versions(a: &str, b: &str) -> Ordering {
+pub(crate) fn compare_versions(a: &str, b: &str) -> Ordering {
     let split = |version: &str| {
         let (release, pre) = version.split_once('-').unwrap_or((version, ""));
         (release.to_owned(), pre.to_owned())
