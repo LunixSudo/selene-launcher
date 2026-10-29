@@ -296,6 +296,10 @@ where
     let installer = work_dir.join(format!("{id}-installer.jar"));
     let url = installer_url(loader, game_version);
     let sha1 = fetch_sha1(client, &url).await;
+    if sha1.is_empty() {
+        // Without a checksum a leftover installer cannot be trusted, so it is fetched again.
+        let _ = tokio::fs::remove_file(&installer).await;
+    }
     download::download_all(
         client,
         vec![Download {
@@ -309,7 +313,13 @@ where
     )
     .await?;
 
-    let profile = read_profile(&installer)?;
+    let profile = match read_profile(&installer) {
+        Ok(profile) => profile,
+        Err(err) => {
+            let _ = tokio::fs::remove_file(&installer).await;
+            return Err(err);
+        }
+    };
     // The installer only downloads what is missing, so libraries fetched here through the
     // official mirrors spare it a host that may be unreachable. It retries the rest itself.
     let env = Environment::current(Features::default());
