@@ -127,8 +127,7 @@ async fn create(
     Ok(instance)
 }
 
-/// Writes the instance as a `.mrpack` (Selene, Prism, Modrinth App) or a CurseForge `.zip`
-/// (CurseForge App, Prism, `ATLauncher`).
+/// Writes the instance as a `.mrpack` or a CurseForge `.zip`.
 #[tauri::command]
 pub async fn export_pack(
     launcher: State<'_, Launcher>,
