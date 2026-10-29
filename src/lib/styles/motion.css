@@ -83,11 +83,8 @@
 }
 
 :root[data-motion="on"] dialog[open] {
-  /* The spring overshoots, which would take the blur below zero and blank the dialog for a
-     moment, so only the movement springs. */
-  animation:
-    dialog-in 420ms var(--spring),
-    dialog-focus 260ms var(--ease);
+  /* No spring here: a big blurred window that overshoots and shrinks back looks like a jolt. */
+  animation: dialog-in 280ms var(--ease);
 }
 
 :root[data-motion="on"] dialog[open]::backdrop {
@@ -150,14 +147,8 @@
 
 @keyframes dialog-in {
   from {
-    transform: translateY(18px) scale(0.92);
-  }
-}
-
-@keyframes dialog-focus {
-  from {
     opacity: 0;
-    filter: blur(8px);
+    transform: translateY(12px) scale(0.96);
   }
 }
 
