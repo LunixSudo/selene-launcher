@@ -115,7 +115,7 @@ impl Instances {
         version: &str,
         loader: Option<LoaderVersion>,
     ) -> Result<Instance> {
-        let id = self.free_id(name).await;
+        let id = self.free_id(name).await?;
         let instance = Instance {
             id,
             name: name.trim().to_owned(),
@@ -152,7 +152,7 @@ impl Instances {
         let mut instance = read_config(&source).await.ok_or_else(|| {
             Error::io(&source, std::io::Error::from(std::io::ErrorKind::NotFound))
         })?;
-        instance.id = self.free_id(name).await;
+        instance.id = self.free_id(name).await?;
         name.trim().clone_into(&mut instance.name);
         instance.created_at = Utc::now();
         instance.last_played = None;
@@ -178,15 +178,26 @@ impl Instances {
             .map_err(|err| Error::io(&path, err))
     }
 
-    async fn free_id(&self, name: &str) -> String {
+    /// Creates an empty folder for `name` and returns its id. Creating the folder is what
+    /// claims the id, so two instances made at once never share one.
+    async fn free_id(&self, name: &str) -> Result<String> {
+        fs::create_dir_all(&self.root)
+            .await
+            .map_err(|err| Error::io(&self.root, err))?;
         let base = slug(name);
         let mut id = base.clone();
         let mut suffix = 2;
-        while fs::try_exists(self.root.join(&id)).await.unwrap_or(false) {
-            id = format!("{base}-{suffix}");
-            suffix += 1;
+        loop {
+            let path = self.root.join(&id);
+            match fs::create_dir(&path).await {
+                Ok(()) => return Ok(id),
+                Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+                    id = format!("{base}-{suffix}");
+                    suffix += 1;
+                }
+                Err(err) => return Err(Error::io(&path, err)),
+            }
         }
-        id
     }
 }
 
@@ -206,9 +217,12 @@ fn checked_id(id: &str) -> Result<&str> {
     }
 }
 
+/// The folder name is the id, so a folder copied by hand is a separate instance.
 async fn read_config(dir: &Path) -> Option<Instance> {
     let bytes = fs::read(dir.join(CONFIG_FILE)).await.ok()?;
-    serde_json::from_slice(&bytes).ok()
+    let mut instance: Instance = serde_json::from_slice(&bytes).ok()?;
+    dir.file_name()?.to_str()?.clone_into(&mut instance.id);
+    Some(instance)
 }
 
 fn copy_dir(from: &Path, to: &Path) -> Result<()> {
