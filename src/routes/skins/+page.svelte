@@ -175,7 +175,6 @@
         variant={preview?.variant ?? profile?.skin?.variant ?? "classic"}
         cape={shownCape}
         animation={settings.skinAnimation}
-        name={profile?.name ?? null}
       />
       <fieldset class="animations">
         <legend class="sr-only">{t("skins.animation")}</legend>
@@ -335,6 +334,7 @@
 
   .layout {
     display: grid;
+    flex: 1;
     grid-template-columns: 300px minmax(0, 1fr);
     gap: 20px;
     min-height: 0;
@@ -345,7 +345,9 @@
     align-content: start;
     justify-items: center;
     gap: 12px;
+    min-height: 0;
     padding: 16px;
+    overflow-y: auto;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     background:

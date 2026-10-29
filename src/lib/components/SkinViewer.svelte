@@ -9,13 +9,11 @@
     variant,
     cape,
     animation,
-    name = null,
   }: {
     skin: string | null;
     variant: SkinVariant;
     cape: string | null;
     animation: SkinAnimation;
-    name?: string | null;
   } = $props();
 
   let canvas: HTMLCanvasElement;
@@ -45,6 +43,21 @@
     };
   }
 
+  /** Small laptop screens get a smaller model, so the capes under it stay in view. */
+  function fittedSize(): { width: number; height: number } {
+    const height = Math.round(Math.min(360, Math.max(240, innerHeight * 0.4)));
+    return { width: Math.round((height * 260) / 360), height };
+  }
+
+  $effect(() => {
+    const resize = () => {
+      const { width, height } = fittedSize();
+      viewer?.setSize(width, height);
+    };
+    addEventListener("resize", resize);
+    return () => removeEventListener("resize", resize);
+  });
+
   $effect(() => {
     let disposed = false;
     let created: SkinViewer | undefined;
@@ -54,13 +67,16 @@
         return;
       }
       try {
-        created = new module.SkinViewer({ canvas, width: 260, height: 360, zoom: 0.8 });
+        created = new module.SkinViewer({ canvas, ...fittedSize(), zoom: 0.8 });
       } catch {
         // Old or blocklisted graphics drivers give no WebGL context.
         unsupported = true;
         return;
       }
       created.controls.enableZoom = false;
+      // Turning glides to a stop instead of following every jitter of the mouse.
+      created.controls.enableDamping = true;
+      created.controls.dampingFactor = 0.12;
       animations = module;
       viewer = created;
     });
@@ -113,12 +129,6 @@
       return;
     }
     return whenLoaded(cape, (image) => viewer?.loadCape(image, { backEquipment }));
-  });
-
-  $effect(() => {
-    if (viewer) {
-      viewer.nameTag = name;
-    }
   });
 </script>
 
