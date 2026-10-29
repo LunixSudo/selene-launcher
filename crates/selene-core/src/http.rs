@@ -48,8 +48,8 @@ const MIRRORS: &[&[&str]] = &[
 /// checksum are still checked against the one from the official index.
 const BMCLAPI: &str = "https://bmclapi2.bangbang93.com/";
 /// MCIM, a public copy of the Modrinth and CurseForge APIs and files. Like
-/// BMCLAPI it is only asked when the official site fails, and mod files keep the checksums the
-/// catalog lists.
+/// BMCLAPI it is only asked when the official site fails. Mod files are checked against the
+/// catalog's checksums, which come from the copy too when the catalog itself is down.
 const MCIM: &str = "https://mod.mcimirror.top/";
 const FALLBACKS: &[(&str, &str)] = &[
     ("https://piston-meta.mojang.com/", BMCLAPI),
@@ -129,17 +129,31 @@ pub fn source() -> Source {
     }
 }
 
+/// Limits the requests made inside a scope to one kind of source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Only {
+    Official,
+    Fallbacks,
+}
+
 tokio::task_local! {
-    static OFFICIAL_ONLY: ();
+    static ONLY: Only;
 }
 
 /// Runs `future` without BMCLAPI and MCIM, for files that have a better second source.
 pub async fn official_only<F: Future>(future: F) -> F::Output {
-    OFFICIAL_ONLY.scope((), future).await
+    ONLY.scope(Only::Official, future).await
 }
 
-fn fallbacks_allowed() -> bool {
-    OFFICIAL_ONLY.try_with(|()| ()).is_err()
+/// Runs `future` against BMCLAPI and MCIM alone, once the official hosts have failed.
+pub async fn fallbacks_only<F: Future>(future: F) -> F::Output {
+    ONLY.scope(Only::Fallbacks, future).await
+}
+
+fn only() -> Option<Only> {
+    ONLY.try_with(|only| *only)
+        .ok()
+        .or((source() == Source::Fallbacks).then_some(Only::Fallbacks))
 }
 
 pub fn client() -> Result<Client> {
@@ -191,11 +205,10 @@ fn is_fallback(url: &str) -> bool {
 pub async fn get(client: &Client, url: &str) -> Result<Response> {
     let mut sources = vec![url.to_owned()];
     sources.extend(mirrors_of(url));
-    if fallbacks_allowed() {
-        match fallback_of(url) {
-            Some(copy) if source() == Source::Fallbacks => sources = vec![copy],
-            copy => sources.extend(copy),
-        }
+    match (only(), fallback_of(url)) {
+        (Some(Only::Official), _) => {}
+        (Some(Only::Fallbacks), Some(copy)) => sources = vec![copy],
+        (_, copy) => sources.extend(copy),
     }
     // Hosts that failed lately go last, still there in case the others fail too.
     sources.sort_by_key(|source| is_down(source));
@@ -225,7 +238,7 @@ pub async fn get(client: &Client, url: &str) -> Result<Response> {
 pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> {
     let request = request.build()?;
     let copy = fallback_of(request.url().as_str())
-        .filter(|_| fallbacks_allowed())
+        .filter(|_| only() != Some(Only::Official))
         .and_then(|url| Url::parse(&url).ok())
         .and_then(|url| {
             let mut copy = request.try_clone()?;
@@ -236,7 +249,7 @@ pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> 
     let Some(copy) = copy else {
         return Ok(client.execute(request).await?);
     };
-    if source() == Source::Fallbacks {
+    if only() == Some(Only::Fallbacks) {
         return Ok(client.execute(copy).await?);
     }
     let mut requests = [request, copy];

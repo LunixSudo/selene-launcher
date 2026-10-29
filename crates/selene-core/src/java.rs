@@ -235,14 +235,22 @@ where
     if official.is_ok() {
         return official;
     }
-    for vendor in [Vendor::Temurin, Vendor::Zulu] {
+    for vendor in VENDORS {
+        if let Some(runtime) = installed_vendor(vendor, major, runtimes_dir).await {
+            return Ok(runtime);
+        }
+    }
+    for vendor in VENDORS {
         if let Ok(runtime) = install_vendor(client, vendor, major, runtimes_dir, &on_progress).await
         {
             return Ok(runtime);
         }
     }
-    let index = fetch_index(client, runtimes_dir).await?;
-    install(client, &index, component, runtimes_dir, on_progress).await
+    http::fallbacks_only(async {
+        let index = fetch_index(client, runtimes_dir).await?;
+        install(client, &index, component, runtimes_dir, on_progress).await
+    })
+    .await
 }
 
 /// Other vendors' Java, used when Mojang's runtimes cannot be downloaded.
@@ -267,6 +275,11 @@ impl Vendor {
         }
     }
 }
+
+/// Two launches preparing at once must not unpack into the same folder.
+static VENDOR_INSTALL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+const VENDORS: [Vendor; 2] = [Vendor::Temurin, Vendor::Zulu];
 
 /// A JRE zip and where to get it.
 struct Archive {
@@ -336,50 +349,32 @@ pub async fn install_vendor<F>(
 where
     F: Fn(Progress) + Sync,
 {
-    let component = vendor.component(major);
     let arch = vendor_arch(std::env::consts::OS, std::env::consts::ARCH)
         .ok_or(Error::UnsupportedPlatform)?;
-    let home = runtimes_dir.join(&component);
-    let installed = read_marker(&home).await;
-
-    let archive = match vendor.latest(client, major, arch).await {
-        Ok(archive) => archive,
-        // Offline, a build installed earlier is still good.
-        Err(err) => match installed {
-            Some(marker)
-                if fs::try_exists(home.join("bin/javaw.exe"))
-                    .await
-                    .unwrap_or(false) =>
-            {
-                return Ok(JavaRuntime {
-                    component,
-                    version: marker.version,
-                    home,
-                });
-            }
-            _ => return Err(err),
-        },
-    };
-    let archive = archive.ok_or_else(|| Error::JavaUnavailable {
-        component: component.clone(),
-        platform: format!("windows-{arch}"),
-    })?;
-    let runtime = JavaRuntime {
-        component,
-        version: archive.version.clone(),
-        home,
-    };
-    let marker = InstallMarker {
-        version: archive.version.clone(),
-        manifest_sha1: archive.sha256.clone(),
-    };
-    if installed.as_ref() == Some(&marker)
-        && fs::try_exists(runtime.executable()).await.unwrap_or(false)
-    {
+    let _guard = VENDOR_INSTALL.lock().await;
+    if let Some(runtime) = installed_vendor(vendor, major, runtimes_dir).await {
         return Ok(runtime);
     }
 
-    let path = runtimes_dir.join(&archive.name);
+    let component = vendor.component(major);
+    let archive =
+        vendor
+            .latest(client, major, arch)
+            .await?
+            .ok_or_else(|| Error::JavaUnavailable {
+                component: component.clone(),
+                platform: format!("windows-{arch}"),
+            })?;
+    let runtime = JavaRuntime {
+        home: runtimes_dir.join(&component),
+        component,
+        version: archive.version.clone(),
+    };
+
+    fs::create_dir_all(runtimes_dir)
+        .await
+        .map_err(|err| Error::io(runtimes_dir, err))?;
+    let path = runtimes_dir.join(format!("{}.part", archive.name));
     let mut result = Ok(());
     for url in &archive.urls {
         result = fetch_archive(client, url, &archive, &path, &on_progress).await;
@@ -387,7 +382,10 @@ where
             break;
         }
     }
-    result?;
+    if let Err(err) = result {
+        let _ = fs::remove_file(&path).await;
+        return Err(err);
+    }
 
     let home = runtime.home.clone();
     let extracted = tokio::task::spawn_blocking({
@@ -395,12 +393,33 @@ where
         move || extract_archive(&path, &home)
     })
     .await
-    .map_err(|err| Error::io(&path, std::io::Error::other(err)))?;
+    .map_err(|err| Error::io(&path, std::io::Error::other(err)));
     let _ = fs::remove_file(&path).await;
-    extracted?;
+    extracted??;
+    let marker = InstallMarker {
+        version: archive.version,
+        manifest_sha1: archive.sha256,
+    };
     write_marker(&runtime.home, &marker).await?;
 
     Ok(runtime)
+}
+
+/// A build of `vendor` installed earlier. It is used as is: Mojang's runtime takes over again
+/// as soon as it can be downloaded.
+async fn installed_vendor(vendor: Vendor, major: u32, runtimes_dir: &Path) -> Option<JavaRuntime> {
+    let component = vendor.component(major);
+    let home = runtimes_dir.join(&component);
+    let marker = read_marker(&home).await?;
+    let runtime = JavaRuntime {
+        component,
+        version: marker.version,
+        home,
+    };
+    fs::try_exists(runtime.executable())
+        .await
+        .unwrap_or(false)
+        .then_some(runtime)
 }
 
 /// The vendors' name for the architecture. Only Windows builds are used, since the other
