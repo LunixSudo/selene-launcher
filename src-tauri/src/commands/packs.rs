@@ -7,7 +7,7 @@ use selene_core::mrpack::{self, ExportOptions};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 
-use super::content::{ManualDownload, manual_downloads};
+use super::content::{ContentTask, ManualDownload, Stage, manual_downloads};
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
@@ -62,12 +62,16 @@ async fn import_mrpack(
     )
     .await?;
     let game_dir = launcher.instances.game_dir(&instance.id);
+    let task = ContentTask::start(app, &instance.id, Stage::Importing);
     let installed = while_importing(
         launcher,
         &instance.id,
-        mrpack::install(&launcher.client, &path, &index, &game_dir),
+        mrpack::install(&launcher.client, &path, &index, &game_dir, |progress| {
+            task.report(progress);
+        }),
     )
     .await;
+    drop(task);
     if let Err(err) = installed {
         let _ = launcher.instances.delete(&instance.id).await;
         return Err(err);
@@ -100,12 +104,21 @@ async fn import_curseforge(
     )
     .await?;
     let game_dir = launcher.instances.game_dir(&instance.id);
+    let task = ContentTask::start(app, &instance.id, Stage::Importing);
     let installed = while_importing(
         launcher,
         &instance.id,
-        cfpack::install(&launcher.client, curseforge, &path, &manifest, &game_dir),
+        cfpack::install(
+            &launcher.client,
+            curseforge,
+            &path,
+            &manifest,
+            &game_dir,
+            |progress| task.report(progress),
+        ),
     )
     .await;
+    drop(task);
     match installed {
         Ok(manual) => Ok(ImportResult {
             instance,

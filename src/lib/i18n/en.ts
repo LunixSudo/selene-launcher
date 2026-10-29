@@ -102,6 +102,11 @@ export const en: Messages = {
   },
   launch: {
     importing: "Importing…",
+    importingCount: "Importing {done} of {total}",
+    installing: "Installing add-ons…",
+    installingCount: "Installing add-ons {done} of {total}",
+    updating: "Updating add-ons…",
+    updatingCount: "Updating add-ons {done} of {total}",
     mods: "Updating mods…",
     files: "Downloading game {percent}%",
     java: "Downloading Java {percent}%",

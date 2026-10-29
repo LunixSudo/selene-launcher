@@ -472,6 +472,7 @@ where
         on_progress(Progress {
             bytes_done: done,
             bytes_total: archive.size,
+            ..Progress::default()
         });
     }
     file.flush().await.map_err(|err| Error::io(path, err))?;

@@ -3,15 +3,17 @@ use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 use selene_core::curseforge::CurseForge;
+use selene_core::download::Progress;
 use selene_core::instance::Instance;
 use selene_core::loader::Loader;
 use selene_core::modrinth::{self, Target};
 use selene_core::mods::{self, ContentKind, ModFile, RemoteFile};
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use super::{
-    CatalogItem, InstallPreview, InstallResult, ManualDownload, PlannedFile, Source, content_dir,
-    curseforge_api, curseforge_loader, curseforge_matches, instance, loader_for,
+    CatalogItem, ContentTask, InstallPreview, InstallResult, ManualDownload, PlannedFile, Source,
+    Stage, content_dir, curseforge_api, curseforge_loader, curseforge_matches, instance,
+    loader_for,
 };
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
@@ -74,6 +76,7 @@ pub async fn preview_install(
 /// Installs the picked projects and their required dependencies.
 #[tauri::command]
 pub async fn install_content(
+    app: AppHandle,
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
@@ -105,6 +108,14 @@ pub async fn install_content(
     if plan.files.is_empty() && plan.preview.manual.is_empty() {
         return Err(CommandError::NoCompatibleVersion);
     }
+    let task = ContentTask::start(&app, &instance_id, Stage::Installing);
+    // Data packs go into the world, the rest into the game folder, so each kind is its own
+    // batch and the progress adds them up.
+    let mut before = Progress {
+        files_total: plan.files.len(),
+        bytes_total: plan.files.iter().map(|(_, file)| file.size).sum(),
+        ..Progress::default()
+    };
     for file_kind in ContentKind::ALL {
         let files: Vec<RemoteFile> = plan
             .files
@@ -116,8 +127,18 @@ pub async fn install_content(
             continue;
         }
         let dir = content_dir(&launcher, &instance_id, file_kind, world.as_deref())?;
-        mods::install(&launcher.client, &dir, file_kind, &files).await?;
+        mods::install(&launcher.client, &dir, file_kind, &files, |progress| {
+            task.report(Progress {
+                files_done: before.files_done + progress.files_done,
+                bytes_done: before.bytes_done + progress.bytes_done,
+                ..before
+            });
+        })
+        .await?;
+        before.files_done += files.len();
+        before.bytes_done += files.iter().map(|file| file.size).sum::<u64>();
     }
+    drop(task);
     Ok(InstallResult {
         installed: plan.files.len(),
         manual: plan.preview.manual,

@@ -104,6 +104,11 @@ export const ptBR: Messages = {
   },
   launch: {
     importing: "Importando…",
+    importingCount: "Importando {done} de {total}",
+    installing: "Instalando complementos…",
+    installingCount: "Instalando complementos {done} de {total}",
+    updating: "Atualizando complementos…",
+    updatingCount: "Atualizando complementos {done} de {total}",
     mods: "Atualizando mods…",
     files: "Baixando o jogo {percent}%",
     java: "Baixando o Java {percent}%",

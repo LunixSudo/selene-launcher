@@ -8,7 +8,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
-use crate::download::{self, Download};
+use crate::download::{self, Download, Progress};
 use crate::{Error, Result};
 
 const DISABLED_SUFFIX: &str = ".disabled";
@@ -175,20 +175,32 @@ pub async fn install(
     game_dir: &Path,
     kind: ContentKind,
     files: &[RemoteFile],
+    on_progress: impl Fn(Progress) + Sync,
 ) -> Result<()> {
-    let dir = kind.dir(game_dir);
+    let files: Vec<(ContentKind, RemoteFile)> =
+        files.iter().map(|file| (kind, file.clone())).collect();
+    install_many(client, game_dir, &files, on_progress).await
+}
+
+/// Downloads files of any kinds into their folders, all in one batch.
+pub async fn install_many(
+    client: &Client,
+    game_dir: &Path,
+    files: &[(ContentKind, RemoteFile)],
+    on_progress: impl Fn(Progress) + Sync,
+) -> Result<()> {
     let downloads = files
         .iter()
-        .map(|file| {
+        .map(|(kind, file)| {
             Ok(Download {
                 url: file.url.clone(),
-                path: dir.join(safe_file_name(&file.file_name)?),
+                path: kind.dir(game_dir).join(safe_file_name(&file.file_name)?),
                 sha1: file.sha1.clone(),
                 size: file.size,
             })
         })
         .collect::<Result<_>>()?;
-    download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, |_| {}).await
+    download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, on_progress).await
 }
 
 /// Swaps an installed file for a newer one, keeping it disabled if it was.
@@ -199,7 +211,14 @@ pub async fn replace(
     old: &ModFile,
     update: &RemoteFile,
 ) -> Result<()> {
-    replace_all(client, game_dir, kind, &[(old.clone(), update.clone())]).await
+    replace_all(
+        client,
+        game_dir,
+        kind,
+        &[(old.clone(), update.clone())],
+        |_| {},
+    )
+    .await
 }
 
 /// Swaps installed files for newer ones. Everything is downloaded first, all at once, and the
@@ -210,9 +229,10 @@ pub async fn replace_all(
     game_dir: &Path,
     kind: ContentKind,
     swaps: &[(ModFile, RemoteFile)],
+    on_progress: impl Fn(Progress) + Sync,
 ) -> Result<()> {
     let updates: Vec<RemoteFile> = swaps.iter().map(|(_, update)| update.clone()).collect();
-    if let Err(err) = install(client, game_dir, kind, &updates).await {
+    if let Err(err) = install(client, game_dir, kind, &updates, on_progress).await {
         for (old, update) in swaps {
             if !same_file(old, update) {
                 let _ = remove(game_dir, kind, &update.file_name).await;

@@ -279,6 +279,18 @@ export interface LaunchProgress {
   bytesTotal: number;
 }
 
+export type ContentStage = "importing" | "installing" | "updating";
+
+export interface ContentProgress {
+  instanceId: string;
+  /** `null` once the task has ended. */
+  stage: ContentStage | null;
+  filesDone: number;
+  filesTotal: number;
+  bytesDone: number;
+  bytesTotal: number;
+}
+
 export type CrashCause =
   | "outOfMemory"
   | "systemMemory"

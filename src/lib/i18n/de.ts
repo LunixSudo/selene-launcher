@@ -105,6 +105,11 @@ export const de: Messages = {
   },
   launch: {
     importing: "Wird importiert…",
+    importingCount: "Wird importiert: {done} von {total}",
+    installing: "Erweiterungen werden installiert…",
+    installingCount: "Erweiterungen werden installiert: {done} von {total}",
+    updating: "Erweiterungen werden aktualisiert…",
+    updatingCount: "Erweiterungen werden aktualisiert: {done} von {total}",
     mods: "Mods werden aktualisiert…",
     files: "Spiel wird geladen {percent} %",
     java: "Java wird geladen {percent} %",

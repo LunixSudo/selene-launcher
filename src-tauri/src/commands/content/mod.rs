@@ -10,11 +10,13 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, PoisonError};
 
 use selene_core::curseforge::{self, CurseForge};
+use selene_core::download::Progress;
 use selene_core::instance::Instance;
 use selene_core::loader::Loader;
 use selene_core::mods::{ContentKind, ModFile};
 use selene_core::saves;
 use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Emitter};
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
@@ -22,7 +24,72 @@ use crate::state::Launcher;
 pub(crate) use install::manual_downloads;
 pub(crate) use installed::update_all;
 
+/// What an instance's add-on download is doing, for its card and page.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum Stage {
+    Importing,
+    Installing,
+    Updating,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ContentProgress<'a> {
+    instance_id: &'a str,
+    /// `None` once the task has ended.
+    stage: Option<Stage>,
+    files_done: usize,
+    files_total: usize,
+    bytes_done: u64,
+    bytes_total: u64,
+}
+
+/// Reports an add-on download to the UI while it lives, and that it ended once dropped.
+pub(crate) struct ContentTask<'a> {
+    app: &'a AppHandle,
+    instance_id: &'a str,
+    stage: Stage,
+}
+
+impl<'a> ContentTask<'a> {
+    pub(crate) fn start(app: &'a AppHandle, instance_id: &'a str, stage: Stage) -> Self {
+        let task = Self {
+            app,
+            instance_id,
+            stage,
+        };
+        task.report(Progress::default());
+        task
+    }
+
+    pub(crate) fn report(&self, progress: Progress) {
+        self.emit(Some(self.stage), progress);
+    }
+
+    fn emit(&self, stage: Option<Stage>, progress: Progress) {
+        let _ = self.app.emit(
+            PROGRESS_EVENT,
+            ContentProgress {
+                instance_id: self.instance_id,
+                stage,
+                files_done: progress.files_done,
+                files_total: progress.files_total,
+                bytes_done: progress.bytes_done,
+                bytes_total: progress.bytes_total,
+            },
+        );
+    }
+}
+
+impl Drop for ContentTask<'_> {
+    fn drop(&mut self) {
+        self.emit(None, Progress::default());
+    }
+}
+
 const PAGE_SIZE: u32 = 20;
+const PROGRESS_EVENT: &str = "content-progress";
 const FABRIC_API: &str = "P7dR8mSH";
 const QUILTED_FABRIC_API: &str = "qvIfYCYJ";
 

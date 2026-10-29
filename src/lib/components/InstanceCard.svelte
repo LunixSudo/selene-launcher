@@ -5,7 +5,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { UI_ICONS } from "$lib/icons";
   import { LOADER_NAMES } from "$lib/loaders";
-  import { type LaunchState, library, play } from "$lib/state/instances.svelte";
+  import { activity, type LaunchState, library, play } from "$lib/state/instances.svelte";
 
   let {
     instance,
@@ -17,8 +17,8 @@
     onmenu: (x: number, y: number) => void;
   } = $props();
 
-  const preparing = $derived(launch?.status === "preparing");
   const running = $derived(launch?.status === "running");
+  const busy = $derived(running ? null : activity(instance.id));
 
   function lastPlayed(): string {
     return instance.lastPlayed
@@ -27,15 +27,10 @@
   }
 
   function playLabel(): string {
-    if (launch?.status === "running") {
+    if (running) {
       return t("instances.stop");
     }
-    if (launch?.status === "preparing") {
-      return launch.stage
-        ? t(`launch.${launch.stage}`, { percent: launch.percent })
-        : t("launch.starting");
-    }
-    return t("instances.play");
+    return busy?.label ?? t("instances.play");
   }
 
   function openMenu(event: MouseEvent) {
@@ -87,11 +82,11 @@
     type="button"
     class="play"
     class:running
-    disabled={preparing}
-    style:--progress={launch?.status === "preparing" ? `${launch.percent}%` : "0%"}
+    disabled={busy !== null}
+    style:--progress={busy ? `${busy.percent}%` : "0%"}
     onclick={() => (running ? api.stopInstance(instance.id) : play(instance.id))}
   >
-    {#if !preparing}
+    {#if !busy}
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d={running ? UI_ICONS.stop : UI_ICONS.play} />
       </svg>

@@ -99,6 +99,11 @@ export const zhCN: Messages = {
   },
   launch: {
     importing: "正在导入…",
+    importingCount: "正在导入 {done}/{total}",
+    installing: "正在安装附加内容…",
+    installingCount: "正在安装附加内容 {done}/{total}",
+    updating: "正在更新附加内容…",
+    updatingCount: "正在更新附加内容 {done}/{total}",
     mods: "正在更新模组…",
     files: "正在下载游戏 {percent}%",
     java: "正在下载 Java {percent}%",

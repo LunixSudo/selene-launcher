@@ -104,6 +104,11 @@ export const es: Messages = {
   },
   launch: {
     importing: "Importando…",
+    importingCount: "Importando {done} de {total}",
+    installing: "Instalando complementos…",
+    installingCount: "Instalando complementos {done} de {total}",
+    updating: "Actualizando complementos…",
+    updatingCount: "Actualizando complementos {done} de {total}",
     mods: "Actualizando mods…",
     files: "Descargando el juego {percent} %",
     java: "Descargando Java {percent} %",

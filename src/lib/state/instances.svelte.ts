@@ -3,6 +3,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   api,
   type CommandError,
+  type ContentProgress,
+  type ContentStage,
   type CrashReport,
   type DiscordPresence,
   type GameExited,
@@ -19,9 +21,17 @@ import { notify } from "$lib/notify";
 import { settings } from "./settings.svelte";
 
 export type LaunchState =
-  | { status: "preparing"; stage: LaunchProgress["stage"] | "importing" | null; percent: number }
+  | { status: "preparing"; stage: LaunchProgress["stage"] | null; percent: number }
   | { status: "running"; since: number }
   | { status: "failed"; error: CommandError };
+
+/** An add-on download of an instance: an import, an install or an update. */
+export interface ContentTask {
+  stage: ContentStage;
+  filesDone: number;
+  filesTotal: number;
+  percent: number;
+}
 
 const UNKNOWN_ERROR: CommandError = { kind: "core", message: "unknown error" };
 
@@ -33,6 +43,7 @@ export const library = $state({
   importError: null as CommandError | null,
   importManual: [] as ManualDownload[],
   launches: {} as Record<string, LaunchState>,
+  tasks: {} as Record<string, ContentTask>,
   crashes: {} as Record<string, CrashReport>,
 });
 
@@ -57,17 +68,45 @@ const preparing = new Map<string, Promise<void>>();
 
 /** Downloads the instance's game right away, so the first start is quick. */
 export function prepare(id: string) {
-  const task = api
+  const task: Promise<void> = api
     .prepareInstance(id)
     // A failed download is retried, and reported, when the instance starts.
     .catch(() => {})
     .finally(() => {
+      // A newer download may have taken over after this one was cancelled.
+      if (preparing.get(id) !== task) {
+        return;
+      }
       preparing.delete(id);
       if (library.launches[id]?.status === "preparing") {
         delete library.launches[id];
       }
     });
   preparing.set(id, task);
+}
+
+export function isPreparing(id: string): boolean {
+  return preparing.has(id);
+}
+
+/** What the instance's Play button says while something downloads, and how far it got. */
+export function activity(id: string): { label: string; percent: number } | null {
+  const task = library.tasks[id];
+  if (task) {
+    const label =
+      task.filesTotal > 0
+        ? t(`launch.${task.stage}Count`, { done: task.filesDone, total: task.filesTotal })
+        : t(`launch.${task.stage}`);
+    return { label, percent: task.percent };
+  }
+  const launch = library.launches[id];
+  if (launch?.status === "preparing") {
+    const label = launch.stage
+      ? t(`launch.${launch.stage}`, { percent: launch.percent })
+      : t("launch.starting");
+    return { label, percent: launch.percent };
+  }
+  return null;
 }
 
 export async function importPack(path: string) {
@@ -102,6 +141,7 @@ export async function deleteInstance(id: string) {
   await api.deleteInstance(id);
   library.instances = library.instances.filter((instance) => instance.id !== id);
   delete library.launches[id];
+  delete library.tasks[id];
   delete settings.instanceBackdrops[id];
 }
 
@@ -109,8 +149,9 @@ export async function deleteInstance(id: string) {
 export async function play(id: string, server: string | null = null) {
   await preparing.get(id);
   const current = library.launches[id]?.status;
-  // A shortcut clicked while the game runs or starts must not hide its Stop button.
-  if (current === "running" || current === "preparing") {
+  // A shortcut clicked while the game runs or starts must not hide its Stop button, and the
+  // game must not start on half-swapped add-ons.
+  if (current === "running" || current === "preparing" || library.tasks[id]) {
     return;
   }
   library.launches[id] = { status: "preparing", stage: null, percent: 0 };
@@ -167,7 +208,19 @@ export async function listenToGames(): Promise<() => void> {
       if (!library.instances.some((instance) => instance.id === payload.id)) {
         library.instances = [payload, ...library.instances];
       }
-      library.launches[payload.id] = { status: "preparing", stage: "importing", percent: 0 };
+      library.tasks[payload.id] ??= { stage: "importing", filesDone: 0, filesTotal: 0, percent: 0 };
+    }),
+    listen<ContentProgress>("content-progress", ({ payload }) => {
+      if (payload.stage === null) {
+        delete library.tasks[payload.instanceId];
+        return;
+      }
+      library.tasks[payload.instanceId] = {
+        stage: payload.stage,
+        filesDone: payload.filesDone,
+        filesTotal: payload.filesTotal,
+        percent: Math.floor((payload.bytesDone / Math.max(payload.bytesTotal, 1)) * 100),
+      };
     }),
     listen<string>("game-started", ({ payload }) => {
       library.launches[payload] = { status: "running", since: Date.now() };

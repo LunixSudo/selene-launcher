@@ -11,7 +11,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { hasHiddenBetas, LOADER_NAMES, preferredRelease, releaseOptions } from "$lib/loaders";
   import { scrollFade } from "$lib/scroll-fade";
-  import { prepare, replaceInstance } from "$lib/state/instances.svelte";
+  import { isPreparing, prepare, replaceInstance } from "$lib/state/instances.svelte";
   import Dialog from "./Dialog.svelte";
   import Select from "./Select.svelte";
 
@@ -122,10 +122,12 @@
     working = true;
     error = null;
     try {
+      // The change stops the game download, which then goes on for the new version.
+      const downloading = isPreparing(instance.id);
       const changed = await api.changeVersion(instance.id, version, loader);
       replaceInstance(changed);
       open = false;
-      void followUp(changed);
+      void followUp(changed, downloading);
     } catch (err) {
       error = describeError(err);
     } finally {
@@ -134,7 +136,7 @@
   }
 
   /** Packs are checked against the new version only once the instance is on it. */
-  async function followUp(changed: Instance) {
+  async function followUp(changed: Instance, downloading: boolean) {
     const kinds: ContentKind[] = [];
     if (updatePacks) {
       kinds.push("resourcePack");
@@ -144,7 +146,7 @@
     }
     // Offline the packs simply stay as they are.
     await Promise.allSettled(kinds.map((kind) => api.updateContent(changed.id, kind, null)));
-    if (download) {
+    if (download || downloading) {
       prepare(changed.id);
     }
   }

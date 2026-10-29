@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use zip::write::SimpleFileOptions;
 use zip::{ZipArchive, ZipWriter};
 
-use crate::download::{self, Download};
+use crate::download::{self, Download, Progress};
 use crate::loader::{Loader, LoaderVersion};
 use crate::mods::ContentKind;
 use crate::{Error, Result, modrinth, mods};
@@ -127,6 +127,7 @@ pub async fn install(
     pack: &Path,
     index: &PackIndex,
     game_dir: &Path,
+    on_progress: impl Fn(Progress) + Sync,
 ) -> Result<()> {
     let downloads = index
         .files
@@ -153,7 +154,7 @@ pub async fn install(
             })
         })
         .collect::<Result<Vec<_>>>()?;
-    download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, |_| {}).await?;
+    download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, on_progress).await?;
 
     let pack = pack.to_owned();
     let game_dir = game_dir.to_owned();

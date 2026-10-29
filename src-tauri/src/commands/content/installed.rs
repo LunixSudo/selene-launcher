@@ -5,11 +5,11 @@ use selene_core::curseforge;
 use selene_core::loader::Loader;
 use selene_core::modrinth::{self, DependencyType, Project, Target, Version};
 use selene_core::mods::{self, ContentKind, ModFile, RemoteFile};
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use super::{
-    ContentUpdate, FABRIC_API, InstalledFile, Issue, ProjectRef, QUILTED_FABRIC_API, Source,
-    content_dir, curseforge_matches, display_name, instance, loader_for,
+    ContentTask, ContentUpdate, FABRIC_API, InstalledFile, Issue, ProjectRef, QUILTED_FABRIC_API,
+    Source, Stage, content_dir, curseforge_matches, display_name, instance, loader_for,
 };
 use crate::error::CommandResult;
 use crate::state::Launcher;
@@ -294,15 +294,17 @@ pub async fn check_updates(
 /// Updates every file that has a newer compatible version. Returns how many were updated.
 #[tauri::command]
 pub async fn update_content(
+    app: AppHandle,
     launcher: State<'_, Launcher>,
     instance_id: String,
     kind: ContentKind,
     world: Option<String>,
 ) -> CommandResult<u32> {
-    update_all(&launcher, &instance_id, kind, world.as_deref()).await
+    update_all(&app, &launcher, &instance_id, kind, world.as_deref()).await
 }
 
 pub(crate) async fn update_all(
+    app: &AppHandle,
     launcher: &Launcher,
     instance_id: &str,
     kind: ContentKind,
@@ -315,7 +317,14 @@ pub(crate) async fn update_all(
         .into_iter()
         .filter_map(|(file, update)| Some((file, update.remote_file()?)))
         .collect();
-    mods::replace_all(&launcher.client, &game_dir, kind, &swaps).await?;
+    if swaps.is_empty() {
+        return Ok(0);
+    }
+    let task = ContentTask::start(app, instance_id, Stage::Updating);
+    mods::replace_all(&launcher.client, &game_dir, kind, &swaps, |progress| {
+        task.report(progress);
+    })
+    .await?;
     Ok(u32::try_from(swaps.len()).unwrap_or(u32::MAX))
 }
 

@@ -9,6 +9,7 @@ use reqwest::{Client, StatusCode};
 use sha1::{Digest, Sha1};
 use tokio::fs::{self, File};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::sync::Notify;
 
 use crate::{Error, Result, http};
 
@@ -34,6 +35,53 @@ pub struct Download {
 pub struct Progress {
     pub bytes_done: u64,
     pub bytes_total: u64,
+    pub files_done: usize,
+    pub files_total: usize,
+}
+
+/// Downloads the user is waiting for right now. Background ones hold back while any run.
+static FOREGROUND: AtomicUsize = AtomicUsize::new(0);
+static FOREGROUND_DONE: Notify = Notify::const_new();
+
+tokio::task_local! {
+    static BACKGROUND: ();
+}
+
+/// Runs `future` with its downloads held back whenever the user waits on another download,
+/// like a mod update while a new instance's game is still being fetched.
+pub async fn in_background<F: Future>(future: F) -> F::Output {
+    BACKGROUND.scope((), future).await
+}
+
+fn is_background() -> bool {
+    BACKGROUND.try_with(|()| ()).is_ok()
+}
+
+async fn wait_for_foreground() {
+    loop {
+        let done = FOREGROUND_DONE.notified();
+        if FOREGROUND.load(Ordering::Acquire) == 0 {
+            return;
+        }
+        done.await;
+    }
+}
+
+struct Foreground;
+
+impl Foreground {
+    fn start() -> Self {
+        FOREGROUND.fetch_add(1, Ordering::AcqRel);
+        Self
+    }
+}
+
+impl Drop for Foreground {
+    fn drop(&mut self) {
+        if FOREGROUND.fetch_sub(1, Ordering::AcqRel) == 1 {
+            FOREGROUND_DONE.notify_waiters();
+        }
+    }
 }
 
 /// Caps how many files download at once and how fast, for slow or metered connections.
@@ -115,8 +163,12 @@ where
         .filter(|download| seen.insert(download.path.clone()))
         .collect();
     let bytes_total = downloads.iter().map(|download| download.size).sum();
+    let files_total = downloads.len();
     let bytes_done = &AtomicU64::new(0);
+    let files_done = &AtomicUsize::new(0);
     let on_progress = &on_progress;
+    let background = is_background();
+    let _foreground = (!background).then(Foreground::start);
 
     stream::iter(downloads)
         .map(|download| async move {
@@ -125,12 +177,17 @@ where
                 _ => is_valid(&download.path, &download.sha1).await,
             };
             if !present {
+                if background {
+                    wait_for_foreground().await;
+                }
                 fetch_with_retry(client, &download).await?;
             }
             let done = bytes_done.fetch_add(download.size, Ordering::Relaxed) + download.size;
             on_progress(Progress {
                 bytes_done: done,
                 bytes_total,
+                files_done: files_done.fetch_add(1, Ordering::Relaxed) + 1,
+                files_total,
             });
             Ok::<_, Error>(())
         })

@@ -99,6 +99,11 @@ export const ru = {
   },
   launch: {
     importing: "Импорт сборки…",
+    importingCount: "Импорт сборки {done} из {total}",
+    installing: "Установка дополнений…",
+    installingCount: "Установка дополнений {done} из {total}",
+    updating: "Обновление дополнений…",
+    updatingCount: "Обновление дополнений {done} из {total}",
     mods: "Обновление модов…",
     files: "Загрузка игры {percent}%",
     java: "Загрузка Java {percent}%",

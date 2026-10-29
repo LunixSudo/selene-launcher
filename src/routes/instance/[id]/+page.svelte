@@ -17,7 +17,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { scrollFade } from "$lib/scroll-fade";
-  import { library, loadInstances, play } from "$lib/state/instances.svelte";
+  import { activity, library, loadInstances, play } from "$lib/state/instances.svelte";
 
   type Tab = "content" | "catalog" | "worlds" | "servers" | "screenshots" | "settings" | "logs";
 
@@ -32,6 +32,7 @@
   const instance = $derived(library.instances.find((entry) => entry.id === page.params.id));
   const launch = $derived(instance ? library.launches[instance.id] : undefined);
   const running = $derived(launch?.status === "running");
+  const busy = $derived(instance && !running ? activity(instance.id) : null);
   const COMMON_TABS: Tab[] = ["worlds", "servers", "screenshots", "settings", "logs"];
 
   const tabs: Tab[] = ["content", "catalog", ...COMMON_TABS];
@@ -99,10 +100,11 @@
           type="button"
           class="play"
           class:running
-          disabled={launch?.status === "preparing"}
+          disabled={busy !== null}
+          style:--progress={busy ? `${busy.percent}%` : "0%"}
           onclick={() => (running ? api.stopInstance(instance.id) : play(instance.id))}
         >
-          {running ? t("instances.stop") : t("instances.play")}
+          <span>{running ? t("instances.stop") : (busy?.label ?? t("instances.play"))}</span>
         </button>
       </div>
     </header>
@@ -119,7 +121,7 @@
       {instance}
       {recheck}
       bind:checking
-      disabled={running}
+      disabled={running || library.tasks[instance.id] !== undefined}
       onupdated={() => refresh++}
     />
 
@@ -272,13 +274,28 @@
   }
 
   .play {
+    position: relative;
     height: 38px;
     padding: 0 28px;
+    overflow: hidden;
     border: none;
     border-radius: var(--radius-md);
     background: var(--accent);
     color: var(--accent-text);
     font-weight: 600;
+  }
+
+  .play::before {
+    position: absolute;
+    inset: 0;
+    width: var(--progress);
+    background: rgb(255 255 255 / 0.25);
+    transition: width 200ms var(--ease);
+    content: "";
+  }
+
+  .play span {
+    position: relative;
   }
 
   .play:disabled {

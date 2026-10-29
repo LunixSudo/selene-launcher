@@ -453,6 +453,7 @@ where
             on_progress(Progress {
                 bytes_done: steps.min(profile.steps),
                 bytes_total: profile.steps,
+                ..Progress::default()
             });
         }
         if tail.len() == OUTPUT_TAIL_LINES {

@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
 use selene_core::crash::{self, CrashReport};
-use selene_core::download::Progress;
+use selene_core::download::{self, Progress};
 use selene_core::game::{self, Installed, Stage};
 use selene_core::instance::{Instance, WindowSize};
 use selene_core::launch::{self, LaunchAccount, LaunchOptions};
@@ -376,7 +376,10 @@ pub async fn prepare_instance(
         return Ok(());
     };
     let result = tokio::select! {
-        result = install_game(&app, &launcher, &instance) => result.map(drop),
+        // Nobody waits on it yet, so add-on downloads go first.
+        result = download::in_background(install_game(&app, &launcher, &instance)) => {
+            result.map(drop)
+        }
         _ = cancelled => Err(CommandError::Cancelled),
     };
     launcher.stop_running(&id);
@@ -423,7 +426,7 @@ async fn prepare_game(
             },
         );
         // Being offline should not stop the game from starting with the mods it has.
-        let _ = content::update_all(launcher, &instance.id, ContentKind::Mod, None).await;
+        let _ = content::update_all(app, launcher, &instance.id, ContentKind::Mod, None).await;
     }
     install_game(app, launcher, instance).await
 }

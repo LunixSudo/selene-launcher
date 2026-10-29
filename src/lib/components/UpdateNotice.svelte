@@ -8,7 +8,7 @@
   import { describeError } from "$lib/errors";
   import { t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES, preferredRelease } from "$lib/loaders";
-  import { replaceInstance } from "$lib/state/instances.svelte";
+  import { isPreparing, prepare, replaceInstance } from "$lib/state/instances.svelte";
 
   let {
     instance,
@@ -106,7 +106,12 @@
     error = null;
     try {
       if (instance.loader && loaderTarget && !skipped.loader) {
+        // Changing the build stops the game download, which then goes on with the new one.
+        const downloading = isPreparing(instance.id);
         replaceInstance(await api.changeLoaderBuild(instance.id, loaderTarget));
+        if (downloading) {
+          prepare(instance.id);
+        }
       }
       for (const kind of pending.filter((kind) => !skipped[kind])) {
         await api.updateContent(instance.id, kind, null);

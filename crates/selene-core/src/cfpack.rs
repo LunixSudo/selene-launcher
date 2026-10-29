@@ -9,6 +9,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::curseforge::{self, CurseForge};
+use crate::download::Progress;
 use crate::loader::{Loader, LoaderVersion};
 use crate::mods::ContentKind;
 use crate::mrpack::{self, ExportOptions};
@@ -123,6 +124,7 @@ pub async fn install(
     pack: &Path,
     manifest: &PackManifest,
     game_dir: &Path,
+    on_progress: impl Fn(Progress) + Sync,
 ) -> Result<Vec<u32>> {
     let ids: Vec<u32> = manifest
         .files
@@ -144,20 +146,18 @@ pub async fn install(
         })
         .collect();
 
-    let mut remote: HashMap<ContentKind, Vec<_>> = HashMap::new();
+    let mut remote = Vec::new();
     let mut manual = Vec::new();
     for file in files {
         match file.remote_file() {
             Some(found) => {
                 let kind = kinds.get(&file.mod_id).copied().unwrap_or(ContentKind::Mod);
-                remote.entry(kind).or_default().push(found);
+                remote.push((kind, found));
             }
             None => manual.push(file.mod_id),
         }
     }
-    for (kind, files) in remote {
-        mods::install(client, game_dir, kind, &files).await?;
-    }
+    mods::install_many(client, game_dir, &remote, on_progress).await?;
 
     let pack = pack.to_owned();
     let target = game_dir.to_owned();

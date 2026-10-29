@@ -102,6 +102,11 @@ export const uk: Messages = {
   },
   launch: {
     importing: "Імпорт…",
+    importingCount: "Імпорт {done} з {total}",
+    installing: "Встановлення доповнень…",
+    installingCount: "Встановлення доповнень {done} з {total}",
+    updating: "Оновлення доповнень…",
+    updatingCount: "Оновлення доповнень {done} з {total}",
     mods: "Оновлення модів…",
     files: "Завантаження гри {percent}%",
     java: "Завантаження Java {percent}%",

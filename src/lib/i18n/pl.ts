@@ -103,6 +103,11 @@ export const pl: Messages = {
   },
   launch: {
     importing: "Importowanie…",
+    importingCount: "Importowanie {done} z {total}",
+    installing: "Instalowanie dodatków…",
+    installingCount: "Instalowanie dodatków {done} z {total}",
+    updating: "Aktualizowanie dodatków…",
+    updatingCount: "Aktualizowanie dodatków {done} z {total}",
     mods: "Aktualizowanie modów…",
     files: "Pobieranie gry {percent}%",
     java: "Pobieranie Javy {percent}%",

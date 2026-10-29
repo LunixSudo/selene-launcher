@@ -104,6 +104,11 @@ export const tr: Messages = {
   },
   launch: {
     importing: "İçe aktarılıyor…",
+    importingCount: "İçe aktarılıyor {done}/{total}",
+    installing: "Eklentiler kuruluyor…",
+    installingCount: "Eklentiler kuruluyor {done}/{total}",
+    updating: "Eklentiler güncelleniyor…",
+    updatingCount: "Eklentiler güncelleniyor {done}/{total}",
     mods: "Modlar güncelleniyor…",
     files: "Oyun indiriliyor %{percent}",
     java: "Java indiriliyor %{percent}",

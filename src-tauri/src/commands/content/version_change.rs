@@ -2,10 +2,12 @@ use selene_core::instance::Instance;
 use selene_core::loader::LoaderVersion;
 use selene_core::modrinth::{self, Target};
 use selene_core::mods::{self, ContentKind, ModFile, RemoteFile};
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use super::installed::list_installed;
-use super::{ContentUpdate, ProjectRef, Source, VersionChange, display_name, instance};
+use super::{
+    ContentTask, ContentUpdate, ProjectRef, Source, Stage, VersionChange, display_name, instance,
+};
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
@@ -43,6 +45,7 @@ pub async fn preview_version_change(
 /// disabling the ones that have none.
 #[tauri::command]
 pub async fn change_version(
+    app: AppHandle,
     launcher: State<'_, Launcher>,
     instance_id: String,
     version: String,
@@ -60,7 +63,18 @@ pub async fn change_version(
         .iter()
         .map(|(file, remote, _)| (file.clone(), remote.clone()))
         .collect();
-    mods::replace_all(&launcher.client, &game_dir, ContentKind::Mod, &swaps).await?;
+    let task = ContentTask::start(&app, &instance_id, Stage::Updating);
+    mods::replace_all(
+        &launcher.client,
+        &game_dir,
+        ContentKind::Mod,
+        &swaps,
+        |progress| {
+            task.report(progress);
+        },
+    )
+    .await?;
+    drop(task);
     for (file, _) in &plan.incompatible {
         mods::set_enabled(&game_dir, ContentKind::Mod, &file.file_name, false).await?;
     }
