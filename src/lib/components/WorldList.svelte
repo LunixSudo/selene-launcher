@@ -22,13 +22,13 @@
   let newName = $state("");
   let renameError = $state<string | null>(null);
 
-  const launch = $derived(library.launches[instanceId]);
-  const busy = $derived(launch !== undefined && launch.status !== "failed");
+  const status = $derived(library.launches[instanceId]?.status);
+  const busy = $derived(status !== undefined && status !== "failed");
 
   $effect(() => {
     void instanceId;
     // Worlds change while the game runs; reload once it closes.
-    void launch;
+    void status;
     void load();
   });
 

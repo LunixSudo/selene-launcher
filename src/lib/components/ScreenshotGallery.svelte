@@ -13,10 +13,11 @@
   let shots = $state<Screenshot[] | null>(null);
   let error = $state<string | null>(null);
   let copied = $state<string | null>(null);
+  const status = $derived(library.launches[instanceId]?.status);
 
   $effect(() => {
     void instanceId;
-    void library.launches[instanceId];
+    void status;
     void load();
   });
 
