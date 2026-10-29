@@ -40,6 +40,8 @@
     let shooting: { x: number; y: number; born: number } | null = null;
     let lastShooting = performance.now();
     let frame = 0;
+    let color = "";
+    let drawn = 0;
 
     const resize = () => {
       const ratio = devicePixelRatio || 1;
@@ -54,7 +56,10 @@
     const draw = (now: number) => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
-      const color = getComputedStyle(canvas).color;
+      // Reading styles every frame is costly; once a second still follows a theme switch.
+      if (drawn++ % 60 === 0) {
+        color = getComputedStyle(canvas).color;
+      }
       context.clearRect(0, 0, width, height);
       context.fillStyle = color;
       for (const star of stars) {

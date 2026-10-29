@@ -444,7 +444,6 @@ export const en: Messages = {
     libraryHint: "64×64 .png skin files. The arm model is detected automatically.",
     cape: "Cape",
     noCape: "No cape",
-    noCapes: "This account has no capes.",
     reset: "Default skin",
     resetHint: "Go back to the skin Minecraft gave the account.",
     resetButton: "Reset",

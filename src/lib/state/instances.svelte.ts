@@ -99,6 +99,7 @@ export async function deleteInstance(id: string) {
   await api.deleteInstance(id);
   library.instances = library.instances.filter((instance) => instance.id !== id);
   delete library.launches[id];
+  delete settings.instanceBackdrops[id];
 }
 
 /** Starts the game, joining `server` right away when given. */

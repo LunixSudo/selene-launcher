@@ -6,11 +6,19 @@
   import { locale, t } from "$lib/i18n/index.svelte";
   import { LOADER_NAMES } from "$lib/loaders";
   import { replaceInstance } from "$lib/state/instances.svelte";
-  import { INSTANCE_BACKDROPS, settings } from "$lib/state/settings.svelte";
+  import { INSTANCE_BACKDROPS, type InstanceBackdrop, settings } from "$lib/state/settings.svelte";
   import BackdropPicker from "./BackdropPicker.svelte";
   import ChangeVersionDialog from "./ChangeVersionDialog.svelte";
 
   let { instance }: { instance: Instance } = $props();
+
+  function setBackdrop(backdrop: InstanceBackdrop) {
+    if (backdrop === "app") {
+      delete settings.instanceBackdrops[instance.id];
+    } else {
+      settings.instanceBackdrops[instance.id] = backdrop;
+    }
+  }
 
   const STEP_MB = 512;
   const MIN_MB = 1024;
@@ -236,16 +244,7 @@
   <h2>{t("instance.backdrop")}</h2>
   <p class="hint">{t("instance.backdropHint")}</p>
   <BackdropPicker
-    bind:value={
-      () => settings.instanceBackdrops[instance.id] ?? "app",
-      (backdrop) => {
-    if (backdrop === "app") {
-      delete settings.instanceBackdrops[instance.id];
-    } else {
-      settings.instanceBackdrops[instance.id] = backdrop;
-    }
-  }
-    }
+    bind:value={() => settings.instanceBackdrops[instance.id] ?? "app", setBackdrop}
     options={INSTANCE_BACKDROPS}
     name="instance-backdrop"
     label={t("instance.backdrop")}
