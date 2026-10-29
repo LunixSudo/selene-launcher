@@ -39,6 +39,9 @@ pub struct Progress {
     pub files_total: usize,
 }
 
+/// Background downloads take few connections, so a slow line still has room for the rest.
+const BACKGROUND_CONCURRENCY: usize = 4;
+
 /// Downloads the user is waiting for right now. Background ones hold back while any run.
 static FOREGROUND: AtomicUsize = AtomicUsize::new(0);
 static FOREGROUND_DONE: Notify = Notify::const_new();
@@ -191,12 +194,21 @@ where
             });
             Ok::<_, Error>(())
         })
-        .buffer_unordered(match MAX_PARALLEL.load(Ordering::Relaxed) {
-            0 => concurrency.max(1),
-            limit => concurrency.clamp(1, limit),
-        })
+        .buffer_unordered(parallel(concurrency, background))
         .try_collect()
         .await
+}
+
+fn parallel(concurrency: usize, background: bool) -> usize {
+    let concurrency = if background {
+        concurrency.min(BACKGROUND_CONCURRENCY)
+    } else {
+        concurrency
+    };
+    match MAX_PARALLEL.load(Ordering::Relaxed) {
+        0 => concurrency.max(1),
+        limit => concurrency.clamp(1, limit),
+    }
 }
 
 async fn has_size(path: &Path, size: u64) -> bool {

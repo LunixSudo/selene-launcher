@@ -127,6 +127,13 @@ impl Launcher {
         Some(stopped)
     }
 
+    /// Whether the instance is downloading without anyone waiting to play it.
+    pub fn is_preparing_in_background(&self, id: &str) -> bool {
+        self.running_map()
+            .get(id)
+            .is_some_and(|run| !run.launch && !run.playing)
+    }
+
     /// Remembers how to stop the game once its process exists.
     pub fn set_stopper(&self, id: &str, stop: oneshot::Sender<()>) {
         if let Some(run) = self.running_map().get_mut(id) {
@@ -228,6 +235,22 @@ impl Launcher {
         log.lines.push_back(line);
         log.end += 1;
         log.end - 1
+    }
+
+    /// Whether one of the last `count` lines the game printed contains `text`.
+    pub fn log_tail_contains(&self, id: &str, text: &str, count: usize) -> bool {
+        self.log_map().get(id).is_some_and(|log| {
+            log.lines
+                .iter()
+                .rev()
+                .take(count)
+                .any(|line| line.contains(text))
+        })
+    }
+
+    /// How many lines the game has printed so far.
+    pub fn log_end(&self, id: &str) -> u64 {
+        self.log_map().get(id).map_or(0, |log| log.end)
     }
 
     pub fn log(&self, id: &str) -> LogSnapshot {

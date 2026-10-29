@@ -161,7 +161,11 @@ export async function deleteInstance(id: string) {
 
 /** Starts the game, joining `server` right away when given. */
 export async function play(id: string, server: string | null = null) {
-  await preparing.get(id);
+  // The start takes over a background download and finishes it at full speed.
+  preparing.delete(id);
+  if (library.launches[id]?.status === "preparing" && !library.tasks[id]) {
+    delete library.launches[id];
+  }
   const current = library.launches[id]?.status;
   // A shortcut clicked while the game runs or starts must not hide its Stop button, and the
   // game must not start on half-swapped add-ons.

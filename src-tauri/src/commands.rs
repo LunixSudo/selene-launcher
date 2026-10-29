@@ -44,7 +44,12 @@ const MIN_HIDDEN_TOKEN_LEN: usize = 8;
 /// A game at start-up prints thousands of lines; the console gets them in batches.
 const LOG_FLUSH_INTERVAL: Duration = Duration::from_millis(100);
 /// How long a game gets to save and quit after Stop before it is killed.
+/// Between them they run on Java 8, 16, 17 and 21.
+const POPULAR_VERSIONS: [&str; 5] = ["1.8.9", "1.12.2", "1.16.5", "1.20.1", "1.21.1"];
 const CLOSE_TIMEOUT: Duration = Duration::from_secs(20);
+const CLOSE_POLL_INTERVAL: Duration = Duration::from_millis(300);
+const HUNG_AFTER_QUIET: Duration = Duration::from_secs(5);
+const CLOSE_LOG_LINES: usize = 30;
 const UNFIT_LOOKUP_TIMEOUT: Duration = Duration::from_secs(5);
 const LOG_DRAIN_TIMEOUT: Duration = Duration::from_secs(3);
 
@@ -344,6 +349,11 @@ pub async fn launch_instance(
         .await
         .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
     let account = launcher.accounts.launch_account(&launcher.client).await?;
+    // A background download of this instance gives way; the start fetches what is left at
+    // full speed.
+    if launcher.is_preparing_in_background(&id) {
+        launcher.cancel_preparing(&id).await?;
+    }
     let Some(cancelled) = launcher.start_running(&id, true) else {
         return Err(CommandError::AlreadyRunning(id));
     };
@@ -389,18 +399,23 @@ pub async fn prepare_instance(
     result
 }
 
-/// Downloads the Java of the newest release in the background, the one most new instances
-/// need, so their first start does not wait for it.
+/// Downloads in the background the Java that the newest release and the most played older
+/// versions run on, so a new instance of them starts without waiting for it.
 #[tauri::command]
 pub async fn prefetch_java(launcher: State<'_, Launcher>) -> CommandResult<()> {
     if launcher.accounts.list().active.is_none() {
         return Ok(());
     }
     let manifest = launcher.manifest().await?;
-    let Some(entry) = manifest.get(&manifest.latest.release) else {
-        return Ok(());
-    };
-    download::in_background(game::install_java(&launcher.client, &launcher.dirs, entry)).await?;
+    let latest = manifest.latest.release.as_str();
+    for id in std::iter::once(latest).chain(POPULAR_VERSIONS) {
+        let Some(entry) = manifest.get(id) else {
+            continue;
+        };
+        // Versions that share a Java find it installed and move on at once.
+        download::in_background(game::install_java(&launcher.client, &launcher.dirs, entry))
+            .await?;
+    }
     Ok(())
 }
 
@@ -601,12 +616,7 @@ async fn watch_game(
             if let Some(pid) = child.id() {
                 ask_to_close(pid).await;
             }
-            if let Ok(status) = tokio::time::timeout(CLOSE_TIMEOUT, child.wait()).await {
-                status
-            } else {
-                let _ = child.kill().await;
-                child.wait().await
-            }
+            close_or_kill(&app, &instance_id, &mut child).await
         }
     };
     let code = status.ok().and_then(|status| status.code());
@@ -656,6 +666,36 @@ async fn instance_has_mods(launcher: &Launcher, id: &str) -> bool {
         .get(id)
         .await
         .is_some_and(|instance| instance.loader.is_some())
+}
+
+/// Waits for the game to quit after it was asked to. A game that has begun stopping and then
+/// prints nothing for a while is hung, which some mods' threads cause; saving a world logs as
+/// it goes. One that ignores the request is killed after a longer wait.
+async fn close_or_kill(
+    app: &AppHandle,
+    instance_id: &str,
+    child: &mut tokio::process::Child,
+) -> std::io::Result<std::process::ExitStatus> {
+    let launcher = app.state::<Launcher>();
+    let started = Instant::now();
+    let mut last_end = launcher.log_end(instance_id);
+    let mut quiet_since = Instant::now();
+    loop {
+        if let Ok(status) = tokio::time::timeout(CLOSE_POLL_INTERVAL, child.wait()).await {
+            return status;
+        }
+        let end = launcher.log_end(instance_id);
+        if end != last_end {
+            last_end = end;
+            quiet_since = Instant::now();
+        }
+        let stopping = launcher.log_tail_contains(instance_id, "Stopping!", CLOSE_LOG_LINES);
+        let hung = stopping && quiet_since.elapsed() >= HUNG_AFTER_QUIET;
+        if hung || started.elapsed() >= CLOSE_TIMEOUT {
+            let _ = child.kill().await;
+            return child.wait().await;
+        }
+    }
 }
 
 /// Asks the game to quit as if its window were closed, so it saves the world first.
