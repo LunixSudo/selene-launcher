@@ -111,6 +111,8 @@ pub async fn releases(
 ) -> Result<Vec<LoaderRelease>> {
     match loader {
         Loader::NeoForge if game_version == "1.20.1" => neoforge_1_20_1_releases(client).await,
+        // No need to ask anyone about versions NeoForge never had.
+        Loader::NeoForge if before_neoforge(game_version) => Ok(Vec::new()),
         Loader::NeoForge => {
             let versions = neoforge_versions(
                 client,
@@ -256,6 +258,20 @@ fn maven_versions(metadata: &str) -> Vec<String> {
         .filter_map(|rest| rest.split_once("</version>"))
         .map(|(version, _)| version.trim().to_owned())
         .collect()
+}
+
+/// Releases before 1.20.1, the first one NeoForge came out for.
+fn before_neoforge(game_version: &str) -> bool {
+    let Some(rest) = game_version.strip_prefix("1.") else {
+        return false;
+    };
+    let mut numbers = rest.split('.').map(str::parse::<u32>);
+    match (numbers.next(), numbers.next()) {
+        (Some(Ok(minor)), patch) => {
+            minor < 20 || (minor == 20 && matches!(patch, None | Some(Ok(0))))
+        }
+        _ => false,
+    }
 }
 
 /// NeoForge numbers builds after the game: `21.1.77` is for 1.21.1, `21.0.5` for 1.21, and
@@ -547,6 +563,16 @@ impl From<InstalledVersion> for ResolvedPatch {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn knows_versions_before_neoforge() {
+        assert!(before_neoforge("1.19.4"));
+        assert!(before_neoforge("1.20"));
+        assert!(before_neoforge("1.8.9"));
+        assert!(!before_neoforge("1.20.1"));
+        assert!(!before_neoforge("1.21"));
+        assert!(!before_neoforge("26.1"));
+    }
 
     #[test]
     fn reads_maven_metadata() {
