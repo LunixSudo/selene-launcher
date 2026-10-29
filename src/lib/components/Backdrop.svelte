@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { startShader } from "$lib/backdrops";
   import type { Backdrop } from "$lib/state/settings.svelte";
 
   const STAR_COUNT = 170;
@@ -10,8 +11,14 @@
   let canvas = $state<HTMLCanvasElement>();
 
   $effect(() => {
-    if (kind === "stars" && canvas) {
+    if (!canvas) {
+      return;
+    }
+    if (kind === "stars") {
       return drawStars(canvas);
+    }
+    if (kind === "halo" || kind === "rays" || kind === "aurora") {
+      return startShader(canvas, kind) ?? undefined;
     }
   });
 
@@ -115,18 +122,7 @@
 
 {#key kind}
   <div class="backdrop {kind}" aria-hidden="true" transition:fade={{ duration: 400 }}>
-    {#if kind === "halo"}
-      <span class="ring one"></span>
-      <span class="ring two"></span>
-      <span class="ring three"></span>
-    {:else if kind === "rays"}
-      <span class="beams"></span>
-      <span class="glare"></span>
-    {:else if kind === "aurora"}
-      <span class="blob one"></span>
-      <span class="blob two"></span>
-      <span class="blob three"></span>
-    {:else if kind === "stars"}
+    {#if kind === "halo" || kind === "rays" || kind === "aurora" || kind === "stars"}
       <canvas bind:this={canvas}></canvas>
     {:else if kind === "cover" && cover}
       <span class="cover" style:background-image={cover}></span>
@@ -141,105 +137,6 @@
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
-  }
-
-  .ring {
-    position: absolute;
-    top: 50%;
-    left: 55%;
-    width: 58vmin;
-    height: 58vmin;
-    border: 5vmin solid;
-    border-radius: 47% 53% 44% 56% / 52% 45% 55% 48%;
-    filter: blur(16px);
-    opacity: 0.6;
-    mix-blend-mode: screen;
-    translate: -50% -50%;
-    animation: spin 26s linear infinite;
-  }
-
-  .ring.one {
-    color: var(--accent);
-  }
-
-  .ring.two {
-    margin: -3vmin 0 0 5vmin;
-    border-radius: 55% 45% 58% 42% / 44% 56% 46% 54%;
-    color: #ff4fd8;
-    animation-duration: 33s;
-    animation-direction: reverse;
-  }
-
-  .ring.three {
-    margin: 4vmin 0 0 -4vmin;
-    width: 50vmin;
-    height: 50vmin;
-    border-radius: 42% 58% 51% 49% / 57% 43% 53% 47%;
-    color: #34e0d2;
-    animation-duration: 41s;
-  }
-
-  .beams {
-    position: absolute;
-    inset: -20%;
-    background: repeating-conic-gradient(
-      from 190deg at 20% 0%,
-      transparent 0deg,
-      color-mix(in srgb, var(--accent) 38%, transparent) 4deg,
-      transparent 9deg,
-      rgb(255 255 255 / 0.06) 12deg,
-      transparent 16deg
-    );
-    filter: blur(10px);
-    mask-image: radial-gradient(ellipse at 20% 0%, #000 10%, transparent 70%);
-    transform-origin: 20% 0%;
-    animation: sway 14s ease-in-out infinite alternate;
-  }
-
-  .glare {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      115deg,
-      transparent 40%,
-      rgb(255 255 255 / 0.1) 47%,
-      rgb(255 255 255 / 0.22) 49%,
-      rgb(255 255 255 / 0.05) 53%,
-      transparent 60%
-    );
-    background-size: 300% 100%;
-    animation: sweep 9s ease-in-out infinite;
-  }
-
-  .blob {
-    position: absolute;
-    width: 70vmax;
-    height: 45vmax;
-    border-radius: 50%;
-    filter: blur(70px);
-    opacity: 0.45;
-    animation: drift 22s ease-in-out infinite alternate;
-  }
-
-  .blob.one {
-    top: -20%;
-    left: -10%;
-    background: #2fe0a2;
-  }
-
-  .blob.two {
-    top: -10%;
-    right: -20%;
-    background: var(--accent);
-    animation-duration: 28s;
-    animation-direction: alternate-reverse;
-  }
-
-  .blob.three {
-    bottom: -30%;
-    left: 20%;
-    background: #3f8cff;
-    animation-duration: 34s;
   }
 
   .stars {
@@ -266,47 +163,6 @@
     animation: flow 24s ease-in-out infinite alternate;
   }
 
-  @keyframes spin {
-    from {
-      rotate: 0deg;
-      scale: 1;
-    }
-    50% {
-      scale: 1.08;
-    }
-    to {
-      rotate: 360deg;
-      scale: 1;
-    }
-  }
-
-  @keyframes sway {
-    from {
-      rotate: -5deg;
-    }
-    to {
-      rotate: 6deg;
-    }
-  }
-
-  @keyframes sweep {
-    from {
-      background-position: 100% 0;
-    }
-    to {
-      background-position: 0% 0;
-    }
-  }
-
-  @keyframes drift {
-    from {
-      translate: 0 0;
-    }
-    to {
-      translate: 8vmax 6vmax;
-    }
-  }
-
   @keyframes flow {
     from {
       background-position: 0% 0%;
@@ -314,17 +170,5 @@
     to {
       background-position: 100% 100%;
     }
-  }
-
-  @media (prefers-color-scheme: light) {
-    :global(:root:not([data-theme="dark"])) .ring {
-      mix-blend-mode: normal;
-      opacity: 0.4;
-    }
-  }
-
-  :global(:root[data-theme="light"]) .ring {
-    mix-blend-mode: normal;
-    opacity: 0.4;
   }
 </style>
