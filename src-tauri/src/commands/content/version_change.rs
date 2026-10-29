@@ -71,6 +71,24 @@ pub async fn change_version(
     Ok(instance)
 }
 
+/// Moves the instance to another build of the loader it already has. Mods stay as they are:
+/// builds of one loader for one game version run the same mods.
+#[tauri::command]
+pub async fn change_loader_build(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+    version: String,
+) -> CommandResult<Instance> {
+    launcher.cancel_preparing(&instance_id).await?;
+    let mut instance = instance(&launcher, &instance_id).await?;
+    let Some(loader) = instance.loader.as_mut() else {
+        return Err(CommandError::NoCompatibleVersion);
+    };
+    loader.version = version;
+    launcher.instances.save(&instance).await?;
+    Ok(instance)
+}
+
 async fn change_plan(
     launcher: &Launcher,
     instance_id: &str,

@@ -117,7 +117,6 @@
 
     <UpdateNotice
       {instance}
-      {refresh}
       {recheck}
       bind:checking
       disabled={running}

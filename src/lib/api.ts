@@ -468,6 +468,8 @@ export const api = {
     invoke<VersionChange>("preview_version_change", { instanceId, version, loader }),
   changeVersion: (instanceId: string, version: string, loader: LoaderVersion | null) =>
     invoke<Instance>("change_version", { instanceId, version, loader }),
+  changeLoaderBuild: (instanceId: string, version: string) =>
+    invoke<Instance>("change_loader_build", { instanceId, version }),
   projectPage: (kind: ContentKind, project: ProjectRef) =>
     invoke<ProjectPage>("project_page", { kind, project }),
   importPack: (path: string) => invoke<ImportResult>("import_pack", { path }),

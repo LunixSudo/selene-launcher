@@ -13,14 +13,12 @@
   let {
     instance,
     disabled,
-    refresh,
     recheck,
     checking = $bindable(false),
     onupdated,
   }: {
     instance: Instance;
     disabled: boolean;
-    refresh: number;
     /** Bumped by the refresh button: checks again and shows the notice even if dismissed. */
     recheck: number;
     checking?: boolean;
@@ -32,6 +30,9 @@
   let skipped = $state<Record<string, boolean>>({});
   let working = $state(false);
   let error = $state<string | null>(null);
+  // Installing from the catalog adds the newest builds, so only an update here calls for a
+  // new check.
+  let updated = $state(0);
 
   // Saving any setting replaces the instance object; only these fields call for a new check.
   const id = $derived(instance.id);
@@ -53,7 +54,7 @@
   $effect(() => {
     const loader = loaderId && loaderVersion ? { loader: loaderId, version: loaderVersion } : null;
     const checked = kinds;
-    void refresh;
+    void updated;
     if (recheck > 0) {
       delete dismissed[id];
     }
@@ -105,12 +106,12 @@
     error = null;
     try {
       if (instance.loader && loaderTarget && !skipped.loader) {
-        const loader = { loader: instance.loader.loader, version: loaderTarget };
-        replaceInstance(await api.changeVersion(instance.id, instance.version, loader));
+        replaceInstance(await api.changeLoaderBuild(instance.id, loaderTarget));
       }
       for (const kind of pending.filter((kind) => !skipped[kind])) {
         await api.updateContent(instance.id, kind, null);
       }
+      updated++;
       onupdated();
     } catch (err) {
       error = describeError(err);
