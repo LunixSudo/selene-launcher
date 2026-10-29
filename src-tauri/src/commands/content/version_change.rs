@@ -48,9 +48,8 @@ pub async fn change_version(
     version: String,
     loader: Option<LoaderVersion>,
 ) -> CommandResult<Instance> {
-    if launcher.is_running(&instance_id) {
-        return Err(CommandError::AlreadyRunning(instance_id));
-    }
+    // The download in progress is for the old version; the new one is fetched afterwards.
+    launcher.cancel_preparing(&instance_id).await?;
     if launcher.manifest().await?.get(&version).is_none() {
         return Err(CommandError::UnknownVersion(version));
     }

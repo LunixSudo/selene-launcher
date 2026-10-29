@@ -32,6 +32,9 @@ pub enum CommandError {
     #[error("instance {0} is already running")]
     AlreadyRunning(String),
 
+    #[error("the download was cancelled")]
+    Cancelled,
+
     #[error("a game is running or installing")]
     GameRunning,
 
@@ -64,6 +67,7 @@ impl CommandError {
             Self::AlreadyRunning(_) => "alreadyRunning",
             Self::JavaNotFound(_) => "javaNotFound",
             Self::GameRunning => "gameRunning",
+            Self::Cancelled => "cancelled",
             Self::Spawn(_) => "spawn",
             Self::Io(err) | Self::Core(selene_core::Error::Io { source: err, .. }) => io_kind(err),
             Self::Core(

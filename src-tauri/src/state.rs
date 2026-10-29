@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use reqwest::Client;
 use selene_core::crash::CrashReport;
@@ -28,13 +29,22 @@ pub struct Launcher {
     pub instances: Instances,
     pub total_memory_mb: u64,
     manifest: OnceCell<VersionManifest>,
-    /// Instances being prepared or played; the sender stops a game that has started.
-    running: Mutex<HashMap<String, Option<oneshot::Sender<()>>>>,
+    /// Instances being prepared or played.
+    running: Mutex<HashMap<String, Run>>,
     logs: Mutex<HashMap<String, VecDeque<String>>>,
     startup_launch: Mutex<Option<String>>,
     /// Crashes of games that ended while the window was closed, shown once it opens again.
     missed_crashes: Mutex<HashMap<String, CrashReport>>,
 }
+
+struct Run {
+    /// Cancels the download, or stops the game once it has started.
+    stop: Option<oneshot::Sender<()>>,
+    playing: bool,
+}
+
+/// How long a deletion waits for a cancelled download to let go of the files.
+const CANCEL_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Lines kept per instance; older ones are dropped.
 const LOG_LINES: usize = 5000;
@@ -80,20 +90,29 @@ impl Launcher {
         }
     }
 
-    /// Marks an instance as running; returns `false` if it already was.
-    pub fn start_running(&self, id: &str) -> bool {
+    /// Marks an instance as being prepared. Returns `None` if it already was busy, otherwise
+    /// a receiver that fires when the download is cancelled.
+    pub fn start_running(&self, id: &str) -> Option<oneshot::Receiver<()>> {
         let mut running = self.running_map();
         if running.contains_key(id) {
-            return false;
+            return None;
         }
-        running.insert(id.to_owned(), None);
-        true
+        let (stop, stopped) = oneshot::channel();
+        running.insert(
+            id.to_owned(),
+            Run {
+                stop: Some(stop),
+                playing: false,
+            },
+        );
+        Some(stopped)
     }
 
     /// Remembers how to stop the game once its process exists.
     pub fn set_stopper(&self, id: &str, stop: oneshot::Sender<()>) {
-        if let Some(slot) = self.running_map().get_mut(id) {
-            *slot = Some(stop);
+        if let Some(run) = self.running_map().get_mut(id) {
+            run.stop = Some(stop);
+            run.playing = true;
         }
     }
 
@@ -101,8 +120,36 @@ impl Launcher {
     pub fn stop_game(&self, id: &str) -> bool {
         self.running_map()
             .get_mut(id)
-            .and_then(Option::take)
+            .filter(|run| run.playing)
+            .and_then(|run| run.stop.take())
             .is_some_and(|stop| stop.send(()).is_ok())
+    }
+
+    /// Cancels a download in progress and waits until it has stopped writing. Fails if the
+    /// game itself is running.
+    pub async fn cancel_preparing(&self, id: &str) -> CommandResult<()> {
+        {
+            let mut running = self.running_map();
+            match running.get_mut(id) {
+                None => return Ok(()),
+                Some(run) if run.playing => {
+                    return Err(CommandError::AlreadyRunning(id.to_owned()));
+                }
+                Some(run) => {
+                    if let Some(stop) = run.stop.take() {
+                        let _ = stop.send(());
+                    }
+                }
+            }
+        }
+        let started = Instant::now();
+        while self.is_running(id) && started.elapsed() < CANCEL_TIMEOUT {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        if self.is_running(id) {
+            return Err(CommandError::AlreadyRunning(id.to_owned()));
+        }
+        Ok(())
     }
 
     pub fn stop_running(&self, id: &str) {
@@ -117,7 +164,7 @@ impl Launcher {
     pub fn running_games(&self) -> Vec<String> {
         self.running_map()
             .iter()
-            .filter(|(_, stop)| stop.is_some())
+            .filter(|(_, run)| run.playing && run.stop.is_some())
             .map(|(id, _)| id.clone())
             .collect()
     }
@@ -168,12 +215,8 @@ impl Launcher {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
-    fn running_map(
-        &self,
-    ) -> std::sync::MutexGuard<'_, HashMap<String, Option<oneshot::Sender<()>>>> {
-        self.running
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    fn running_map(&self) -> std::sync::MutexGuard<'_, HashMap<String, Run>> {
+        lock(&self.running)
     }
 }
 

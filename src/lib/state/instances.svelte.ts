@@ -55,8 +55,8 @@ export async function createInstance(name: string, version: string, loader: Load
 /** Background downloads of new instances, which a start has to wait for. */
 const preparing = new Map<string, Promise<void>>();
 
-/** Downloads a new instance's game right away, so the first start is quick. */
-function prepare(id: string) {
+/** Downloads the instance's game right away, so the first start is quick. */
+export function prepare(id: string) {
   const task = api
     .prepareInstance(id)
     // A failed download is retried, and reported, when the instance starts.
@@ -110,6 +110,10 @@ export async function play(id: string, server: string | null = null) {
   try {
     await api.launchInstance(id, server);
   } catch (error) {
+    if (isCommandError(error) && error.kind === "cancelled") {
+      delete library.launches[id];
+      return;
+    }
     library.launches[id] = {
       status: "failed",
       error: isCommandError(error) ? error : UNKNOWN_ERROR,

@@ -78,7 +78,7 @@
         label: t("instances.delete"),
         icon: UI_ICONS.delete,
         danger: true,
-        disabled: busy,
+        disabled: status === "running",
         action: () => (deleting = true),
       },
     ];

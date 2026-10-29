@@ -312,9 +312,7 @@ pub fn open_data_folder(app: AppHandle, launcher: State<'_, Launcher>) -> Comman
 
 #[tauri::command]
 pub async fn delete_instance(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
-    if launcher.is_running(&id) {
-        return Err(CommandError::AlreadyRunning(id));
-    }
+    launcher.cancel_preparing(&id).await?;
     Ok(launcher.instances.delete(&id).await?)
 }
 
@@ -334,11 +332,11 @@ pub async fn launch_instance(
         .await
         .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
     let account = launcher.accounts.launch_account(&launcher.client).await?;
-    if !launcher.start_running(&id) {
+    let Some(cancelled) = launcher.start_running(&id) else {
         return Err(CommandError::AlreadyRunning(id));
-    }
+    };
 
-    let result = start_game(&app, &launcher, instance, account, server).await;
+    let result = start_game(&app, &launcher, instance, account, server, cancelled).await;
     if result.is_err() {
         launcher.stop_running(&id);
     }
@@ -361,12 +359,15 @@ pub async fn prepare_instance(
         .get(&id)
         .await
         .ok_or_else(|| CommandError::UnknownInstance(id.clone()))?;
-    if !launcher.start_running(&id) {
+    let Some(cancelled) = launcher.start_running(&id) else {
         return Ok(());
-    }
-    let result = install_game(&app, &launcher, &instance).await;
+    };
+    let result = tokio::select! {
+        result = install_game(&app, &launcher, &instance) => result.map(drop),
+        _ = cancelled => Err(CommandError::Cancelled),
+    };
     launcher.stop_running(&id);
-    result.map(drop)
+    result
 }
 
 /// Kills a game that hangs or will not close.
@@ -381,7 +382,23 @@ async fn start_game(
     instance: Instance,
     account: LaunchAccount,
     server: Option<String>,
+    mut cancelled: oneshot::Receiver<()>,
 ) -> CommandResult<()> {
+    tokio::select! {
+        result = prepare_game(app, launcher, &instance) => {
+            let installed = result?;
+            run_game(app, launcher, instance, account, server, installed).await
+        }
+        _ = &mut cancelled => Err(CommandError::Cancelled),
+    }
+}
+
+/// Brings the mods up to date if the player wants that, then installs whatever is missing.
+async fn prepare_game(
+    app: &AppHandle,
+    launcher: &Launcher,
+    instance: &Instance,
+) -> CommandResult<Installed> {
     if launcher.config.get().auto_update_mods && instance.loader.is_some() {
         let _ = app.emit(
             "launch-progress",
@@ -395,9 +412,17 @@ async fn start_game(
         // Being offline should not stop the game from starting with the mods it has.
         let _ = content::update_all(launcher, &instance.id, ContentKind::Mod, None).await;
     }
+    install_game(app, launcher, instance).await
+}
 
-    let installed = install_game(app, launcher, &instance).await?;
-
+async fn run_game(
+    app: &AppHandle,
+    launcher: &Launcher,
+    instance: Instance,
+    account: LaunchAccount,
+    server: Option<String>,
+    installed: Installed,
+) -> CommandResult<()> {
     let dirs = &launcher.dirs;
     let token = account.access_token.clone();
     let java = match &instance.java_path {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     api,
+    type ContentKind,
     type Instance,
     type LoaderRelease,
     type LoaderVersion,
@@ -10,7 +11,7 @@
   import { t } from "$lib/i18n/index.svelte";
   import { hasHiddenBetas, LOADER_NAMES, preferredRelease, releaseOptions } from "$lib/loaders";
   import { scrollFade } from "$lib/scroll-fade";
-  import { replaceInstance } from "$lib/state/instances.svelte";
+  import { prepare, replaceInstance } from "$lib/state/instances.svelte";
   import Dialog from "./Dialog.svelte";
   import Select from "./Select.svelte";
 
@@ -25,6 +26,9 @@
   let working = $state(false);
   let error = $state<string | null>(null);
   let loaderError = $state<string | null>(null);
+  let updatePacks = $state(true);
+  let updateShaders = $state(true);
+  let download = $state(true);
 
   const options = $derived(releases.map((value) => ({ value, label: value })));
   const loader = $derived<LoaderVersion | null>(
@@ -118,12 +122,30 @@
     working = true;
     error = null;
     try {
-      replaceInstance(await api.changeVersion(instance.id, version, loader));
+      const changed = await api.changeVersion(instance.id, version, loader);
+      replaceInstance(changed);
       open = false;
+      void followUp(changed);
     } catch (err) {
       error = describeError(err);
     } finally {
       working = false;
+    }
+  }
+
+  /** Packs are checked against the new version only once the instance is on it. */
+  async function followUp(changed: Instance) {
+    const kinds: ContentKind[] = [];
+    if (updatePacks) {
+      kinds.push("resourcePack");
+    }
+    if (updateShaders && changed.loader) {
+      kinds.push("shaderPack");
+    }
+    // Offline the packs simply stay as they are.
+    await Promise.allSettled(kinds.map((kind) => api.updateContent(changed.id, kind, null)));
+    if (download) {
+      prepare(changed.id);
     }
   }
 </script>
@@ -199,6 +221,23 @@
     {#if change.updated.length + change.incompatible.length + change.unknown.length === 0}
       <p class="muted">{t("changeVersion.nothing")}</p>
     {/if}
+    <section class="also">
+      <h3>{t("changeVersion.also")}</h3>
+      <label class="toggle">
+        <input type="checkbox" bind:checked={updatePacks}>
+        <span>{t("changeVersion.alsoPacks")}</span>
+      </label>
+      {#if instance.loader}
+        <label class="toggle">
+          <input type="checkbox" bind:checked={updateShaders}>
+          <span>{t("changeVersion.alsoShaders")}</span>
+        </label>
+      {/if}
+      <label class="toggle">
+        <input type="checkbox" bind:checked={download}>
+        <span>{t("changeVersion.alsoDownload")}</span>
+      </label>
+    </section>
   {/if}
 
   {#if error}
@@ -233,6 +272,15 @@
   h3 {
     margin: 0 0 6px;
     font-size: 13px;
+  }
+
+  .also {
+    display: grid;
+    gap: 6px;
+  }
+
+  .also h3 {
+    margin: 0;
   }
 
   .warn {

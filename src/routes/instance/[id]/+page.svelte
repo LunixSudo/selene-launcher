@@ -120,7 +120,7 @@
       {refresh}
       {recheck}
       bind:checking
-      disabled={launch?.status === "preparing" || running}
+      disabled={running}
       onupdated={() => refresh++}
     />
 

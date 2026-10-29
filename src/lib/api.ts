@@ -258,6 +258,7 @@ export type ErrorKind =
   | "noCompatibleVersion"
   | "alreadyRunning"
   | "gameRunning"
+  | "cancelled"
   | "javaNotFound"
   | "spawn"
   | "network"
