@@ -128,7 +128,7 @@ impl Instances {
             cover: None,
             play_seconds: 0,
             window: None,
-            fullscreen: false,
+            fullscreen: true,
             java_args: String::new(),
             java_path: None,
             group: None,
