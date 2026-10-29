@@ -202,7 +202,7 @@
         </h3>
         <p class="muted">{t("changeVersion.incompatibleHint")}</p>
         <ul {@attach scrollFade}>
-          {#each change.incompatible as title (title)}
+          {#each change.incompatible as title, index (index)}
             <li>{title}</li>
           {/each}
         </ul>
@@ -212,7 +212,7 @@
       <section>
         <h3>{t("changeVersion.unknown", { count: change.unknown.length })}</h3>
         <ul {@attach scrollFade}>
-          {#each change.unknown as title (title)}
+          {#each change.unknown as title, index (index)}
             <li>{title}</li>
           {/each}
         </ul>

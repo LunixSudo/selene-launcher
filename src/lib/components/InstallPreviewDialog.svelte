@@ -41,7 +41,7 @@
     <section>
       <h3>{t("install.requested", { count: requested.length })}</h3>
       <ul {@attach scrollFade}>
-        {#each requested as planned (planned.title)}
+        {#each requested as planned, index (index)}
           <li>{planned.title}</li>
         {/each}
       </ul>
@@ -53,7 +53,7 @@
       <h3>{t("install.dependencies", { count: dependencies.length })}</h3>
       <p class="hint">{t("install.dependenciesHint")}</p>
       <ul {@attach scrollFade}>
-        {#each dependencies as planned (planned.title)}
+        {#each dependencies as planned, index (index)}
           <li class="dependency">{planned.title}</li>
         {/each}
       </ul>

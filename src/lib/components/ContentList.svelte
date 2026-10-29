@@ -213,7 +213,7 @@
                   {t("content.notForVersion", { version: gameVersion })}
                 </span>
               {/if}
-              {#each file.issues as issue (issue.kind + issue.title)}
+              {#each file.issues as issue, index (index)}
                 <span class="issue {issue.kind}"
                   >{t(`content.${issue.kind}`, { title: issue.title })}</span
                 >

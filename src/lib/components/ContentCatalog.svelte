@@ -201,7 +201,13 @@
       if (request !== lastRequest) {
         return;
       }
-      hits = next === 0 ? results.hits : [...hits, ...results.hits];
+      if (next === 0) {
+        hits = results.hits;
+      } else {
+        // A project published between pages shifts the rest down by one.
+        const shown = new Set(hits.map(key));
+        hits = [...hits, ...results.hits.filter((hit) => !shown.has(key(hit)))];
+      }
       hasMore = results.hasMore;
       page = next;
     } catch (err) {
