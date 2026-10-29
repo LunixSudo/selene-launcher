@@ -114,7 +114,7 @@ pub struct ContentUpdate {
 }
 
 /// A catalog entry the user picked.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct CatalogItem {
     source: Source,
     id: String,

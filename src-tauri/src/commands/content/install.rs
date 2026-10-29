@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::sync::{Mutex, PoisonError};
+use std::time::{Duration, Instant};
 
 use selene_core::curseforge::CurseForge;
 use selene_core::instance::Instance;
@@ -14,10 +16,35 @@ use super::{
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
+/// How long a previewed plan is reused when the user confirms the install.
+const PREVIEW_TTL: Duration = Duration::from_secs(120);
+
+static PREVIEWED: Mutex<Option<Previewed>> = Mutex::new(None);
+
 struct Plan {
     /// Each file with its kind, since a dependency can be of another kind than what needs it.
     files: Vec<(ContentKind, RemoteFile)>,
     preview: InstallPreview,
+}
+
+#[derive(PartialEq, Eq)]
+struct PlanKey {
+    instance_id: String,
+    kind: ContentKind,
+    world: Option<String>,
+    items: Vec<CatalogItem>,
+}
+
+struct Previewed {
+    key: PlanKey,
+    plan: Plan,
+    at: Instant,
+}
+
+fn take_previewed(key: &PlanKey) -> Option<Plan> {
+    let mut slot = PREVIEWED.lock().unwrap_or_else(PoisonError::into_inner);
+    let previewed = slot.take()?;
+    (previewed.key == *key && previewed.at.elapsed() < PREVIEW_TTL).then_some(previewed.plan)
 }
 
 /// What installing the picked projects would download, dependencies included.
@@ -29,11 +56,19 @@ pub async fn preview_install(
     world: Option<String>,
     items: Vec<CatalogItem>,
 ) -> CommandResult<InstallPreview> {
-    Ok(
-        plan(&launcher, &instance_id, kind, world.as_deref(), &items)
-            .await?
-            .preview,
-    )
+    let plan = plan(&launcher, &instance_id, kind, world.as_deref(), &items).await?;
+    let preview = plan.preview.clone();
+    *PREVIEWED.lock().unwrap_or_else(PoisonError::into_inner) = Some(Previewed {
+        key: PlanKey {
+            instance_id,
+            kind,
+            world,
+            items,
+        },
+        plan,
+        at: Instant::now(),
+    });
+    Ok(preview)
 }
 
 /// Installs the picked projects and their required dependencies.
@@ -45,7 +80,28 @@ pub async fn install_content(
     world: Option<String>,
     items: Vec<CatalogItem>,
 ) -> CommandResult<InstallResult> {
-    let plan = plan(&launcher, &instance_id, kind, world.as_deref(), &items).await?;
+    let key = PlanKey {
+        instance_id,
+        kind,
+        world,
+        items,
+    };
+    let plan = match take_previewed(&key) {
+        Some(plan) => plan,
+        None => {
+            plan(
+                &launcher,
+                &key.instance_id,
+                kind,
+                key.world.as_deref(),
+                &key.items,
+            )
+            .await?
+        }
+    };
+    let PlanKey {
+        instance_id, world, ..
+    } = key;
     if plan.files.is_empty() && plan.preview.manual.is_empty() {
         return Err(CommandError::NoCompatibleVersion);
     }

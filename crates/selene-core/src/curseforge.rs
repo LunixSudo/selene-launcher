@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, PoisonError};
 
+use futures_util::{StreamExt, TryStreamExt, stream};
 use reqwest::{Client, Method, RequestBuilder};
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +13,7 @@ const API_URL: &str = "https://api.curseforge.com/v1";
 const MINECRAFT_GAME_ID: u32 = 432;
 const SHA1_ALGORITHM: u32 = 1;
 const REQUIRED_DEPENDENCY: u32 = 3;
+const RESOLVE_CONCURRENCY: usize = 6;
 
 /// CurseForge needs an API key for every request.
 #[derive(Debug, Clone)]
@@ -454,26 +456,31 @@ impl CurseForge {
         installed: impl IntoIterator<Item = u32>,
     ) -> Result<InstallPlan> {
         let mut seen: HashSet<u32> = installed.into_iter().collect();
-        let mut queue: Vec<u32> = mod_ids.iter().rev().copied().collect();
+        let mut level: Vec<u32> = mod_ids.to_vec();
         let mut plan = InstallPlan::default();
 
-        while let Some(id) = queue.pop() {
-            if !seen.insert(id) {
-                continue;
-            }
-            let files = self.compatible_files(id, game_version, loader).await?;
-            let Some(file) = files.into_iter().next() else {
-                continue;
-            };
-            queue.extend(
-                file.dependencies
-                    .iter()
-                    .filter(|dependency| dependency.relation_type == REQUIRED_DEPENDENCY)
-                    .map(|dependency| dependency.mod_id),
-            );
-            match file.remote_file() {
-                Some(remote) => plan.files.push((id, remote)),
-                None => plan.manual.push(id),
+        // Each depth of the dependency tree is looked up at once.
+        while !level.is_empty() {
+            level.retain(|id| seen.insert(*id));
+            let found: Vec<_> = stream::iter(level.drain(..))
+                .map(|id| async move {
+                    let files = self.compatible_files(id, game_version, loader).await?;
+                    Ok::<_, crate::Error>(files.into_iter().next().map(|file| (id, file)))
+                })
+                .buffered(RESOLVE_CONCURRENCY)
+                .try_collect()
+                .await?;
+            for (id, file) in found.into_iter().flatten() {
+                level.extend(
+                    file.dependencies
+                        .iter()
+                        .filter(|dependency| dependency.relation_type == REQUIRED_DEPENDENCY)
+                        .map(|dependency| dependency.mod_id),
+                );
+                match file.remote_file() {
+                    Some(remote) => plan.files.push((id, remote)),
+                    None => plan.manual.push(id),
+                }
             }
         }
         Ok(plan)

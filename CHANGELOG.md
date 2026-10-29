@@ -214,3 +214,17 @@ All notable changes to this project are documented here. The format follows
 - The skins page says when the PC has no WebGL for the 3D preview.
 - The home screen and the settings show when instances could not be read or settings
   could not be saved.
+- Updating only the loader from the instance page notice keeps the game version, and a fresh
+  install no longer triggers a second update check.
+- Modpack files in `client-overrides` win over the ones in `overrides`, and CurseForge packs
+  use the overrides folder their manifest names.
+- A saved catalog or version list is used when the server answers with broken JSON.
+- The launcher stops waiting for the game's output a few seconds after the game exits.
+- "Update all" downloads every new file first and only then swaps them, so a failed download
+  leaves the old mods in place.
+- Two Forge or NeoForge installers no longer run at the same time for one build.
+- Deleting an instance while its modpack is importing cancels the import.
+- Installing from the catalog reuses the dependency list from the preview instead of asking
+  the servers again, and dependencies are looked up one tree level at a time in parallel.
+- Modrinth and CurseForge are asked about each installed file and the Java runtime index once
+  per session.

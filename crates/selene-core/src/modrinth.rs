@@ -3,6 +3,7 @@ use std::hash::BuildHasher;
 use std::sync::{Mutex, PoisonError};
 
 use chrono::{DateTime, Utc};
+use futures_util::{StreamExt, TryStreamExt, stream};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -12,6 +13,7 @@ use crate::mods::{CatalogSort, ContentKind, RemoteFile};
 use crate::{Result, http};
 
 const API_URL: &str = "https://api.modrinth.com/v2";
+const RESOLVE_CONCURRENCY: usize = 6;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -487,45 +489,53 @@ pub async fn resolve_install<'a>(
     installed_projects: impl IntoIterator<Item = String>,
 ) -> Result<Vec<(ContentKind, Version)>> {
     let mut seen: HashSet<String> = installed_projects.into_iter().collect();
-    let mut queue: Vec<(String, Option<String>)> = project_ids
-        .iter()
-        .rev()
-        .map(|id| (id.clone(), None))
-        .collect();
+    let mut level: Vec<(String, Option<String>)> =
+        project_ids.iter().map(|id| (id.clone(), None)).collect();
     let mut plan = Vec::new();
 
-    while let Some((project, pinned)) = queue.pop() {
-        if !seen.insert(project.clone()) {
-            continue;
+    // Each depth of the dependency tree is looked up at once.
+    while !level.is_empty() {
+        level.retain(|(project, _)| seen.insert(project.clone()));
+        let found: Vec<_> = stream::iter(level.drain(..))
+            .map(|(project, pinned)| resolve_one(client, project, pinned, kind, &target_for))
+            .buffered(RESOLVE_CONCURRENCY)
+            .try_collect()
+            .await?;
+        for (found_kind, version) in found.into_iter().flatten() {
+            level.extend(
+                version
+                    .dependencies
+                    .iter()
+                    .filter(|dependency| dependency.dependency_type == DependencyType::Required)
+                    .filter_map(|dependency| {
+                        Some((
+                            dependency.project_id.clone()?,
+                            dependency.version_id.clone(),
+                        ))
+                    }),
+            );
+            plan.push((found_kind, version));
         }
-        let found = match pinned {
-            Some(version_id) => {
-                let version = version(client, &version_id).await?;
-                let pinned_kind = kind_of(&version, kind);
-                // A pin made for another game version or loader would not run here.
-                if target_for(pinned_kind).is_some_and(|target| target.accepts(&version)) {
-                    Some((pinned_kind, version))
-                } else {
-                    newest_for_kind(client, &project, kind, &target_for).await?
-                }
-            }
-            None => newest_for_kind(client, &project, kind, &target_for).await?,
-        };
-        let Some((found_kind, version)) = found else {
-            continue;
-        };
-
-        for dependency in &version.dependencies {
-            if dependency.dependency_type != DependencyType::Required {
-                continue;
-            }
-            if let Some(project_id) = &dependency.project_id {
-                queue.push((project_id.clone(), dependency.version_id.clone()));
-            }
-        }
-        plan.push((found_kind, version));
     }
     Ok(plan)
+}
+
+async fn resolve_one<'a>(
+    client: &Client,
+    project: String,
+    pinned: Option<String>,
+    kind: ContentKind,
+    target_for: &impl Fn(ContentKind) -> Option<Target<'a>>,
+) -> Result<Option<(ContentKind, Version)>> {
+    if let Some(version_id) = pinned {
+        let version = version(client, &version_id).await?;
+        let pinned_kind = kind_of(&version, kind);
+        // A pin made for another game version or loader would not run here.
+        if target_for(pinned_kind).is_some_and(|target| target.accepts(&version)) {
+            return Ok(Some((pinned_kind, version)));
+        }
+    }
+    newest_for_kind(client, &project, kind, target_for).await
 }
 
 /// The newest fitting version, looked up as `kind` first and then as the project's own kind.
