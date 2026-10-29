@@ -95,9 +95,9 @@ All notable changes to this project are documented here. The format follows
 - After a crash the launcher opens the instance, and the crash notice names the mod at fault
   and any enabled mods made for another game version.
 - Signing in downloads the instances added before, one at a time; Play moves its instance ahead.
-- The Java of the newest release downloads in the background, so a new instance starts sooner.
-- The player on the skins page turns smoothly around itself, stands on a soft shadow, fades in
-  once dressed and hops when clicked.
+- The Java of the newest release and of the most played versions (1.8.9, 1.12.2, 1.16.5,
+  1.20.1, 1.21.1) downloads in the background, so a new instance starts sooner.
+- The player on the skins page turns smoothly, fades in once dressed and hops when clicked.
 - Deleting an instance or changing its game version while its game, Java or loader is
   downloading cancels the download. Mods, resource packs and shaders can be updated meanwhile.
 - Changing the game version can also update resource packs and shaders for the new version
@@ -245,7 +245,12 @@ All notable changes to this project are documented here. The format follows
 - A first start of versions before 1.11 sets the system language too.
 - Uninstalling removes the instance shortcuts from the desktop.
 - The lifted instance card's shadow is no longer cut off at the edges of the list.
-- Dialogs open with a smooth fade instead of a springy jolt.
+- Dialogs settle in from slightly larger, like iOS alerts, instead of a springy jolt.
+- Background downloads use a few connections only, so version lists and the catalog stay
+  quick meanwhile. Play takes over an instance's background download at full speed.
+- Stop no longer waits 20 seconds for a game that has saved and then hangs.
+- NeoForge no longer looks for builds for versions before 1.20.1.
+- The cape row on the skins page scrolls sideways again.
 - Dropdown lists stay opaque where their scrolled edges fade.
 - After Stop the button says the game is saving and quitting.
 - A NeoForge site that hangs instead of failing no longer keeps the build list loading.
