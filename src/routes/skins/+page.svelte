@@ -340,6 +340,7 @@
 
   .stage {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     justify-items: center;
     gap: 12px;
@@ -475,6 +476,9 @@
     display: flex;
     gap: 6px;
     width: 100%;
+    /* A fieldset is as wide as its content unless told otherwise, which kept the row from
+       scrolling. */
+    min-width: 0;
     padding: 14px 4px 6px;
     overflow-x: auto;
     border-top: 1px solid var(--border);

@@ -81,9 +81,6 @@
       }
       created.controls.enableZoom = false;
       created.controls.enablePan = false;
-      // Turning only around the player keeps the feet on the floor shadow.
-      created.controls.minPolarAngle = Math.PI / 2;
-      created.controls.maxPolarAngle = Math.PI / 2;
       // Turning glides to a stop instead of following every jitter of the mouse.
       created.controls.enableDamping = true;
       created.controls.dampingFactor = 0.1;
@@ -181,7 +178,6 @@
   <p class="unsupported">{t("skins.noPreview")}</p>
 {/if}
 <div class="viewer" class:hidden={!skin || unsupported} class:shown>
-  <span class="floor" aria-hidden="true"></span>
   <canvas bind:this={canvas} onpointerdown={press} onpointerup={release}></canvas>
 </div>
 {#if skin && !unsupported}
@@ -205,17 +201,6 @@
     position: relative;
     cursor: grab;
     touch-action: none;
-  }
-
-  .floor {
-    position: absolute;
-    bottom: 6%;
-    left: 50%;
-    width: 46%;
-    height: 7%;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, rgb(0 0 0 / 0.35), transparent);
-    transform: translateX(-50%);
   }
 
   .hint {
