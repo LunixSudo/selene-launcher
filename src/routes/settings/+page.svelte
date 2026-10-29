@@ -6,6 +6,7 @@
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
   import Select from "$lib/components/Select.svelte";
+  import StylePresets from "$lib/components/StylePresets.svelte";
   import { describeError } from "$lib/errors";
   import { type Locale, locale, setLocale, t } from "$lib/i18n/index.svelte";
   import { scrollFade } from "$lib/scroll-fade";
@@ -120,6 +121,14 @@
     <section class="panel">
       <h2 class="panel-title">{t("settings.appearance")}</h2>
 
+      <div class="row column">
+        <div>
+          <h3>{t("settings.presets")}</h3>
+          <p>{t("settings.presetsHint")}</p>
+        </div>
+        <StylePresets />
+      </div>
+
       <div class="row">
         <div>
           <h3>{t("settings.theme")}</h3>
@@ -202,6 +211,13 @@
           <p>{t("settings.clickSoundHint")}</p>
         </div>
         <input class="switch" type="checkbox" bind:checked={settings.clickSound}>
+      </label>
+      <label class="row switch-row">
+        <div>
+          <h3>{t("settings.scrollFade")}</h3>
+          <p>{t("settings.scrollFadeHint")}</p>
+        </div>
+        <input class="switch" type="checkbox" bind:checked={settings.scrollFade}>
       </label>
     </section>
 

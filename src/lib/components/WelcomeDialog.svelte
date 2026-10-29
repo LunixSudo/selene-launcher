@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "$lib/i18n/index.svelte";
-  import { BEAUTIFUL, settings } from "$lib/state/settings.svelte";
+  import { BEAUTIFUL, FAST, settings } from "$lib/state/settings.svelte";
 
   let { open }: { open: boolean } = $props();
 
@@ -17,9 +17,7 @@
   });
 
   function choose(beautiful: boolean) {
-    if (beautiful) {
-      Object.assign(settings, BEAUTIFUL);
-    }
+    Object.assign(settings, beautiful ? BEAUTIFUL : FAST);
     settings.setupDone = true;
   }
 </script>

@@ -1,4 +1,5 @@
 import { Effect, getCurrentWindow } from "@tauri-apps/api/window";
+import { SHADER_BACKDROPS, type ShaderBackdrop } from "$lib/backdrops";
 
 export type Theme = "system" | "light" | "dark";
 export type Style = "glass" | "mica" | "solid";
@@ -6,7 +7,7 @@ export type Accent = "violet" | "blue" | "green" | "pink" | "orange";
 export type Font = "rounded" | "modern" | "rubik" | "system";
 export type AfterLaunch = "keep" | "minimize" | "close";
 export type SortOrder = "lastPlayed" | "name" | "playTime" | "created";
-export type Backdrop = "none" | "halo" | "rays" | "stars" | "aurora";
+export type Backdrop = "none" | "stars" | ShaderBackdrop;
 /** An instance's own background: the launcher's, its cover, or any of the animated ones. */
 export type InstanceBackdrop = "app" | "cover" | Exclude<Backdrop, "none">;
 export type SkinAnimation = "idle" | "walk" | "run" | "fly" | "wave";
@@ -16,14 +17,12 @@ export const STYLES: Style[] = ["glass", "mica", "solid"];
 export const FONTS: Font[] = ["rounded", "modern", "rubik", "system"];
 export const AFTER_LAUNCH: AfterLaunch[] = ["keep", "minimize", "close"];
 export const SORT_ORDERS: SortOrder[] = ["lastPlayed", "name", "playTime", "created"];
-export const BACKDROPS: Backdrop[] = ["none", "halo", "rays", "stars", "aurora"];
+export const BACKDROPS: Backdrop[] = ["none", "stars", ...SHADER_BACKDROPS];
 export const INSTANCE_BACKDROPS: InstanceBackdrop[] = [
   "app",
   "cover",
-  "halo",
-  "rays",
   "stars",
-  "aurora",
+  ...SHADER_BACKDROPS,
 ];
 export const SKIN_ANIMATIONS: SkinAnimation[] = ["idle", "walk", "run", "fly", "wave"];
 export const ACCENTS: Record<Accent, string> = {
@@ -58,6 +57,21 @@ interface Settings {
   skinAnimation: SkinAnimation;
   /** Whether the first-start question about looks or speed was answered. */
   setupDone: boolean;
+  /** Looks the user saved to switch between quickly. */
+  presets: StylePreset[];
+  /** Lists fade out at the edges where they scroll on. */
+  scrollFade: boolean;
+}
+
+/** Everything that makes up how the launcher looks. */
+export type Look = Pick<
+  Settings,
+  "theme" | "style" | "accent" | "font" | "backdrop" | "motion" | "clickSound"
+>;
+
+export interface StylePreset {
+  name: string;
+  look: Look;
 }
 
 const DEFAULTS: Settings = {
@@ -78,12 +92,21 @@ const DEFAULTS: Settings = {
   clickSound: false,
   skinAnimation: "walk",
   setupDone: false,
+  presets: [],
+  scrollFade: true,
 };
 
-/** What "make it beautiful" on the first start turns on. */
-export const BEAUTIFUL: Partial<Settings> = {
-  style: "glass",
-  backdrop: "halo",
+/** The two looks offered on the first start and kept in the settings. Colours stay as set. */
+export const FAST: Partial<Look> = {
+  style: "solid",
+  backdrop: "none",
+  motion: false,
+  clickSound: false,
+};
+
+export const BEAUTIFUL: Partial<Look> = {
+  style: "mica",
+  backdrop: "aurora",
   motion: true,
   clickSound: true,
 };
@@ -99,11 +122,17 @@ function load(): Settings {
   }
   const oneOf = <T>(value: unknown, allowed: readonly T[], fallback: T): T =>
     allowed.includes(value as T) ? (value as T) : fallback;
+  const checkLook = (look: Partial<Look>): Look => ({
+    theme: oneOf(look.theme, THEMES, DEFAULTS.theme),
+    style: oneOf(look.style, STYLES, DEFAULTS.style),
+    accent: oneOf(look.accent, Object.keys(ACCENTS) as Accent[], DEFAULTS.accent),
+    font: oneOf(look.font, FONTS, DEFAULTS.font),
+    backdrop: oneOf(look.backdrop, BACKDROPS, DEFAULTS.backdrop),
+    motion: oneOf(look.motion, [true, false], DEFAULTS.motion),
+    clickSound: oneOf(look.clickSound, [true, false], DEFAULTS.clickSound),
+  });
   return {
-    theme: oneOf(saved.theme, THEMES, DEFAULTS.theme),
-    style: oneOf(saved.style, STYLES, DEFAULTS.style),
-    accent: oneOf(saved.accent, Object.keys(ACCENTS) as Accent[], DEFAULTS.accent),
-    font: oneOf(saved.font, FONTS, DEFAULTS.font),
+    ...checkLook(saved),
     afterLaunch: oneOf(saved.afterLaunch, AFTER_LAUNCH, DEFAULTS.afterLaunch),
     restoreAfterGame: oneOf(saved.restoreAfterGame, [true, false], DEFAULTS.restoreAfterGame),
     sort: oneOf(saved.sort, SORT_ORDERS, DEFAULTS.sort),
@@ -113,17 +142,30 @@ function load(): Settings {
     notifications: oneOf(saved.notifications, [true, false], DEFAULTS.notifications),
     checkUpdates: oneOf(saved.checkUpdates, [true, false], DEFAULTS.checkUpdates),
     discordStatus: oneOf(saved.discordStatus, [true, false], DEFAULTS.discordStatus),
-    backdrop: oneOf(saved.backdrop, BACKDROPS, DEFAULTS.backdrop),
-    motion: oneOf(saved.motion, [true, false], DEFAULTS.motion),
     instanceBackdrops: Object.fromEntries(
       Object.entries(saved.instanceBackdrops ?? {}).filter(([, backdrop]) =>
         INSTANCE_BACKDROPS.includes(backdrop),
       ),
     ),
-    clickSound: oneOf(saved.clickSound, [true, false], DEFAULTS.clickSound),
     skinAnimation: oneOf(saved.skinAnimation, SKIN_ANIMATIONS, DEFAULTS.skinAnimation),
     setupDone: oneOf(saved.setupDone, [true, false], DEFAULTS.setupDone),
+    presets: Array.isArray(saved.presets)
+      ? saved.presets
+          .filter((preset) => typeof preset?.name === "string" && preset.look)
+          .map((preset) => ({ name: preset.name, look: checkLook(preset.look) }))
+      : DEFAULTS.presets,
+    scrollFade: oneOf(saved.scrollFade, [true, false], DEFAULTS.scrollFade),
   };
+}
+
+export function currentLook(from: Look = settings): Look {
+  const { theme, style, accent, font, backdrop, motion, clickSound } = from;
+  return { theme, style, accent, font, backdrop, motion, clickSound };
+}
+
+/** Whether the settings already look the way `look` describes. */
+export function matchesLook(look: Partial<Look>): boolean {
+  return Object.entries(look).every(([key, value]) => settings[key as keyof Look] === value);
 }
 
 // Call from an effect so it reruns whenever a setting changes.
@@ -133,6 +175,7 @@ export function applySettings() {
   root.dataset.style = settings.style;
   root.dataset.font = settings.font;
   root.dataset.motion = settings.motion ? "on" : "off";
+  root.dataset.scrollFade = settings.scrollFade ? "on" : "off";
   root.style.setProperty("--accent", ACCENTS[settings.accent]);
 
   try {
