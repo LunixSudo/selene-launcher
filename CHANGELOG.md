@@ -87,6 +87,13 @@ All notable changes to this project are documented here. The format follows
   vendor's SHA-256, and only then tries Mojang's Java on BMCLAPI.
 - A temporary "Download source" setting that takes everything from BMCLAPI and MCIM, to check
   that the copies work. It goes away before the release.
+- Importing a modpack, installing from the catalog and updating add-ons show their progress
+  on the instance card and the instance page, file by file. These downloads go ahead of a game
+  download running in the background, which waits for them.
+- Stop asks the game to close as its window would, so it saves the world, and only kills it
+  when it has not quit after 20 seconds.
+- After a crash the launcher opens the instance, and the crash notice names the mod at fault
+  and any enabled mods made for another game version.
 - Deleting an instance or changing its game version while its game, Java or loader is
   downloading cancels the download. Mods, resource packs and shaders can be updated meanwhile.
 - Changing the game version can also update resource packs and shaders for the new version
@@ -228,3 +235,10 @@ All notable changes to this project are documented here. The format follows
   the servers again, and dependencies are looked up one tree level at a time in parallel.
 - Modrinth and CurseForge are asked about each installed file and the Java runtime index once
   per session.
+- NeoForge builds are listed from BMCLAPI when the NeoForge site cannot be reached.
+- Changing the loader build or the game version while the game downloads goes on with the
+  download for the new one instead of stopping it.
+- A first start of versions before 1.11 sets the system language too.
+- Uninstalling removes the instance shortcuts from the desktop.
+- The lifted instance card's shadow is no longer cut off at the edges of the list.
+- Dialogs no longer flash while they open.
