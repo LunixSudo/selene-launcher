@@ -278,7 +278,10 @@ impl CurseForge {
         .error_for_status()?
         .json()
         .await?;
-        Ok(response.data)
+        let mut files = response.data;
+        // The API lists newest first, but its mirror may not.
+        files.sort_by(|a, b| b.file_date.cmp(&a.file_date));
+        Ok(files)
     }
 
     pub async fn mod_info(&self, mod_id: u32) -> Result<Mod> {
