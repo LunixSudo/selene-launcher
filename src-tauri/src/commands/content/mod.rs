@@ -7,6 +7,7 @@ pub mod version_change;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, PoisonError};
 
 use selene_core::curseforge::{self, CurseForge};
 use selene_core::instance::Instance;
@@ -179,12 +180,32 @@ async fn curseforge_matches(
     kind: ContentKind,
     files: &[ModFile],
 ) -> HashMap<String, u32> {
+    // A fingerprint depends only on the file's contents, so it is kept by SHA-1 and a file
+    // is read again only when it changes.
+    static FINGERPRINTS: Mutex<Option<HashMap<String, u32>>> = Mutex::new(None);
     let mut by_fingerprint = HashMap::with_capacity(files.len());
     for file in files {
-        let path = kind.dir(game_dir).join(&file.file_name);
-        if let Ok(bytes) = tokio::fs::read(&path).await {
-            by_fingerprint.insert(curseforge::fingerprint(&bytes), file.sha1.clone());
-        }
+        let known = FINGERPRINTS
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .as_ref()
+            .and_then(|cache| cache.get(&file.sha1).copied());
+        let fingerprint = if let Some(fingerprint) = known {
+            fingerprint
+        } else {
+            let path = kind.dir(game_dir).join(&file.file_name);
+            let Ok(bytes) = tokio::fs::read(&path).await else {
+                continue;
+            };
+            let fingerprint = curseforge::fingerprint(&bytes);
+            FINGERPRINTS
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .get_or_insert_default()
+                .insert(file.sha1.clone(), fingerprint);
+            fingerprint
+        };
+        by_fingerprint.insert(fingerprint, file.sha1.clone());
     }
     let fingerprints: Vec<u32> = by_fingerprint.keys().copied().collect();
     curseforge
