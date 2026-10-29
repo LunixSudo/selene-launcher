@@ -4,7 +4,7 @@ use std::path::Path;
 use selene_core::curseforge;
 use selene_core::loader::Loader;
 use selene_core::modrinth::{self, DependencyType, Project, Target, Version};
-use selene_core::mods::{self, ContentKind, ModFile};
+use selene_core::mods::{self, ContentKind, ModFile, RemoteFile};
 use tauri::State;
 
 use super::{
@@ -310,14 +310,13 @@ pub(crate) async fn update_all(
 ) -> CommandResult<u32> {
     let game_dir = content_dir(launcher, instance_id, kind, world)?;
     let files = mods::list(&game_dir, kind).await?;
-    let mut count = 0;
-    for (file, update) in available_updates(launcher, instance_id, kind, &files).await? {
-        if let Some(remote) = update.remote_file() {
-            mods::replace(&launcher.client, &game_dir, kind, &file, &remote).await?;
-            count += 1;
-        }
-    }
-    Ok(count)
+    let swaps: Vec<(ModFile, RemoteFile)> = available_updates(launcher, instance_id, kind, &files)
+        .await?
+        .into_iter()
+        .filter_map(|(file, update)| Some((file, update.remote_file()?)))
+        .collect();
+    mods::replace_all(&launcher.client, &game_dir, kind, &swaps).await?;
+    Ok(u32::try_from(swaps.len()).unwrap_or(u32::MAX))
 }
 
 async fn available_updates(

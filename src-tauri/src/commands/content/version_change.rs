@@ -55,9 +55,12 @@ pub async fn change_version(
     }
     let plan = change_plan(&launcher, &instance_id, &version, loader.as_ref()).await?;
     let game_dir = launcher.game_dir(&instance_id)?;
-    for (file, remote, _) in &plan.updates {
-        mods::replace(&launcher.client, &game_dir, ContentKind::Mod, file, remote).await?;
-    }
+    let swaps: Vec<(ModFile, RemoteFile)> = plan
+        .updates
+        .iter()
+        .map(|(file, remote, _)| (file.clone(), remote.clone()))
+        .collect();
+    mods::replace_all(&launcher.client, &game_dir, ContentKind::Mod, &swaps).await?;
     for (file, _) in &plan.incompatible {
         mods::set_enabled(&game_dir, ContentKind::Mod, &file.file_name, false).await?;
     }

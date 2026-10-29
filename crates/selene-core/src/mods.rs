@@ -199,14 +199,40 @@ pub async fn replace(
     old: &ModFile,
     update: &RemoteFile,
 ) -> Result<()> {
-    install(client, game_dir, kind, std::slice::from_ref(update)).await?;
-    if update.file_name != old.file_name.trim_end_matches(DISABLED_SUFFIX) {
-        remove(game_dir, kind, &old.file_name).await?;
+    replace_all(client, game_dir, kind, &[(old.clone(), update.clone())]).await
+}
+
+/// Swaps installed files for newer ones. Everything is downloaded first, all at once, and the
+/// old files are only removed once every new one is in place, so a failed download leaves
+/// the folder as it was.
+pub async fn replace_all(
+    client: &Client,
+    game_dir: &Path,
+    kind: ContentKind,
+    swaps: &[(ModFile, RemoteFile)],
+) -> Result<()> {
+    let updates: Vec<RemoteFile> = swaps.iter().map(|(_, update)| update.clone()).collect();
+    if let Err(err) = install(client, game_dir, kind, &updates).await {
+        for (old, update) in swaps {
+            if !same_file(old, update) {
+                let _ = remove(game_dir, kind, &update.file_name).await;
+            }
+        }
+        return Err(err);
     }
-    if !old.enabled {
-        set_enabled(game_dir, kind, &update.file_name, false).await?;
+    for (old, update) in swaps {
+        if !same_file(old, update) {
+            remove(game_dir, kind, &old.file_name).await?;
+        }
+        if !old.enabled {
+            set_enabled(game_dir, kind, &update.file_name, false).await?;
+        }
     }
     Ok(())
+}
+
+fn same_file(old: &ModFile, update: &RemoteFile) -> bool {
+    update.file_name == old.file_name.trim_end_matches(DISABLED_SUFFIX)
 }
 
 /// Renames `name.jar` to `name.jar.disabled` or back. Takes either file name.
