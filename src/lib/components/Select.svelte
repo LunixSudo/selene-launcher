@@ -146,36 +146,41 @@
 </button>
 
 {#if open}
+  <!-- The fade masks the scrolling part only, so the list's background stays opaque. -->
   <div
     class="list"
-    {@attach scrollFade}
-    bind:this={list}
     {@attach lift}
-    role="listbox"
-    aria-multiselectable={multiple}
     class:above={placement.above}
     style:left="{placement.left}px"
     style:top="{placement.top}px"
     style:width="{placement.width}px"
-    style:max-height="{placement.maxHeight}px"
   >
-    {#each options as option, index (option.value)}
-      <div
-        role="option"
-        tabindex="-1"
-        aria-selected={isChosen(option.value)}
-        class:active={index === active}
-        onpointerenter={() => (active = index)}
-        onpointerdown={(event) => event.preventDefault()}
-        onclick={() => choose(index)}
-        onkeydown={() => {}}
-      >
-        {option.label}
-        {#if isChosen(option.value)}
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
-        {/if}
-      </div>
-    {/each}
+    <div
+      class="options"
+      {@attach scrollFade}
+      bind:this={list}
+      role="listbox"
+      aria-multiselectable={multiple}
+      style:max-height="{placement.maxHeight - 2}px"
+    >
+      {#each options as option, index (option.value)}
+        <div
+          role="option"
+          tabindex="-1"
+          aria-selected={isChosen(option.value)}
+          class:active={index === active}
+          onpointerenter={() => (active = index)}
+          onpointerdown={(event) => event.preventDefault()}
+          onclick={() => choose(index)}
+          onkeydown={() => {}}
+        >
+          {option.label}
+          {#if isChosen(option.value)}
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
+          {/if}
+        </div>
+      {/each}
+    </div>
   </div>
 {/if}
 
@@ -232,8 +237,7 @@
     position: fixed;
     z-index: 100;
     margin: 0;
-    padding: 5px;
-    overflow-y: auto;
+    overflow: hidden;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface-solid);
@@ -244,6 +248,11 @@
   .list.above {
     transform: translateY(-100%);
     animation: none;
+  }
+
+  .options {
+    padding: 5px;
+    overflow-y: auto;
   }
 
   [role="option"] {
