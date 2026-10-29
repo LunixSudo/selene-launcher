@@ -366,11 +366,14 @@ export const zhCN: Messages = {
   crash: {
     title: "游戏因错误而关闭",
     showLogs: "打开日志",
+    blamed: "出问题的模组：{mods}",
+    unfit: "已启用为其他游戏版本制作的模组：{mods}。请禁用它们，或在“附加内容”页安装合适的版本。",
     causes: {
       outOfMemory: "游戏内存不足。请在实例设置中分配更多内存。",
       systemMemory:
         "电脑的可用内存不足以运行游戏。请关闭其他程序，或在实例设置中减少分配给游戏的内存。",
       wrongJava: "某个模组需要更新的 Java。请更新该模组或更换游戏版本。",
+      wrongGameVersion: "有模组是为其他游戏版本制作的。请禁用它或安装适用于此版本的版本：",
       missingDependency: "部分模组缺少未安装的前置：",
       incompatibleMods: "部分模组无法一起使用：",
       modError: "某个模组在加载时出错。请尝试更新模组。",

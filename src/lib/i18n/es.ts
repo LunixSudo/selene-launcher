@@ -384,12 +384,17 @@ export const es: Messages = {
   crash: {
     title: "El juego se cerró con un error",
     showLogs: "Abrir registro",
+    blamed: "El mod causante: {mods}",
+    unfit:
+      "Hay mods activados para otra versión del juego: {mods}. Desactívalos o instala versiones adecuadas en la pestaña Complementos.",
     causes: {
       outOfMemory: "El juego se quedó sin memoria. Dale más en los ajustes de la instancia.",
       systemMemory:
         "El PC tiene muy poca memoria libre para el juego. Cierra otros programas o dale menos al juego en los ajustes de la instancia.",
       wrongJava:
         "Un mod necesita un Java más nuevo. Actualiza el mod o cambia la versión del juego.",
+      wrongGameVersion:
+        "Un mod es para otra versión del juego. Desactívalo o instala una versión para esta:",
       missingDependency: "Algunos mods necesitan otros que no están instalados:",
       incompatibleMods: "Algunos mods no funcionan juntos:",
       modError: "Un mod falló al cargar. Prueba a actualizar tus mods.",

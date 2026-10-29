@@ -296,6 +296,7 @@ export type CrashCause =
   | "systemMemory"
   | "wrongJava"
   | "missingDependency"
+  | "wrongGameVersion"
   | "incompatibleMods"
   | "modError"
   | "graphicsDriver"
@@ -304,6 +305,10 @@ export type CrashCause =
 export interface CrashReport {
   cause: CrashCause;
   details: string[];
+  /** The mods the log blames. */
+  mods: string[];
+  /** Enabled mods made for another game version. */
+  unfit: string[];
 }
 
 export interface GameExited {

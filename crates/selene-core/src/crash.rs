@@ -9,6 +9,8 @@ pub enum CrashCause {
     SystemMemory,
     WrongJava,
     MissingDependency,
+    /// A mod made for another game version.
+    WrongGameVersion,
     IncompatibleMods,
     ModError,
     GraphicsDriver,
@@ -21,6 +23,10 @@ pub struct CrashReport {
     pub cause: CrashCause,
     /// The line or two from the log that explain it, when there are any.
     pub details: Vec<String>,
+    /// The mods the log blames, by the name or id it gives.
+    pub mods: Vec<String>,
+    /// Enabled mods made for another game version, which the launcher knows of itself.
+    pub unfit: Vec<String>,
 }
 
 const MAX_DETAILS: usize = 6;
@@ -51,10 +57,27 @@ pub fn analyze<S: AsRef<str>>(log: &[S]) -> CrashReport {
     ]) {
         return report(CrashCause::WrongJava, &lines[index..=index]);
     }
-    // Fabric and Quilt list each unmet requirement on its own line.
+    // Fabric and Quilt name the game "Minecraft", NeoForge and Forge by its id.
+    let wrong_game: Vec<&str> = lines
+        .iter()
+        .filter(|line| {
+            (line.contains("but only the wrong version is present")
+                && (line.contains("'Minecraft'") || line.contains("of minecraft")))
+                || line.contains("Mod ID: 'minecraft'")
+        })
+        .map(|line| line.trim())
+        .collect();
+    if !wrong_game.is_empty() {
+        return report(CrashCause::WrongGameVersion, &wrong_game);
+    }
+    // Fabric and Quilt list each unmet requirement on its own line, NeoForge and Forge too.
     let missing: Vec<&str> = lines
         .iter()
-        .filter(|line| line.contains("which is missing!") || line.contains("requires any version"))
+        .filter(|line| {
+            line.contains("which is missing!")
+                || line.contains("requires any version")
+                || line.contains("Actual version: '[MISSING]'")
+        })
         .map(|line| line.trim())
         .collect();
     if !missing.is_empty() {
@@ -75,6 +98,7 @@ pub fn analyze<S: AsRef<str>>(log: &[S]) -> CrashReport {
     }
     if let Some(index) = find(&[
         "Mixin apply failed",
+        "Mixin apply for mod",
         "MixinApplyError",
         "InvalidInjectionException",
         "Could not execute entrypoint",
@@ -94,14 +118,44 @@ pub fn analyze<S: AsRef<str>>(log: &[S]) -> CrashReport {
 }
 
 fn report(cause: CrashCause, lines: &[&str]) -> CrashReport {
+    let lines = &lines[..lines.len().min(MAX_DETAILS)];
+    let mut mods = Vec::new();
+    for name in lines.iter().filter_map(|line| blamed_mod(line)) {
+        if !mods.contains(&name) {
+            mods.push(name);
+        }
+    }
     CrashReport {
         cause,
-        details: lines
-            .iter()
-            .take(MAX_DETAILS)
-            .map(|line| line.trim().to_owned())
-            .collect(),
+        details: lines.iter().map(|line| line.trim().to_owned()).collect(),
+        mods,
+        unfit: Vec::new(),
     }
+}
+
+/// The mod a log line is about, in the ways the loaders put it.
+fn blamed_mod(line: &str) -> Option<String> {
+    let quoted_after = |marker: &str| {
+        let rest = &line[line.find(marker)? + marker.len()..];
+        let (name, _) = rest.split_once('\'')?;
+        Some(name.to_owned())
+    };
+    let word_after = |marker: &str| {
+        let rest = &line[line.find(marker)? + marker.len()..];
+        rest.split_whitespace().next().map(str::to_owned)
+    };
+    quoted_after("Mod '")
+        .or_else(|| quoted_after("Requested by: '"))
+        .or_else(|| quoted_after("Mod ID: '"))
+        .or_else(|| quoted_after("provided by '"))
+        .or_else(|| word_after("Mixin apply for mod "))
+        .or_else(|| {
+            let config = word_after("Mixin apply failed ")?;
+            config
+                .split_once(".mixins")
+                .map(|(name, _)| name.to_owned())
+        })
+        .filter(|name| !name.is_empty())
 }
 
 #[cfg(test)]
@@ -135,6 +189,35 @@ mod tests {
             "has been compiled by a more recent version of the Java Runtime (class file version 65.0)",
         ];
         assert_eq!(analyze(&log).cause, CrashCause::WrongJava);
+    }
+
+    #[test]
+    fn names_a_mod_for_another_game_version() {
+        let log = [
+            "Incompatible mods found!",
+            "\t - Mod 'Sodium' (sodium) 0.5.11+mc1.21 requires version 1.21 of 'Minecraft' (minecraft), but only the wrong version is present: 1.21.1!",
+        ];
+        let report = analyze(&log);
+        assert_eq!(report.cause, CrashCause::WrongGameVersion);
+        assert_eq!(report.mods, ["Sodium"]);
+
+        let log = [
+            "\tMod ID: 'minecraft', Requested by: 'sodium', Expected range: '[1.20.1]', Actual version: '1.21.1'",
+        ];
+        assert_eq!(analyze(&log).mods, ["sodium"]);
+    }
+
+    #[test]
+    fn names_the_mod_a_mixin_broke_in() {
+        let log =
+            ["Mixin apply for mod sodium failed sodium.mixins.json:core.MinecraftClientMixin"];
+        let report = analyze(&log);
+        assert_eq!(report.cause, CrashCause::ModError);
+        assert_eq!(report.mods, ["sodium"]);
+        let log = [
+            "org.spongepowered.asm.mixin.transformer.throwables.MixinTransformerError: Mixin apply failed iris.mixins.json:MixinGameRenderer",
+        ];
+        assert_eq!(analyze(&log).mods, ["iris"]);
     }
 
     #[test]

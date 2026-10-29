@@ -181,6 +181,17 @@ pub(super) async fn list_installed(
     Ok(installed)
 }
 
+/// Enabled mods made for another game version or loader, which the player turned on anyway.
+pub(crate) async fn unfit_mods(launcher: &Launcher, instance_id: &str) -> Vec<String> {
+    list_installed(launcher, instance_id, ContentKind::Mod, None)
+        .await
+        .unwrap_or_default()
+        .iter()
+        .filter(|installed| installed.file.enabled && installed.fits_version == Some(false))
+        .map(|installed| display_name(installed).to_owned())
+        .collect()
+}
+
 /// Problems a Modrinth version declares with the rest of the instance.
 fn issues(
     version: &modrinth::Version,

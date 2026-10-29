@@ -380,11 +380,16 @@ export const tr: Messages = {
   crash: {
     title: "Oyun bir hatayla kapandı",
     showLogs: "Günlüğü aç",
+    blamed: "Sorunlu mod: {mods}",
+    unfit:
+      "Başka bir oyun sürümü için yapılmış modlar açık: {mods}. Kapatın veya Eklentiler sekmesinden uygun sürümleri kurun.",
     causes: {
       outOfMemory: "Oyunun belleği bitti. Profil ayarlarından daha fazla ver.",
       systemMemory:
         "Bilgisayarda oyun için yeterli boş bellek yok. Diğer programları kapat ya da profil ayarlarından oyuna daha az ver.",
       wrongJava: "Bir mod daha yeni bir Java istiyor. Modu güncelle ya da oyun sürümünü değiştir.",
+      wrongGameVersion:
+        "Bir mod başka bir oyun sürümü için yapılmış. Kapatın veya bu sürüme uygun olanı kurun:",
       missingDependency: "Bazı modlar kurulu olmayan başka modlara ihtiyaç duyuyor:",
       incompatibleMods: "Bazı modlar birlikte çalışmıyor:",
       modError: "Bir mod yüklenirken bozuldu. Modlarını güncellemeyi dene.",

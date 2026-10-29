@@ -22,7 +22,7 @@ use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
 pub(crate) use install::manual_downloads;
-pub(crate) use installed::update_all;
+pub(crate) use installed::{unfit_mods, update_all};
 
 /// What an instance's add-on download is doing, for its card and page.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

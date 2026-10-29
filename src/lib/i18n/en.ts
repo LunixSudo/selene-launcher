@@ -375,11 +375,16 @@ export const en: Messages = {
   crash: {
     title: "The game closed with an error",
     showLogs: "Open logs",
+    blamed: "The mod at fault: {mods}",
+    unfit:
+      "Mods made for another game version are turned on: {mods}. Turn them off or install fitting builds on the Add-ons tab.",
     causes: {
       outOfMemory: "The game ran out of memory. Give it more in the instance settings.",
       systemMemory:
         "The PC has too little free memory for the game. Close other programs or give the game less in the instance settings.",
       wrongJava: "A mod needs a newer Java. Update the mod or change the game version.",
+      wrongGameVersion:
+        "A mod was made for another game version. Turn it off or install a build for this one:",
       missingDependency: "Some mods need others that aren't installed:",
       incompatibleMods: "Some mods don't work together:",
       modError: "A mod broke while loading. Try updating your mods.",

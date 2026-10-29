@@ -13,6 +13,12 @@
   <div class="text">
     <strong>{t("crash.title")}</strong>
     <p>{t(`crash.causes.${crash.cause}`)}</p>
+    {#if crash.mods.length > 0}
+      <p class="blamed">{t("crash.blamed", { mods: crash.mods.join(", ") })}</p>
+    {/if}
+    {#if crash.unfit.length > 0}
+      <p>{t("crash.unfit", { mods: crash.unfit.join(", ") })}</p>
+    {/if}
     {#if crash.details.length > 0}
       <pre>{crash.details.join("\n")}</pre>
     {/if}
@@ -44,6 +50,10 @@
   p {
     margin: 0;
     font-size: 13px;
+  }
+
+  .blamed {
+    font-weight: 600;
   }
 
   pre {

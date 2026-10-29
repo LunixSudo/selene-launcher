@@ -382,11 +382,16 @@ export const ptBR: Messages = {
   crash: {
     title: "O jogo fechou com um erro",
     showLogs: "Abrir registro",
+    blamed: "O mod culpado: {mods}",
+    unfit:
+      "Há mods ativados feitos para outra versão do jogo: {mods}. Desative-os ou instale versões compatíveis na aba Complementos.",
     causes: {
       outOfMemory: "O jogo ficou sem memória. Dê mais a ele nas configurações da instância.",
       systemMemory:
         "O PC tem pouca memória livre para o jogo. Feche outros programas ou dê menos ao jogo nas configurações da instância.",
       wrongJava: "Um mod precisa de um Java mais novo. Atualize o mod ou mude a versão do jogo.",
+      wrongGameVersion:
+        "Um mod foi feito para outra versão do jogo. Desative-o ou instale uma versão para esta:",
       missingDependency: "Alguns mods precisam de outros que não estão instalados:",
       incompatibleMods: "Alguns mods não funcionam juntos:",
       modError: "Um mod quebrou ao carregar. Tente atualizar seus mods.",

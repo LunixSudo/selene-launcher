@@ -389,12 +389,17 @@ export const de: Messages = {
   crash: {
     title: "Das Spiel wurde mit einem Fehler beendet",
     showLogs: "Protokoll öffnen",
+    blamed: "Verursacht von: {mods}",
+    unfit:
+      "Mods für eine andere Spielversion sind aktiv: {mods}. Schalte sie aus oder installiere passende Versionen im Tab „Erweiterungen“.",
     causes: {
       outOfMemory: "Dem Spiel ging der Speicher aus. Gib ihm in den Instanz-Einstellungen mehr.",
       systemMemory:
         "Der PC hat zu wenig freien Speicher für das Spiel. Schließe andere Programme oder gib dem Spiel in den Instanz-Einstellungen weniger.",
       wrongJava:
         "Ein Mod braucht eine neuere Java-Version. Aktualisiere den Mod oder ändere die Spielversion.",
+      wrongGameVersion:
+        "Ein Mod wurde für eine andere Spielversion gemacht. Schalte ihn aus oder installiere eine passende Version:",
       missingDependency: "Einige Mods brauchen andere, die nicht installiert sind:",
       incompatibleMods: "Einige Mods funktionieren nicht zusammen:",
       modError: "Ein Mod ist beim Laden abgestürzt. Versuche, deine Mods zu aktualisieren.",

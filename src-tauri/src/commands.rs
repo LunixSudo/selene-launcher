@@ -45,6 +45,7 @@ const MIN_HIDDEN_TOKEN_LEN: usize = 8;
 const LOG_FLUSH_INTERVAL: Duration = Duration::from_millis(100);
 /// How long a game gets to save and quit after Stop before it is killed.
 const CLOSE_TIMEOUT: Duration = Duration::from_secs(20);
+const UNFIT_LOOKUP_TIMEOUT: Duration = Duration::from_secs(5);
 const LOG_DRAIN_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Clone, Serialize)]
@@ -603,8 +604,19 @@ async fn watch_game(
     launcher.stop_running(&instance_id);
     add_play_time(&launcher, &instance_id, started.elapsed().as_secs()).await;
 
-    let crash =
+    let mut crash =
         (!killed && code != Some(0)).then(|| crash::analyze(&launcher.log(&instance_id).lines));
+    if let Some(crash) = &mut crash
+        && instance_has_mods(&launcher, &instance_id).await
+    {
+        // Looking them up may need the network, which must not hold back the report for long.
+        crash.unfit = tokio::time::timeout(
+            UNFIT_LOOKUP_TIMEOUT,
+            content::unfit_mods(&launcher, &instance_id),
+        )
+        .await
+        .unwrap_or_default();
+    }
     if app.get_webview_window(crate::MAIN_WINDOW).is_none() {
         // The player closed the launcher for the game; it opens again now.
         if let Some(crash) = crash {
@@ -621,6 +633,14 @@ async fn watch_game(
             crash,
         },
     );
+}
+
+async fn instance_has_mods(launcher: &Launcher, id: &str) -> bool {
+    launcher
+        .instances
+        .get(id)
+        .await
+        .is_some_and(|instance| instance.loader.is_some())
 }
 
 /// Asks the game to quit as if its window were closed, so it saves the world first.

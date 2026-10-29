@@ -1,5 +1,6 @@
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { goto } from "$app/navigation";
 import {
   api,
   type CommandError,
@@ -194,6 +195,12 @@ export function onGameLog(listener: (log: GameLog) => void): () => void {
   return () => logListeners.delete(listener);
 }
 
+/** Opens the instance page, where the crash notice says what went wrong. */
+function showCrash(id: string, crash: CrashReport) {
+  library.crashes[id] = crash;
+  void goto(`/instance/${id}`);
+}
+
 /** Subscribes to game events from the backend. Returns a function that unsubscribes. */
 export async function listenToGames(): Promise<() => void> {
   const unlisteners = await Promise.all([
@@ -245,7 +252,7 @@ export async function listenToGames(): Promise<() => void> {
     listen<GameExited>("game-exited", ({ payload }) => {
       delete library.launches[payload.instanceId];
       if (payload.crash) {
-        library.crashes[payload.instanceId] = payload.crash;
+        showCrash(payload.instanceId, payload.crash);
       }
       void loadInstances();
       if (settings.afterLaunch === "minimize" && settings.restoreAfterGame) {
@@ -254,7 +261,10 @@ export async function listenToGames(): Promise<() => void> {
       }
     }),
   ]);
-  Object.assign(library.crashes, await api.takeMissedCrashes());
+  // The launcher opens again after a crash it closed for; it goes straight to the instance.
+  for (const [id, crash] of Object.entries(await api.takeMissedCrashes())) {
+    showCrash(id, crash);
+  }
   for (const id of await api.runningGames()) {
     library.launches[id] ??= { status: "running", since: Date.now() };
   }

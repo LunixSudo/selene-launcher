@@ -379,11 +379,16 @@ export const pl: Messages = {
   crash: {
     title: "Gra zamknęła się z błędem",
     showLogs: "Otwórz dziennik",
+    blamed: "Winny mod: {mods}",
+    unfit:
+      "Włączone są mody dla innej wersji gry: {mods}. Wyłącz je lub zainstaluj pasujące wersje w karcie Dodatki.",
     causes: {
       outOfMemory: "Grze zabrakło pamięci. Przydziel jej więcej w ustawieniach instancji.",
       systemMemory:
         "Komputer ma za mało wolnej pamięci dla gry. Zamknij inne programy albo przydziel grze mniej w ustawieniach instancji.",
       wrongJava: "Mod wymaga nowszej Javy. Zaktualizuj mod albo zmień wersję gry.",
+      wrongGameVersion:
+        "Mod jest przeznaczony dla innej wersji gry. Wyłącz go lub zainstaluj wersję dla tej:",
       missingDependency: "Niektóre mody wymagają innych, które nie są zainstalowane:",
       incompatibleMods: "Niektóre mody nie działają razem:",
       modError: "Mod zepsuł się podczas wczytywania. Spróbuj zaktualizować mody.",
