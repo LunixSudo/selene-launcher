@@ -43,6 +43,8 @@ use crate::state::{Launcher, LogSnapshot};
 const MIN_HIDDEN_TOKEN_LEN: usize = 8;
 /// A game at start-up prints thousands of lines; the console gets them in batches.
 const LOG_FLUSH_INTERVAL: Duration = Duration::from_millis(100);
+/// How long a game gets to save and quit after Stop before it is killed.
+const CLOSE_TIMEOUT: Duration = Duration::from_secs(20);
 const LOG_DRAIN_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Clone, Serialize)]
@@ -386,7 +388,7 @@ pub async fn prepare_instance(
     result
 }
 
-/// Kills a game that hangs or will not close.
+/// Closes the game as its window would, so it saves the world, and kills it if it hangs.
 #[tauri::command]
 pub fn stop_instance(launcher: State<'_, Launcher>, id: String) -> bool {
     launcher.stop_game(&id)
@@ -580,8 +582,15 @@ async fn watch_game(
         status = child.wait() => status,
         Ok(()) = &mut stopped => {
             killed = true;
-            let _ = child.kill().await;
-            child.wait().await
+            if let Some(pid) = child.id() {
+                ask_to_close(pid).await;
+            }
+            if let Ok(status) = tokio::time::timeout(CLOSE_TIMEOUT, child.wait()).await {
+                status
+            } else {
+                let _ = child.kill().await;
+                child.wait().await
+            }
         }
     };
     let code = status.ok().and_then(|status| status.code());
@@ -612,6 +621,30 @@ async fn watch_game(
             crash,
         },
     );
+}
+
+/// Asks the game to quit as if its window were closed, so it saves the world first.
+async fn ask_to_close(pid: u32) {
+    #[cfg(windows)]
+    let mut command = {
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let mut command = tokio::process::Command::new("taskkill");
+        command.args(["/PID", &pid.to_string()]);
+        command.creation_flags(CREATE_NO_WINDOW);
+        command
+    };
+    #[cfg(not(windows))]
+    let mut command = {
+        let mut command = tokio::process::Command::new("kill");
+        command.args(["-TERM", &pid.to_string()]);
+        command
+    };
+    let _ = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .await;
 }
 
 /// Sends each line the game prints to the UI, with the session token blanked out in case
