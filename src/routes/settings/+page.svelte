@@ -671,6 +671,11 @@
     font-weight: 700;
   }
 
+  .font[data-font="pixel"] .sample {
+    font-family: "Pixelify Sans Variable", sans-serif;
+    font-weight: 650;
+  }
+
   .font[data-font="system"] .sample {
     font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
     font-weight: 600;

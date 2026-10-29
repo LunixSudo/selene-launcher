@@ -212,7 +212,7 @@ export const ru = {
     },
     language: "Язык",
     fonts: "Шрифт",
-    fontNames: { rounded: "Мягкий", modern: "Современный", rubik: "Плотный", system: "Системный" },
+    fontNames: { rounded: "Мягкий", modern: "Современный", rubik: "Плотный", pixel: "Пиксельный", system: "Системный" },
     game: "Запуск игры",
     afterLaunch: "После запуска игры",
     afterLaunchHint:

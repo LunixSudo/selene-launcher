@@ -1,6 +1,7 @@
 <script lang="ts">
   import "@fontsource-variable/nunito";
   import "@fontsource-variable/onest";
+  import "@fontsource-variable/pixelify-sans";
   import "@fontsource-variable/rubik";
   import "@fontsource-variable/unbounded";
   import "$lib/styles/global.css";

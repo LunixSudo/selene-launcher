@@ -4,7 +4,7 @@ import { SHADER_BACKDROPS, type ShaderBackdrop } from "$lib/backdrops";
 export type Theme = "system" | "light" | "dark";
 export type Style = "glass" | "mica" | "solid";
 export type Accent = "violet" | "blue" | "green" | "pink" | "orange";
-export type Font = "rounded" | "modern" | "rubik" | "system";
+export type Font = "rounded" | "modern" | "rubik" | "pixel" | "system";
 export type AfterLaunch = "keep" | "minimize" | "close";
 export type SortOrder = "lastPlayed" | "name" | "playTime" | "created";
 export type Backdrop = "none" | "stars" | ShaderBackdrop;
@@ -14,7 +14,7 @@ export type SkinAnimation = "idle" | "walk" | "run" | "fly" | "wave";
 
 export const THEMES: Theme[] = ["system", "light", "dark"];
 export const STYLES: Style[] = ["glass", "mica", "solid"];
-export const FONTS: Font[] = ["rounded", "modern", "rubik", "system"];
+export const FONTS: Font[] = ["rounded", "modern", "rubik", "pixel", "system"];
 export const AFTER_LAUNCH: AfterLaunch[] = ["keep", "minimize", "close"];
 export const SORT_ORDERS: SortOrder[] = ["lastPlayed", "name", "playTime", "created"];
 export const BACKDROPS: Backdrop[] = ["none", "stars", ...SHADER_BACKDROPS];

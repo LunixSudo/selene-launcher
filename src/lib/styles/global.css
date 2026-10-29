@@ -72,6 +72,13 @@
   --display-weight: 700;
 }
 
+:root[data-font="pixel"] {
+  --font-sans: "Pixelify Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --body-weight: 450;
+  --display-weight: 650;
+}
+
 :root[data-font="system"] {
   --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;

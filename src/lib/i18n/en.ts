@@ -213,7 +213,7 @@ export const en: Messages = {
     },
     language: "Language",
     fonts: "Font",
-    fontNames: { rounded: "Soft", modern: "Modern", rubik: "Bold", system: "System" },
+    fontNames: { rounded: "Soft", modern: "Modern", rubik: "Bold", pixel: "Pixel", system: "System" },
     game: "Game launch",
     afterLaunch: "After the game starts",
     afterLaunchHint: "Close frees memory; the launcher opens again when you quit the game.",
