@@ -374,6 +374,8 @@ mod tests {
         let first = partial_path(Path::new("libs/lwjgl-3.3.3.jar"));
         let second = partial_path(Path::new("libs/lwjgl-3.3.3.jar"));
         assert_ne!(first, second);
-        assert!(first.to_string_lossy().starts_with("libs/lwjgl-3.3.3.jar."));
+        assert_eq!(first.parent(), Some(Path::new("libs")));
+        let name = first.file_name().unwrap().to_string_lossy();
+        assert!(name.starts_with("lwjgl-3.3.3.jar.") && name.ends_with(".part"));
     }
 }
