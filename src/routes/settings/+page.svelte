@@ -9,7 +9,7 @@
   import Select from "$lib/components/Select.svelte";
   import StylePresets from "$lib/components/StylePresets.svelte";
   import { describeError } from "$lib/errors";
-  import { type Locale, locale, setLocale, t } from "$lib/i18n/index.svelte";
+  import { CHECKED_LOCALES, LANGUAGES, locale, setLocale, t } from "$lib/i18n/index.svelte";
   import { scrollFade } from "$lib/scroll-fade";
   import {
     ACCENTS,
@@ -23,11 +23,6 @@
   } from "$lib/state/settings.svelte";
   import { checkForUpdate, installUpdate, launcherUpdate } from "$lib/state/update.svelte";
   import { tooltip } from "$lib/tooltip";
-
-  const LANGUAGES: { value: Locale; label: string }[] = [
-    { value: "ru", label: "Русский" },
-    { value: "en", label: "English" },
-  ];
 
   const REPOSITORY_URL = "https://github.com/LunixSudo/selene-launcher/blob/main";
   const PARALLEL = ["auto", "2", "4", "8", "16"];
@@ -344,13 +339,13 @@
       <div class="row">
         <div>
           <h3>{t("settings.language")}</h3>
+          {#if !CHECKED_LOCALES.includes(language)}
+            <p>{t("settings.machineTranslation")}</p>
+          {/if}
         </div>
-        <Segmented
-          bind:value={language}
-          options={LANGUAGES}
-          name="language"
-          label={t("settings.language")}
-        />
+        <div class="select">
+          <Select bind:value={language} options={LANGUAGES} />
+        </div>
       </div>
     </section>
 

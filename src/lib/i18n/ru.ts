@@ -211,8 +211,15 @@ export const ru = {
       orange: "Оранжевый",
     },
     language: "Язык",
+    machineTranslation: "Машинный перевод: некоторые фразы могут звучать неточно.",
     fonts: "Шрифт",
-    fontNames: { rounded: "Мягкий", modern: "Современный", rubik: "Плотный", pixel: "Пиксельный", system: "Системный" },
+    fontNames: {
+      rounded: "Мягкий",
+      modern: "Современный",
+      rubik: "Плотный",
+      pixel: "Пиксельный",
+      system: "Системный",
+    },
     game: "Запуск игры",
     afterLaunch: "После запуска игры",
     afterLaunchHint:
