@@ -2,6 +2,7 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { api, type LauncherConfig } from "$lib/api";
+  import BackdropPicker from "$lib/components/BackdropPicker.svelte";
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
   import Select from "$lib/components/Select.svelte";
@@ -12,6 +13,7 @@
     ACCENTS,
     type Accent,
     AFTER_LAUNCH,
+    BACKDROPS,
     FONTS,
     STYLES,
     settings,
@@ -171,6 +173,36 @@
           {/each}
         </div>
       </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">{t("settings.effects")}</h2>
+      <div class="row column">
+        <div>
+          <h3>{t("settings.backdrop")}</h3>
+          <p>{t("settings.backdropHint")}</p>
+        </div>
+        <BackdropPicker
+          bind:value={settings.backdrop}
+          options={BACKDROPS}
+          name="backdrop"
+          label={t("settings.backdrop")}
+        />
+      </div>
+      <label class="row switch-row">
+        <div>
+          <h3>{t("settings.motion")}</h3>
+          <p>{t("settings.motionHint")}</p>
+        </div>
+        <input class="switch" type="checkbox" bind:checked={settings.motion}>
+      </label>
+      <label class="row switch-row">
+        <div>
+          <h3>{t("settings.clickSound")}</h3>
+          <p>{t("settings.clickSoundHint")}</p>
+        </div>
+        <input class="switch" type="checkbox" bind:checked={settings.clickSound}>
+      </label>
     </section>
 
     <section class="panel">

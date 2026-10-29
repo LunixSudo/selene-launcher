@@ -5,16 +5,27 @@
   import "@fontsource-variable/unbounded";
   import "$lib/styles/global.css";
   import type { Snippet } from "svelte";
+  import { page } from "$app/state";
   import { api } from "$lib/api";
+  import { coverOf } from "$lib/appearance";
+  import Backdrop from "$lib/components/Backdrop.svelte";
   import DropOverlay from "$lib/components/DropOverlay.svelte";
   import PrivacyDialog from "$lib/components/PrivacyDialog.svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
   import { locale } from "$lib/i18n/index.svelte";
-  import { discordPresence, listenToGames } from "$lib/state/instances.svelte";
+  import { discordPresence, library, listenToGames } from "$lib/state/instances.svelte";
   import { applySettings, settings } from "$lib/state/settings.svelte";
   import { checkForUpdate } from "$lib/state/update.svelte";
 
   let { children }: { children: Snippet } = $props();
+
+  const instance = $derived(
+    page.route.id === "/instance/[id]"
+      ? library.instances.find((entry) => entry.id === page.params.id)
+      : undefined,
+  );
+  const own = $derived((instance && settings.instanceBackdrops[instance.id]) ?? "app");
+  const backdrop = $derived(own === "app" ? settings.backdrop : own);
 
   $effect(() => {
     document.documentElement.lang = locale();
@@ -83,6 +94,7 @@
 
 <svelte:window {oncontextmenu} {onkeydown} onclick={blockNewWindow} onauxclick={blockNewWindow} />
 
+<Backdrop kind={backdrop} cover={instance ? coverOf(instance.id, instance.cover) : null} />
 <div class="app">
   <TitleBar />
   <main>
@@ -94,6 +106,8 @@
 
 <style>
   .app {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     height: 100vh;

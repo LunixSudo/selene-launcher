@@ -51,6 +51,9 @@ export const en: Messages = {
     copyName: "{name} (copy)",
   },
   instance: {
+    backdrop: "Instance background",
+    backdropHint:
+      "Shown while this instance is open. The cover slowly flows across the whole window.",
     back: "Instances",
     content: "Add-ons",
     catalog: "Catalog",
@@ -169,6 +172,14 @@ export const en: Messages = {
     confirm: "Delete",
   },
   settings: {
+    effects: "Effects",
+    backdrop: "Live background",
+    backdropHint:
+      "An animated background behind the window. Pretty, but it costs the GPU a little.",
+    motion: "Smooth animations",
+    motionHint: "Page transitions, soft dialogs and a glowing Play button.",
+    clickSound: "Click sound",
+    clickSoundHint: "A quiet click when you press a button.",
     uninstall: "Uninstall Selene Launcher",
     uninstallHint: "Opens the Windows uninstaller. Instances and worlds can be kept.",
     uninstallButton: "Uninstall",
@@ -389,6 +400,15 @@ export const en: Messages = {
     checkNow: "Check now",
     checking: "Checking…",
     upToDate: "You have the latest version",
+  },
+  backdrops: {
+    none: "None",
+    app: "Launcher's",
+    cover: "Cover",
+    halo: "Rings",
+    rays: "Rays",
+    stars: "Stars",
+    aurora: "Aurora",
   },
   skins: {
     animation: "Animation",

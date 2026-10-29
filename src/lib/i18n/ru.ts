@@ -49,6 +49,8 @@ export const ru = {
     copyName: "{name} (копия)",
   },
   instance: {
+    backdrop: "Фон сборки",
+    backdropHint: "Виден, пока открыта эта сборка. Обложка медленно переливается на всё окно.",
     back: "Сборки",
     content: "Дополнения",
     catalog: "Каталог",
@@ -169,6 +171,13 @@ export const ru = {
     confirm: "Удалить",
   },
   settings: {
+    effects: "Эффекты",
+    backdrop: "Живой фон",
+    backdropHint: "Анимированный фон за окном. Красиво, но немного нагружает видеокарту.",
+    motion: "Плавные анимации",
+    motionHint: "Переходы между страницами, мягкое появление окон и свечение кнопки «Играть».",
+    clickSound: "Звук нажатий",
+    clickSoundHint: "Тихий щелчок при нажатии на кнопки.",
     uninstall: "Удалить Selene Launcher",
     uninstallHint: "Откроется программа удаления Windows. Сборки и миры можно оставить.",
     uninstallButton: "Удалить",
@@ -387,6 +396,15 @@ export const ru = {
     checkNow: "Проверить",
     checking: "Проверка…",
     upToDate: "У вас последняя версия",
+  },
+  backdrops: {
+    none: "Без фона",
+    app: "Как в лаунчере",
+    cover: "Обложка",
+    halo: "Кольца",
+    rays: "Лучи",
+    stars: "Звёзды",
+    aurora: "Сияние",
   },
   skins: {
     animation: "Анимация",

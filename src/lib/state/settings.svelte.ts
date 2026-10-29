@@ -7,6 +7,8 @@ export type Font = "rounded" | "modern" | "rubik" | "system";
 export type AfterLaunch = "keep" | "minimize" | "close";
 export type SortOrder = "lastPlayed" | "name" | "playTime" | "created";
 export type Backdrop = "none" | "halo" | "rays" | "stars" | "aurora";
+/** An instance's own background: the launcher's, its cover, or any of the animated ones. */
+export type InstanceBackdrop = "app" | "cover" | Exclude<Backdrop, "none">;
 export type SkinAnimation = "idle" | "walk" | "run" | "fly" | "wave";
 
 export const THEMES: Theme[] = ["system", "light", "dark"];
@@ -15,6 +17,14 @@ export const FONTS: Font[] = ["rounded", "modern", "rubik", "system"];
 export const AFTER_LAUNCH: AfterLaunch[] = ["keep", "minimize", "close"];
 export const SORT_ORDERS: SortOrder[] = ["lastPlayed", "name", "playTime", "created"];
 export const BACKDROPS: Backdrop[] = ["none", "halo", "rays", "stars", "aurora"];
+export const INSTANCE_BACKDROPS: InstanceBackdrop[] = [
+  "app",
+  "cover",
+  "halo",
+  "rays",
+  "stars",
+  "aurora",
+];
 export const SKIN_ANIMATIONS: SkinAnimation[] = ["idle", "walk", "run", "fly", "wave"];
 export const ACCENTS: Record<Accent, string> = {
   violet: "#6b5bff",
@@ -42,8 +52,9 @@ interface Settings {
   backdrop: Backdrop;
   /** Page transitions, hover lifts and the glowing play button. */
   motion: boolean;
-  /** The instance page shows its cover, blurred, behind everything. */
-  coverBackdrop: boolean;
+  instanceBackdrops: Record<string, InstanceBackdrop>;
+  /** A soft click when a button is pressed. */
+  clickSound: boolean;
   skinAnimation: SkinAnimation;
   /** Whether the first-start question about looks or speed was answered. */
   setupDone: boolean;
@@ -63,7 +74,8 @@ const DEFAULTS: Settings = {
   discordStatus: true,
   backdrop: "none",
   motion: false,
-  coverBackdrop: false,
+  instanceBackdrops: {},
+  clickSound: false,
   skinAnimation: "walk",
   setupDone: false,
 };
@@ -73,7 +85,7 @@ export const BEAUTIFUL: Partial<Settings> = {
   style: "glass",
   backdrop: "halo",
   motion: true,
-  coverBackdrop: true,
+  clickSound: true,
 };
 
 export const settings = $state<Settings>(load());
@@ -103,7 +115,12 @@ function load(): Settings {
     discordStatus: oneOf(saved.discordStatus, [true, false], DEFAULTS.discordStatus),
     backdrop: oneOf(saved.backdrop, BACKDROPS, DEFAULTS.backdrop),
     motion: oneOf(saved.motion, [true, false], DEFAULTS.motion),
-    coverBackdrop: oneOf(saved.coverBackdrop, [true, false], DEFAULTS.coverBackdrop),
+    instanceBackdrops: Object.fromEntries(
+      Object.entries(saved.instanceBackdrops ?? {}).filter(([, backdrop]) =>
+        INSTANCE_BACKDROPS.includes(backdrop),
+      ),
+    ),
+    clickSound: oneOf(saved.clickSound, [true, false], DEFAULTS.clickSound),
     skinAnimation: oneOf(saved.skinAnimation, SKIN_ANIMATIONS, DEFAULTS.skinAnimation),
     setupDone: oneOf(saved.setupDone, [true, false], DEFAULTS.setupDone),
   };
