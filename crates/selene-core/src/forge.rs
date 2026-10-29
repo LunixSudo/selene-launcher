@@ -295,7 +295,7 @@ where
     let work_dir = dirs.root.join(".installers");
     let installer = work_dir.join(format!("{id}-installer.jar"));
     let url = installer_url(loader, game_version);
-    let sha1 = fetch_sha1(client, &url).await?;
+    let sha1 = fetch_sha1(client, &url).await;
     download::download_all(
         client,
         vec![Download {

@@ -54,8 +54,6 @@ const BMCLAPI_PATHS: &[(&str, &str)] = &[
     ("https://libraries.minecraft.net/", "/maven/"),
     ("https://meta.fabricmc.net/", "/fabric-meta/"),
     ("https://maven.fabricmc.net/", "/maven/"),
-    ("https://meta.quiltmc.org/", "/quilt-meta/"),
-    ("https://maven.quiltmc.org/repository/release/", "/maven/"),
     ("https://maven.minecraftforge.net/", "/maven/"),
     ("https://files.minecraftforge.net/maven/", "/maven/"),
     ("https://files.minecraftforge.net/", "/maven/"),

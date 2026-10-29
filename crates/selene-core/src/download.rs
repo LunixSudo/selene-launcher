@@ -148,7 +148,13 @@ async fn has_size(path: &Path, size: u64) -> bool {
         .is_ok_and(|metadata| metadata.is_file() && metadata.len() == size)
 }
 
+/// An empty `expected_sha1` means the checksum could not be had, so any file there will do.
 pub async fn is_valid(path: &Path, expected_sha1: &str) -> bool {
+    if expected_sha1.is_empty() {
+        return fs::metadata(path)
+            .await
+            .is_ok_and(|metadata| metadata.is_file());
+    }
     match sha1_file(path).await {
         Ok(actual) => actual.eq_ignore_ascii_case(expected_sha1),
         Err(_) => false,
@@ -243,7 +249,7 @@ async fn fetch(client: &Client, download: &Download) -> Result<()> {
     drop(file);
 
     let actual = hex(&hasher.finalize());
-    if !actual.eq_ignore_ascii_case(&download.sha1) {
+    if !download.sha1.is_empty() && !actual.eq_ignore_ascii_case(&download.sha1) {
         let _ = fs::remove_file(&partial).await;
         return Err(Error::ChecksumMismatch {
             url: download.url.clone(),

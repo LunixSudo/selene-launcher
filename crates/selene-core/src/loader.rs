@@ -263,12 +263,13 @@ async fn fill_hashes(client: &Client, libraries: &mut [serde_json::Value]) -> Re
         .collect();
     let hashes: Vec<(usize, String)> = stream::iter(missing)
         .map(|(index, url)| async move {
-            Ok::<_, crate::Error>((index, fetch_sha1(client, &url).await?))
+            Ok::<_, crate::Error>((index, fetch_sha1(client, &url).await))
         })
         .buffer_unordered(HASH_CONCURRENCY)
         .try_collect()
         .await?;
-    for (index, sha1) in hashes {
+    // A missing hash is not saved, so the next start asks for it again.
+    for (index, sha1) in hashes.into_iter().filter(|(_, sha1)| !sha1.is_empty()) {
         libraries[index]["sha1"] = sha1.into();
     }
     Ok(())
@@ -307,7 +308,7 @@ impl MavenLibrary {
         let url = format!("{}/{path}", self.url.trim_end_matches('/'));
         let sha1 = match self.sha1 {
             Some(sha1) => sha1,
-            None => fetch_sha1(client, &url).await?,
+            None => fetch_sha1(client, &url).await,
         };
         Ok(Library {
             name: self.name,
@@ -326,18 +327,23 @@ impl MavenLibrary {
     }
 }
 
-pub(crate) async fn fetch_sha1(client: &Client, jar_url: &str) -> Result<String> {
-    let text = http::get(client, &format!("{jar_url}.sha1"))
-        .await?
-        .error_for_status()?
-        .text()
-        .await?;
+/// The checksum published next to a Maven file, or an empty string when neither the
+/// repository nor BMCLAPI has it. The file is then taken unchecked rather than not at all,
+/// since that is when the official repository cannot be reached.
+pub(crate) async fn fetch_sha1(client: &Client, jar_url: &str) -> String {
+    let text: Result<String> = async {
+        let url = format!("{jar_url}.sha1");
+        Ok(http::get(client, &url)
+            .await?
+            .error_for_status()?
+            .text()
+            .await?)
+    }
+    .await;
     // Some repositories append the file name after the hash.
-    Ok(text
-        .split_whitespace()
-        .next()
+    text.ok()
+        .and_then(|text| text.split_whitespace().next().map(str::to_owned))
         .unwrap_or_default()
-        .to_owned())
 }
 
 /// `group:artifact:version[:classifier]` to `group/path/artifact/version/artifact-version[-classifier].jar`.

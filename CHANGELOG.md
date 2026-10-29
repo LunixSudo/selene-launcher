@@ -76,7 +76,9 @@ All notable changes to this project are documented here. The format follows
 - When the official hosts and their mirrors all fail, downloads and version lists come from
   BMCLAPI, the mirror HMCL and PCL use. Files are still checked against the checksums of the
   official index, and a host that failed is skipped for five minutes so a blocked one does not
-  cost a timeout per file. The privacy policy lists it.
+  cost a timeout per file. A loader file whose checksum cannot be had from anywhere is taken
+  unchecked instead of failing, and checked on a later start. The privacy policy lists BMCLAPI
+  and its download nodes.
 - Deleting an instance or changing its game version while its game, Java or loader is
   downloading cancels the download. Mods, resource packs and shaders can be updated meanwhile.
 - Changing the game version can also update resource packs and shaders for the new version

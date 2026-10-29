@@ -18,7 +18,7 @@ None of this is sent anywhere, except as described below.
 | Microsoft and Xbox Live | Signing in | Sign-in tokens |
 | Mojang and Minecraft Services | Checking you own the game, downloading the game and Java, skins and capes | Your Minecraft token, the skin you choose |
 | Fabric, Quilt, Forge and NeoForge | Mod loaders: the list of builds and the loader itself, which Forge and NeoForge download with their own installer. When a site cannot be reached, the same files come from the official mirrors the project lists, for Forge that is CreeperHost | The game version |
-| BMCLAPI (bmclapi2.bangbang93.com, run by bangbang93) | A spare copy of the game, Java and loader files, used only when the official servers and their mirrors cannot be reached. Files are checked against the official checksums whenever those can be had | The address of the requested file |
+| BMCLAPI (bmclapi2.bangbang93.com, run by bangbang93) | A spare copy of the game, Java and loader files, used only when the official servers and their mirrors cannot be reached. BMCLAPI hands each file out from one of its download nodes, run by volunteers and Chinese university mirrors (CERNET), which also see your IP address. Files are checked against the official checksums whenever those can be had | The address of the requested file |
 | Modrinth and CurseForge | The catalog, installing and updating mods | Search queries, and checksums of installed files to recognise them and find updates |
 | GitHub | Checking for launcher updates | Nothing beyond the request itself |
 | Discord (the app on your computer) | The "Playing Selene Launcher" status | The game version and instance name. Can be turned off in settings |
