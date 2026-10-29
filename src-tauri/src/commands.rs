@@ -43,6 +43,7 @@ use crate::state::{Launcher, LogSnapshot};
 const MIN_HIDDEN_TOKEN_LEN: usize = 8;
 /// A game at start-up prints thousands of lines; the console gets them in batches.
 const LOG_FLUSH_INTERVAL: Duration = Duration::from_millis(100);
+const LOG_DRAIN_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -581,9 +582,10 @@ async fn watch_game(
         }
     };
     let code = status.ok().and_then(|status| status.code());
-    // Let the readers drain what the game printed last; that is where the error is.
+    // Let the readers drain what the game printed last; that is where the error is. A process
+    // the game left behind can hold the pipes open, so the wait is short.
     for reader in [stdout, stderr].into_iter().flatten() {
-        let _ = reader.await;
+        let _ = tokio::time::timeout(LOG_DRAIN_TIMEOUT, reader).await;
     }
     let launcher = app.state::<Launcher>();
     launcher.stop_running(&instance_id);
