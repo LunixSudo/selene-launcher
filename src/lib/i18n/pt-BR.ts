@@ -52,6 +52,12 @@ export const ptBR: Messages = {
     duplicate: "Duplicar",
     copyName: "{name} (cópia)",
   },
+  modpacks: {
+    title: "Modpacks",
+    search: "Buscar modpacks",
+    install: "Instalar",
+    installing: "Instalando…",
+  },
   instance: {
     backdrop: "Fundo da instância",
     backdropHint:

@@ -3,6 +3,7 @@
 pub mod catalog;
 pub mod install;
 pub mod installed;
+pub mod modpacks;
 pub mod version_change;
 
 use std::collections::HashMap;

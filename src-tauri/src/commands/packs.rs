@@ -34,13 +34,21 @@ pub async fn import_pack(
     launcher: State<'_, Launcher>,
     path: PathBuf,
 ) -> CommandResult<ImportResult> {
+    import_file(&app, &launcher, path).await
+}
+
+pub(crate) async fn import_file(
+    app: &AppHandle,
+    launcher: &Launcher,
+    path: PathBuf,
+) -> CommandResult<ImportResult> {
     let is_zip = path
         .extension()
         .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"));
     if is_zip {
-        import_curseforge(&app, &launcher, path).await
+        import_curseforge(app, launcher, path).await
     } else {
-        import_mrpack(&app, &launcher, path).await
+        import_mrpack(app, launcher, path).await
     }
 }
 

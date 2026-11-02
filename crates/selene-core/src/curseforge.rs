@@ -103,6 +103,8 @@ pub struct File {
     pub download_url: Option<String>,
     pub file_length: u64,
     #[serde(default)]
+    pub is_server_pack: bool,
+    #[serde(default)]
     pub hashes: Vec<FileHash>,
     #[serde(default)]
     pub dependencies: Vec<FileDependency>,
@@ -174,6 +176,17 @@ pub struct InstallPlan {
     pub manual: Vec<u32>,
 }
 
+const MODPACK_CLASS_ID: u32 = 4471;
+
+fn sort_field(sort: CatalogSort) -> u32 {
+    match sort {
+        CatalogSort::Relevance => 2,
+        CatalogSort::Downloads => 6,
+        CatalogSort::Newest => 11,
+        CatalogSort::Updated => 3,
+    }
+}
+
 fn class_id(kind: ContentKind) -> u32 {
     match kind {
         ContentKind::Mod => 6,
@@ -238,18 +251,12 @@ impl CurseForge {
     }
 
     pub async fn search(&self, query: &SearchQuery<'_>) -> Result<SearchResults> {
-        let sort_field = match query.sort {
-            CatalogSort::Relevance => 2,
-            CatalogSort::Downloads => 6,
-            CatalogSort::Newest => 11,
-            CatalogSort::Updated => 3,
-        };
         let mut params = vec![
             ("gameId", MINECRAFT_GAME_ID.to_string()),
             ("classId", class_id(query.kind).to_string()),
             ("gameVersion", query.game_version.to_owned()),
             ("searchFilter", query.text.to_owned()),
-            ("sortField", sort_field.to_string()),
+            ("sortField", sort_field(query.sort).to_string()),
             ("sortOrder", "desc".to_owned()),
             ("index", query.offset.to_string()),
             ("pageSize", query.limit.to_string()),
@@ -272,6 +279,55 @@ impl CurseForge {
                 .map_or(0, |pagination| pagination.total_count),
             mods: response.data,
         })
+    }
+
+    /// Modpacks for any game version and loader, since a pack brings its own.
+    pub async fn search_modpacks(
+        &self,
+        text: &str,
+        sort: CatalogSort,
+        offset: u32,
+        limit: u32,
+    ) -> Result<SearchResults> {
+        let params = [
+            ("gameId", MINECRAFT_GAME_ID.to_string()),
+            ("classId", MODPACK_CLASS_ID.to_string()),
+            ("searchFilter", text.to_owned()),
+            ("sortField", sort_field(sort).to_string()),
+            ("sortOrder", "desc".to_owned()),
+            ("index", offset.to_string()),
+            ("pageSize", limit.to_string()),
+        ];
+        let response: Response<Vec<Mod>> =
+            http::send(&self.client, self.get("/mods/search").query(&params))
+                .await?
+                .error_for_status()?
+                .json()
+                .await?;
+        Ok(SearchResults {
+            total: response
+                .pagination
+                .map_or(0, |pagination| pagination.total_count),
+            mods: response.data,
+        })
+    }
+
+    /// The newest file of a project for players, for any game version.
+    pub async fn latest_file(&self, mod_id: u32) -> Result<Option<File>> {
+        let response: Response<Vec<File>> = http::send(
+            &self.client,
+            self.get(&format!("/mods/{mod_id}/files"))
+                .query(&[("pageSize", "20")]),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+        Ok(response
+            .data
+            .into_iter()
+            .filter(|file| !file.is_server_pack)
+            .max_by(|a, b| a.file_date.cmp(&b.file_date)))
     }
 
     /// Files of a project for this game version and, for mods, this loader. Newest first.

@@ -50,6 +50,12 @@ export const ru = {
     duplicate: "Создать копию",
     copyName: "{name} (копия)",
   },
+  modpacks: {
+    title: "Модпаки",
+    search: "Поиск модпаков",
+    install: "Установить",
+    installing: "Установка…",
+  },
   instance: {
     backdrop: "Фон сборки",
     backdropHint: "Виден, пока открыта эта сборка. Обложка медленно переливается на всё окно.",

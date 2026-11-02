@@ -19,6 +19,8 @@ All notable changes to this project are documented here. The format follows
 - Warnings in the mod list when a mod needs another one or conflicts with one.
 - Changing an instance's game version, with a check of which mods have a matching build.
 - Modpack import and export (`.mrpack` and CurseForge `.zip`).
+- A modpack catalog from Modrinth and CurseForge: search, sorting and installing the newest
+  version of a pack as a new instance in one click.
 - Worlds, servers and screenshots tabs; renaming worlds; joining a server straight from the
   launcher.
 - Game console, crash analysis, play time and a button that stops a hung game.

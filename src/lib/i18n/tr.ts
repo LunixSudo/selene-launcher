@@ -52,6 +52,12 @@ export const tr: Messages = {
     duplicate: "Çoğalt",
     copyName: "{name} (kopya)",
   },
+  modpacks: {
+    title: "Mod paketleri",
+    search: "Mod paketi ara",
+    install: "Yükle",
+    installing: "Yükleniyor…",
+  },
   instance: {
     backdrop: "Profil arka planı",
     backdropHint: "Bu profil açıkken gösterilir. Kapak görseli tüm pencerede yavaşça akar.",

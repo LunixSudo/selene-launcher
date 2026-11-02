@@ -52,6 +52,12 @@ export const uk: Messages = {
     duplicate: "Дублювати",
     copyName: "{name} (копія)",
   },
+  modpacks: {
+    title: "Модпаки",
+    search: "Пошук модпаків",
+    install: "Встановити",
+    installing: "Встановлення…",
+  },
   instance: {
     backdrop: "Фон збірки",
     backdropHint:

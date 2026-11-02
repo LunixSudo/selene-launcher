@@ -10,11 +10,13 @@ import {
   type DiscordPresence,
   type GameExited,
   type GameLog,
+  type ImportResult,
   type Instance,
   isCommandError,
   type LaunchProgress,
   type LoaderVersion,
   type ManualDownload,
+  type Source,
 } from "$lib/api";
 import { t } from "$lib/i18n/index.svelte";
 import { LOADER_NAMES } from "$lib/loaders";
@@ -123,21 +125,31 @@ export function activity(id: string): { label: string; percent: number } | null 
   return null;
 }
 
-export async function importPack(path: string) {
+export function importPack(path: string): Promise<Instance | null> {
+  return runImport(() => api.importPack(path));
+}
+
+export function installModpack(source: Source, projectId: string): Promise<Instance | null> {
+  return runImport(() => api.installModpack(source, projectId));
+}
+
+async function runImport(task: () => Promise<ImportResult>): Promise<Instance | null> {
   library.importing++;
   library.importError = null;
   library.importManual = [];
   try {
-    const result = await api.importPack(path);
+    const result = await task();
     delete library.launches[result.instance.id];
     prepare(result.instance.id);
     library.importManual = result.manual;
     void notify(t("notify.imported"), t("notify.importedBody", { name: result.instance.name }));
+    return result.instance;
   } catch (error) {
     // Deleting the instance while it imports cancels the import; that is no error.
     if (!isCommandError(error) || error.kind !== "cancelled") {
       library.importError = isCommandError(error) ? error : UNKNOWN_ERROR;
     }
+    return null;
   } finally {
     library.importing--;
     // Reread from disk: the list on screen may have been loaded while the import was running.

@@ -503,6 +503,10 @@ export const api = {
   projectPage: (kind: ContentKind, project: ProjectRef) =>
     invoke<ProjectPage>("project_page", { kind, project }),
   importPack: (path: string) => invoke<ImportResult>("import_pack", { path }),
+  searchModpacks: (source: Source, query: string, sort: CatalogSort, page: number) =>
+    invoke<CatalogPage>("search_modpacks", { source, query, sort, page }),
+  installModpack: (source: Source, projectId: string) =>
+    invoke<ImportResult>("install_modpack", { source, projectId }),
   exportPack: (instanceId: string, path: string, folders: string[], format: PackFormat) =>
     invoke<void>("export_pack", { instanceId, path, folders, format }),
 };

@@ -251,12 +251,7 @@ pub async fn search(client: &Client, query: &SearchQuery<'_>) -> Result<SearchRe
     for category in query.categories {
         facets.push(vec![format!("categories:{category}")]);
     }
-    let index = match query.sort {
-        CatalogSort::Relevance => "relevance",
-        CatalogSort::Downloads => "downloads",
-        CatalogSort::Newest => "newest",
-        CatalogSort::Updated => "updated",
-    };
+    let index = sort_index(query.sort);
 
     let results = http::send(
         client,
@@ -273,6 +268,44 @@ pub async fn search(client: &Client, query: &SearchQuery<'_>) -> Result<SearchRe
     .json()
     .await?;
     Ok(results)
+}
+
+/// Modpacks for any game version and loader, since a pack brings its own.
+pub async fn search_modpacks(
+    client: &Client,
+    text: &str,
+    sort: CatalogSort,
+    offset: u32,
+    limit: u32,
+) -> Result<SearchResults> {
+    let facets = vec![vec![format!(
+        "project_type:{}",
+        ProjectType::Modpack.as_str()
+    )]];
+    let results = http::send(
+        client,
+        client.get(format!("{API_URL}/search")).query(&[
+            ("query", text),
+            ("facets", &serde_json::to_string(&facets)?),
+            ("index", sort_index(sort)),
+            ("offset", &offset.to_string()),
+            ("limit", &limit.to_string()),
+        ]),
+    )
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
+    Ok(results)
+}
+
+fn sort_index(sort: CatalogSort) -> &'static str {
+    match sort {
+        CatalogSort::Relevance => "relevance",
+        CatalogSort::Downloads => "downloads",
+        CatalogSort::Newest => "newest",
+        CatalogSort::Updated => "updated",
+    }
 }
 
 /// Versions of a project that run on the target, newest first.

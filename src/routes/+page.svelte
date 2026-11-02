@@ -164,6 +164,12 @@
   <header>
     <h1 class="page-title">{t("instances.title")}</h1>
     <div class="actions">
+      <a class="create" href="/modpacks">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 2.5l5 2.5v6l-5 2.5-5-2.5V5zM3 5l5 2.5L13 5M8 7.5v6" />
+        </svg>
+        {t("modpacks.title")}
+      </a>
       <button type="button" class="create" onclick={chooseImport}>
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v7M5 7l3 3 3-3M3 13h10" /></svg>
         {t("instances.import")}
@@ -327,6 +333,11 @@
     background: var(--surface-hover);
   }
 
+  a.create {
+    color: inherit;
+    text-decoration: none;
+  }
+
   .create svg {
     width: 14px;
     height: 14px;
@@ -334,6 +345,7 @@
     stroke: currentColor;
     stroke-width: 1.6;
     stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .filters {

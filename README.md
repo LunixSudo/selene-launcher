@@ -39,8 +39,8 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
   needs. Updates stay on the release channel you
   installed, two copies of one mod are flagged even when added by hand, and the launcher warns before you turn on something made for another version.
   Data packs go into the world you pick.
-- **Modpacks.** Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the
-  window.
+- **Modpacks.** Find and install modpacks from Modrinth and CurseForge in one click, import
+  and export `.mrpack` and CurseForge `.zip` files, or drop them on the window.
 - **Playing.** Worlds (renaming moves the folder too, and backups), servers and screenshots per instance,
   joining a server in one click, a game console, crash analysis, play time and a Discord status.
 - **Skins.** An animated 3D preview, a library of saved skins, saving the skin you wear now

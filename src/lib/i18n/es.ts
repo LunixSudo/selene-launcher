@@ -52,6 +52,12 @@ export const es: Messages = {
     duplicate: "Duplicar",
     copyName: "{name} (copia)",
   },
+  modpacks: {
+    title: "Modpacks",
+    search: "Buscar modpacks",
+    install: "Instalar",
+    installing: "Instalando…",
+  },
   instance: {
     backdrop: "Fondo de la instancia",
     backdropHint:

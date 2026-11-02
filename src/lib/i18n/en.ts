@@ -52,6 +52,12 @@ export const en: Messages = {
     duplicate: "Duplicate",
     copyName: "{name} (copy)",
   },
+  modpacks: {
+    title: "Modpacks",
+    search: "Search modpacks",
+    install: "Install",
+    installing: "Installing…",
+  },
   instance: {
     backdrop: "Instance background",
     backdropHint:

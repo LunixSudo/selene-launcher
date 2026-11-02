@@ -52,6 +52,12 @@ export const zhCN: Messages = {
     duplicate: "复制",
     copyName: "{name}（副本）",
   },
+  modpacks: {
+    title: "整合包",
+    search: "搜索整合包",
+    install: "安装",
+    installing: "正在安装…",
+  },
   instance: {
     backdrop: "实例背景",
     backdropHint: "打开此实例时显示。封面会在整个窗口中缓缓流动。",
