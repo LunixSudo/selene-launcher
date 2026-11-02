@@ -27,6 +27,8 @@
     refresh,
   }: { instanceId: string; kind: ContentKind; world?: string | null; refresh: number } = $props();
 
+  const RESULT_SHOWN_MS = 4000;
+
   let files = $state<InstalledFile[] | null>(null);
   let updates = $state<ContentUpdate[] | null>(null);
   let checking = $state(false);
@@ -58,16 +60,30 @@
   });
 
   const unlisten = listen("content-changed", () => void load());
+  let optifineStatus = $state<string | null>(null);
+
+  /** Shows a result on the button itself for a few seconds, where the eye already is. */
+  function flash(set: (text: string | null) => void, text: string) {
+    set(text);
+    setTimeout(() => set(null), RESULT_SHOWN_MS);
+  }
+
   const unlistenOptifine = listen<string>("optifine-installed", (event) => {
     if (event.payload === instanceId) {
-      optimized = t("content.optifineAdded");
+      flash((text) => (optifineStatus = text), t("content.optifineAdded"));
       void load();
+    }
+  });
+  const unlistenOptifineFailed = listen<string>("optifine-failed", (event) => {
+    if (event.payload === instanceId) {
+      flash((text) => (optifineStatus = text), t("content.optifineFailed"));
     }
   });
 
   onDestroy(() => {
     void unlisten.then((stop) => stop());
     void unlistenOptifine.then((stop) => stop());
+    void unlistenOptifineFailed.then((stop) => stop());
     void api.unwatchContent();
   });
 
@@ -126,15 +142,13 @@
         null,
         optimizers(loader, instance.version, hasOptiFine),
       );
-      optimized = t("content.optimized", { count: result.installed });
+      flash((text) => (optimized = text), t("content.optimized", { count: result.installed }));
       await load();
     } catch (err) {
       // Nothing new to add: everything is in place already or has no build for this version.
-      optimized =
-        isCommandError(err) && err.kind === "noCompatibleVersion"
-          ? t("content.optimizedNothing")
-          : null;
-      if (!optimized) {
+      if (isCommandError(err) && err.kind === "noCompatibleVersion") {
+        flash((text) => (optimized = text), t("content.optimizedNothing"));
+      } else {
         error = describeError(err);
       }
     } finally {
@@ -248,28 +262,14 @@
 
 <div class="toolbar">
   {#if kind === "mod" && instance?.loader}
-    <button
-      type="button"
-      class="pill-button"
-      disabled={optimizing}
-      title={t("content.optimizeHint")}
-      onclick={addOptimizers}
-    >
-      {optimizing ? t("content.optimizing") : t("content.optimize")}
-    </button>
     {#if optifineBuild}
-      <button
-        type="button"
-        class="pill-button"
-        title={t("content.optifineHint")}
-        onclick={installOptifine}
-      >
-        {t("content.optifine")}
+      <button type="button" class="pill-button" onclick={installOptifine}>
+        {optifineStatus ?? t("content.optifine")}
       </button>
     {/if}
-    {#if optimized}
-      <span class="muted">{optimized}</span>
-    {/if}
+    <button type="button" class="pill-button" disabled={optimizing} onclick={addOptimizers}>
+      {optimizing ? t("content.optimizing") : (optimized ?? t("content.optimize"))}
+    </button>
   {/if}
   {#if updates && updates.length > 0}
     <button type="button" class="pill-button primary" disabled={updating} onclick={updateAll}>

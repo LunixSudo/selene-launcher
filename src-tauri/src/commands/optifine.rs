@@ -3,19 +3,25 @@
 
 use std::path::{Path, PathBuf};
 
+use selene_core::download::{self, Download};
 use tauri::webview::DownloadEvent;
 use tauri::{AppHandle, Emitter, Manager, State, Url, WebviewUrl, WebviewWindowBuilder};
 
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
-const SITES: [&str; 2] = ["optifine.net", "adfoc.us"];
+const SITE: &str = "optifine.net";
 const DOWNLOADS: &str = "https://optifine.net/downloads";
+const MIRROR: &str = "https://optifine.net/adloadx";
 
 /// Game versions with an `OptiFine` build, as listed on its downloads page.
 #[tauri::command]
 pub async fn optifine_versions(launcher: State<'_, Launcher>) -> CommandResult<Vec<String>> {
-    let page = launcher
+    Ok(listed_versions(&downloads_page(&launcher).await?))
+}
+
+async fn downloads_page(launcher: &Launcher) -> CommandResult<String> {
+    Ok(launcher
         .client
         .get(DOWNLOADS)
         .send()
@@ -24,8 +30,25 @@ pub async fn optifine_versions(launcher: State<'_, Launcher>) -> CommandResult<V
         .map_err(selene_core::Error::from)?
         .text()
         .await
-        .map_err(selene_core::Error::from)?;
-    Ok(listed_versions(&page))
+        .map_err(selene_core::Error::from)?)
+}
+
+/// The newest build for a game version, preferring releases over previews.
+fn newest_build(page: &str, version: &str) -> Option<String> {
+    let heading = format!("{version}</h2>");
+    let section = page
+        .split("<h2>Minecraft ")
+        .find(|section| section.starts_with(&heading))?;
+    let files: Vec<&str> = section
+        .split("optifine.net/adloadx?f=")
+        .skip(1)
+        .filter_map(|rest| rest.split(['&', '"', '\'']).next())
+        .collect();
+    files
+        .iter()
+        .find(|file| !file.starts_with("preview_"))
+        .or_else(|| files.first())
+        .map(|file| (*file).to_owned())
 }
 
 fn listed_versions(page: &str) -> Vec<String> {
@@ -54,53 +77,105 @@ pub async fn open_optifine(
         let _ = window.set_focus();
         return Ok(());
     }
-    let url = DOWNLOADS.parse().expect("the downloads address is valid");
+    // The download page of the right file has one button and no ad detour; the whole list is
+    // the fallback when the site is laid out differently.
+    let url = match downloads_page(&launcher).await {
+        Ok(page) => newest_build(&page, &instance.version)
+            .and_then(|file| Url::parse_with_params(MIRROR, [("f", file)]).ok()),
+        Err(_) => None,
+    }
+    .unwrap_or_else(|| DOWNLOADS.parse().expect("the downloads address is valid"));
     WebviewWindowBuilder::new(&app, label, WebviewUrl::External(url))
         .title("OptiFine")
         .inner_size(1040.0, 760.0)
         .min_inner_size(640.0, 480.0)
-        .initialization_script(scroll_to_version(&instance.version))
+        .initialization_script(page_script(&instance.version))
         .on_navigation(|url| url.host_str().is_some_and(is_site))
-        .on_download(move |webview, event| match event {
-            DownloadEvent::Requested { url, destination } => {
-                let Some(name) = jar_name(&url, destination) else {
-                    return false;
-                };
-                *destination = mods.join(name);
-                true
+        .on_download(move |webview, event| {
+            // The webview's own download leaves half-written files behind when the site
+            // stumbles, so the launcher fetches the file itself and cancels the webview's.
+            if let DownloadEvent::Requested { url, destination } = event
+                && let Some(name) = jar_name(&url, destination)
+            {
+                let app = webview.app_handle().clone();
+                let window = webview.window();
+                let path = mods.join(name);
+                let instance_id = instance_id.clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = window.hide();
+                    let result = fetch_jar(&app, url.as_str(), &path).await;
+                    let _ = window.destroy();
+                    match result {
+                        Ok(()) => {
+                            log::info!("OptiFine saved as {}", path.display());
+                            let _ = app.emit("optifine-installed", &instance_id);
+                        }
+                        Err(err) => {
+                            log::warn!("OptiFine download failed: {err}");
+                            let _ = app.emit("optifine-failed", &instance_id);
+                        }
+                    }
+                });
             }
-            DownloadEvent::Finished { success, .. } => {
-                if success {
-                    let _ = webview
-                        .app_handle()
-                        .emit("optifine-installed", &instance_id);
-                    let _ = webview.window().close();
-                }
-                true
-            }
-            _ => true,
+            false
         })
         .build()
         .map_err(|err| CommandError::Io(std::io::Error::other(err)))?;
     Ok(())
 }
 
-/// The site's own download button goes through its ad partner first.
-fn is_site(host: &str) -> bool {
-    SITES.iter().any(|site| {
-        host == *site
-            || host
-                .strip_suffix(site)
-                .is_some_and(|sub| sub.ends_with('.'))
-    })
+/// Downloads next to the target and moves the file in only once it is whole and really a jar,
+/// since an overloaded site answers with an error page instead.
+async fn fetch_jar(app: &AppHandle, url: &str, path: &Path) -> selene_core::Result<()> {
+    let launcher = app.state::<Launcher>();
+    let partial = path.with_extension("jar.part");
+    download::download_all(
+        &launcher.client,
+        vec![Download {
+            url: url.to_owned(),
+            path: partial.clone(),
+            sha1: String::new(),
+            size: 0,
+        }],
+        1,
+        |_| {},
+    )
+    .await?;
+    let mut magic = [0; 2];
+    let is_jar = std::fs::File::open(&partial)
+        .and_then(|mut file| std::io::Read::read_exact(&mut file, &mut magic))
+        .is_ok()
+        && magic == *b"PK";
+    if !is_jar {
+        let _ = tokio::fs::remove_file(&partial).await;
+        return Err(selene_core::Error::InvalidPack("not a jar".into()));
+    }
+    selene_core::fs::rename(&partial, path).await
 }
 
-/// Older versions sit in a hidden block on the page, so it is unfolded first.
-fn scroll_to_version(version: &str) -> String {
+fn is_site(host: &str) -> bool {
+    host == SITE
+        || host
+            .strip_suffix(SITE)
+            .is_some_and(|sub| sub.ends_with('.'))
+}
+
+/// Runs on the downloads page. Older versions sit in a hidden block there, so it is unfolded
+/// before scrolling to the instance's version. The main download buttons go through an ad
+/// service that opens other downloads in this window; they are pointed at the site's own
+/// mirror link instead, which the page offers next to each of them.
+fn page_script(version: &str) -> String {
     let heading = serde_json::to_string(&format!("Minecraft {version}")).unwrap_or_default();
     format!(
         r#"addEventListener("DOMContentLoaded", () => {{
   if (location.pathname !== "/downloads") return;
+  for (const link of document.querySelectorAll('a[href*="adfoc.us"]')) {{
+    const target = new URL(link.href).searchParams.get("url");
+    if (target) {{
+      link.href = target;
+      link.removeAttribute("target");
+    }}
+  }}
   const heading = [...document.querySelectorAll("h2")].find((h) => h.textContent.trim() === {heading});
   if (!heading) return;
   const folded = heading.closest('[id^="all"]');
@@ -142,13 +217,31 @@ mod tests {
         assert!(is_site("www.optifine.net"));
         assert!(!is_site("notoptifine.net"));
         assert!(!is_site("optifine.net.example.com"));
-        assert!(is_site("adfoc.us"));
+        assert!(!is_site("adfoc.us"));
     }
 
     #[test]
     fn reads_listed_versions() {
         let page = "<h2>Minecraft 26.1.2</h2><p>x</p>\n<h2>Minecraft 1.8.9</h2><h2>Other</h2>";
         assert_eq!(listed_versions(page), ["26.1.2", "1.8.9"]);
+    }
+
+    #[test]
+    fn finds_the_newest_release() {
+        let page = r#"<h2>Minecraft 1.8.9</h2>
+<a href="http://adfoc.us/serve/sitelinks/?id=1&url=http://optifine.net/adloadx?f=preview_OptiFine_1.8.9_HD_U_M6_pre2.jar&x=e">x</a>
+<a href="http://optifine.net/adloadx?f=preview_OptiFine_1.8.9_HD_U_M6_pre2.jar">(Mirror)</a>
+<a href="http://optifine.net/adloadx?f=OptiFine_1.8.9_HD_U_M5.jar">(Mirror)</a>
+<h2>Minecraft 1.8</h2><a href="http://optifine.net/adloadx?f=OptiFine_1.8.0_HD_U_I7.jar">"#;
+        assert_eq!(
+            newest_build(page, "1.8.9").as_deref(),
+            Some("OptiFine_1.8.9_HD_U_M5.jar")
+        );
+        assert_eq!(
+            newest_build(page, "1.8").as_deref(),
+            Some("OptiFine_1.8.0_HD_U_I7.jar")
+        );
+        assert_eq!(newest_build(page, "1.12.2"), None);
     }
 
     #[test]

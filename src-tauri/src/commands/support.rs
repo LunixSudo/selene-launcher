@@ -50,8 +50,11 @@ pub async fn report_problem(
         ("instance", game.trim().to_owned()),
     ];
     let logs = launcher.data_dir.join("logs");
-    let report = logs.join(REPORT_FILE);
+    // Kept out of the logs folder, so nobody has to tell two logs apart there.
+    let report_dir = std::env::temp_dir().join("SeleneLauncher");
+    let report = report_dir.join(REPORT_FILE);
     if with_log {
+        tokio::fs::create_dir_all(&report_dir).await?;
         let log = hide_home(
             &tokio::fs::read_to_string(logs.join("launcher.log"))
                 .await

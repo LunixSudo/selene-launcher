@@ -303,14 +303,11 @@ export const zhCN: Messages = {
   content: {
     optimize: "添加优化模组",
     optimizing: "正在添加…",
-    optimizeHint:
-      "经过测试的帧率和内存优化组合：Sodium 或 Embeddium、Lithium、FerriteCore、EntityCulling、ImmediatelyFast。只添加适配此版本的模组。",
     optimized: "已添加模组：{count}",
     optimizedNothing: "已全部安装，或此版本没有可用模组",
     optifine: "安装 OptiFine",
-    optifineHint:
-      "将打开 OptiFine 官方网站。点击所需版本旁的 Download，文件会直接放入此实例的模组文件夹。",
     optifineAdded: "已添加 OptiFine",
+    optifineFailed: "无法下载 OptiFine，请重试",
     optifineClashTitle: "OptiFine 与 Embeddium 不兼容",
     optifineClash: "此实例已安装 Embeddium。两者同时存在时游戏无法启动，请在游戏前停用其中一个。",
     optifineClashConfirm: "仍然打开",

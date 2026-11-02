@@ -313,16 +313,13 @@ export const ru = {
     done: "Готово",
   },
   content: {
-    optimize: "Добавить оптимизацию",
+    optimize: "Добавить моды на оптимизацию",
     optimizing: "Добавляем…",
-    optimizeHint:
-      "Проверенный набор модов для FPS и памяти: Sodium или Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Ставятся только те, что подходят к этой версии.",
     optimized: "Добавлено модов: {count}",
     optimizedNothing: "Всё уже стоит или нет версий под эту игру",
     optifine: "Установить OptiFine",
-    optifineHint:
-      "Откроется официальный сайт OptiFine. Нажмите Download у нужной версии, и файл сам попадёт в моды этой сборки.",
     optifineAdded: "OptiFine добавлен",
+    optifineFailed: "Не удалось скачать OptiFine, попробуйте ещё раз",
     optifineClashTitle: "OptiFine и Embeddium несовместимы",
     optifineClash:
       "В этой сборке стоит Embeddium. С OptiFine игра не запустится: перед игрой выключите один из них.",

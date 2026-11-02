@@ -315,16 +315,13 @@ export const pl: Messages = {
     done: "Gotowe",
   },
   content: {
-    optimize: "Dodaj optymalizację",
+    optimize: "Dodaj mody optymalizacyjne",
     optimizing: "Dodawanie…",
-    optimizeHint:
-      "Sprawdzony zestaw na FPS i pamięć: Sodium lub Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Dodawane są tylko te z wersją dla tej gry.",
     optimized: "Dodano modów: {count}",
     optimizedNothing: "Wszystko już jest lub brak wersji dla tej gry",
     optifine: "Zainstaluj OptiFine",
-    optifineHint:
-      "Otworzy się oficjalna strona OptiFine. Kliknij Download przy wybranej wersji, a plik trafi prosto do modów tej instancji.",
     optifineAdded: "Dodano OptiFine",
+    optifineFailed: "Nie udało się pobrać OptiFine, spróbuj ponownie",
     optifineClashTitle: "OptiFine i Embeddium się gryzą",
     optifineClash:
       "Ta instancja ma Embeddium. Z oboma gra się nie uruchomi, przed grą wyłącz jeden z nich.",
