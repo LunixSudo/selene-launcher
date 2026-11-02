@@ -474,6 +474,9 @@ export const api = {
     fileName: string,
     enabled: boolean,
   ) => invoke<void>("set_content_enabled", { instanceId, kind, world, fileName, enabled }),
+  watchContent: (instanceId: string, kind: ContentKind, world: string | null) =>
+    invoke<void>("watch_content", { instanceId, kind, world }),
+  unwatchContent: () => invoke<void>("unwatch_content"),
   removeContent: (instanceId: string, kind: ContentKind, world: string | null, fileName: string) =>
     invoke<void>("remove_content", { instanceId, kind, world, fileName }),
   checkUpdates: (instanceId: string, kind: ContentKind, world: string | null) =>

@@ -6,6 +6,7 @@ mod discord;
 mod error;
 mod game_window;
 mod state;
+mod watch;
 
 use std::path::PathBuf;
 use std::sync::{Mutex, PoisonError};
@@ -29,6 +30,7 @@ const WEBVIEW2_URL: &str = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
 
 /// Starts the launcher.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[expect(clippy::too_many_lines, reason = "most of it is the list of commands")]
 pub fn run() {
     let app = tauri::Builder::default()
         // A second start, say from a desktop shortcut, hands its request to the open window.
@@ -98,6 +100,8 @@ pub fn run() {
             commands::content::install::preview_install,
             commands::content::install::install_content,
             commands::content::installed::set_content_enabled,
+            commands::content::installed::watch_content,
+            commands::content::installed::unwatch_content,
             commands::content::installed::remove_content,
             commands::content::installed::check_updates,
             commands::content::installed::update_content,
@@ -143,6 +147,7 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .allow_directory(&data_dir, true)?;
     let args: Vec<String> = std::env::args().collect();
     app.manage(Launcher::new(&data_dir, launch_arg(&args))?);
+    app.manage(watch::FolderWatch::default());
     Ok(())
 }
 

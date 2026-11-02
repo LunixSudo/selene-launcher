@@ -13,6 +13,7 @@ use super::{
 };
 use crate::error::CommandResult;
 use crate::state::Launcher;
+use crate::watch::FolderWatch;
 
 /// Catalog entries already in the instance, as `source:id` mapped to the file's name. A
 /// file uploaded to both sites counts for both.
@@ -177,34 +178,103 @@ pub(super) async fn list_installed(
             }
         })
         .collect();
-    mark_duplicates(&mut installed);
+    settle_duplicates(&game_dir, kind, &mut installed, &versions).await;
     installed.sort_by_cached_key(|installed| display_name(installed).to_lowercase());
     Ok(installed)
 }
 
-/// Flags enabled files that are the same project, or declare the same mod id, as another
-/// enabled file. The game refuses to start with two copies of one mod.
-fn mark_duplicates(installed: &mut [InstalledFile]) {
-    let keys = |file: &InstalledFile| -> Vec<String> {
-        let project = file
-            .project
-            .iter()
-            .map(|project| format!("{:?}:{}", project.source, project.id));
-        let ids = file.file.mod_ids.iter().map(|id| format!("id:{id}"));
-        project.chain(ids).collect()
-    };
+/// What makes two files the same mod: the catalog project, or a mod id the loader reads.
+fn identity(file: &InstalledFile) -> impl Iterator<Item = String> + '_ {
+    let project = file
+        .project
+        .iter()
+        .map(|project| format!("{:?}:{}", project.source, project.id));
+    let ids = file.file.mod_ids.iter().map(|id| format!("id:{id}"));
+    project.chain(ids)
+}
+
+/// Enabled files grouped by what they share with each other.
+fn enabled_twins(installed: &[InstalledFile]) -> Vec<Vec<usize>> {
     let mut owners: HashMap<String, Vec<usize>> = HashMap::new();
     for (index, file) in installed.iter().enumerate() {
         if file.file.enabled {
-            for key in keys(file) {
+            for key in identity(file) {
                 owners.entry(key).or_default().push(index);
             }
         }
     }
+    let mut groups: Vec<Vec<usize>> = owners
+        .into_values()
+        .filter(|indices| indices.len() > 1)
+        .collect();
+    for group in &mut groups {
+        group.sort_unstable();
+        group.dedup();
+    }
+    groups.sort();
+    groups.dedup();
+    groups
+}
+
+/// The game refuses to start with two copies of one mod, so only the newest copy stays on:
+/// by release date when the catalog knows every copy, otherwise by when the file appeared.
+async fn keep_newest_duplicates(
+    game_dir: &Path,
+    installed: &mut [InstalledFile],
+    versions: &HashMap<String, Version>,
+) {
+    for group in enabled_twins(installed) {
+        let released = |index: usize| {
+            versions
+                .get(&installed[index].file.sha1)
+                .and_then(|version| version.date_published)
+        };
+        let by_release = group.iter().all(|&index| released(index).is_some());
+        let Some(&newest) = group.iter().max_by_key(|&&index| {
+            if by_release {
+                (released(index), None)
+            } else {
+                (None, installed[index].file.modified)
+            }
+        }) else {
+            continue;
+        };
+        for index in group.into_iter().filter(|&index| index != newest) {
+            let file = &mut installed[index].file;
+            if !file.enabled {
+                continue;
+            }
+            match mods::set_enabled(game_dir, ContentKind::Mod, &file.file_name, false).await {
+                Ok(()) => {
+                    file.enabled = false;
+                    file.file_name = format!("{}{}", file.file_name, mods::DISABLED_SUFFIX);
+                    installed[index].issues.clear();
+                }
+                Err(err) => log::warn!("could not switch off {}: {err}", file.file_name),
+            }
+        }
+    }
+}
+
+async fn settle_duplicates(
+    game_dir: &Path,
+    kind: ContentKind,
+    installed: &mut [InstalledFile],
+    versions: &HashMap<String, Version>,
+) {
+    if kind == ContentKind::Mod {
+        keep_newest_duplicates(game_dir, installed, versions).await;
+    }
+    mark_duplicates(installed);
+}
+
+/// Flags enabled files that are the same project, or declare the same mod id, as another
+/// enabled file.
+fn mark_duplicates(installed: &mut [InstalledFile]) {
     let mut twins: Vec<(usize, String)> = Vec::new();
-    for indices in owners.values().filter(|indices| indices.len() > 1) {
-        for &index in indices {
-            for &other in indices.iter().filter(|&&other| other != index) {
+    for group in enabled_twins(installed) {
+        for &index in &group {
+            for &other in group.iter().filter(|&&other| other != index) {
                 twins.push((index, installed[other].file.file_name.clone()));
             }
         }
@@ -282,6 +352,34 @@ async fn curseforge_projects(
         .collect()
 }
 
+/// Starts watching the folder of the tab that is open, replacing the previous one.
+#[tauri::command]
+pub async fn watch_content(
+    app: AppHandle,
+    launcher: State<'_, Launcher>,
+    watch: State<'_, FolderWatch>,
+    instance_id: String,
+    kind: ContentKind,
+    world: Option<String>,
+) -> CommandResult<()> {
+    let dir = kind.dir(&content_dir(
+        &launcher,
+        &instance_id,
+        kind,
+        world.as_deref(),
+    )?);
+    tokio::fs::create_dir_all(&dir).await?;
+    if let Err(err) = watch.start(&app, &dir) {
+        log::warn!("could not watch {}: {err}", dir.display());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn unwatch_content(watch: State<'_, FolderWatch>) {
+    watch.stop();
+}
+
 #[tauri::command]
 pub async fn set_content_enabled(
     launcher: State<'_, Launcher>,
@@ -292,7 +390,31 @@ pub async fn set_content_enabled(
     enabled: bool,
 ) -> CommandResult<()> {
     let game_dir = content_dir(&launcher, &instance_id, kind, world.as_deref())?;
+    if enabled && kind == ContentKind::Mod {
+        switch_off_twins(&game_dir, &file_name).await?;
+    }
     Ok(mods::set_enabled(&game_dir, kind, &file_name, enabled).await?)
+}
+
+/// Turning one copy of a mod on turns the other copies off, so the player can go back to
+/// an older version without the newest one taking over again.
+async fn switch_off_twins(game_dir: &Path, file_name: &str) -> CommandResult<()> {
+    let files = mods::list(game_dir, ContentKind::Mod).await?;
+    let base = file_name.trim_end_matches(mods::DISABLED_SUFFIX);
+    let Some(chosen) = files
+        .iter()
+        .find(|file| file.file_name.trim_end_matches(mods::DISABLED_SUFFIX) == base)
+    else {
+        return Ok(());
+    };
+    for file in files.iter().filter(|file| {
+        file.enabled
+            && file.file_name != chosen.file_name
+            && file.mod_ids.iter().any(|id| chosen.mod_ids.contains(id))
+    }) {
+        mods::set_enabled(game_dir, ContentKind::Mod, &file.file_name, false).await?;
+    }
+    Ok(())
 }
 
 #[tauri::command]

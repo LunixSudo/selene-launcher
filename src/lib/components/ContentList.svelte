@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { listen } from "@tauri-apps/api/event";
+  import { onDestroy } from "svelte";
   import {
     api,
     type ContentKind,
@@ -45,6 +47,18 @@
     void world;
     updates = null;
     void load();
+  });
+
+  // Files copied in through the file manager show up on their own.
+  $effect(() => {
+    void api.watchContent(instanceId, kind, world).catch(() => {});
+  });
+
+  const unlisten = listen("content-changed", () => void load());
+
+  onDestroy(() => {
+    void unlisten.then((stop) => stop());
+    void api.unwatchContent();
   });
 
   async function load() {

@@ -11,7 +11,7 @@ use tokio::fs;
 use crate::download::{self, Download, Progress};
 use crate::{Error, Result};
 
-const DISABLED_SUFFIX: &str = ".disabled";
+pub const DISABLED_SUFFIX: &str = ".disabled";
 const DOWNLOAD_CONCURRENCY: usize = 8;
 const HASH_CONCURRENCY: usize = 8;
 
@@ -93,6 +93,8 @@ pub struct ModFile {
     /// when they are different files.
     #[serde(skip)]
     pub mod_ids: Vec<String>,
+    #[serde(skip)]
+    pub modified: Option<SystemTime>,
 }
 
 /// A mod file to download from Modrinth or CurseForge.
@@ -146,6 +148,7 @@ pub async fn list(game_dir: &Path, kind: ContentKind) -> Result<Vec<ModFile>> {
                 enabled,
                 size: metadata.len(),
                 mod_ids,
+                modified: metadata.modified().ok(),
             })
         })
         .buffer_unordered(HASH_CONCURRENCY)
