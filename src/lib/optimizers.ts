@@ -24,12 +24,7 @@ function renderer(loader: Loader, gameVersion: string): string {
  * installing, so the list may name more than ends up in the folder.
  */
 export function optimizers(loader: Loader, gameVersion: string): CatalogItem[] {
-  const ids = [
-    renderer(loader, gameVersion),
-    FERRITE_CORE,
-    ENTITY_CULLING,
-    IMMEDIATELY_FAST,
-  ];
+  const ids = [renderer(loader, gameVersion), FERRITE_CORE, ENTITY_CULLING, IMMEDIATELY_FAST];
   if (loader !== "forge") {
     ids.push(LITHIUM);
   }
