@@ -46,7 +46,10 @@ pub async fn report_problem(
         ("labels", "bug".to_owned()),
         ("what", description.trim().to_owned()),
         ("version", app.package_info().version.to_string()),
-        ("system", system()),
+        (
+            "system",
+            format!("{}, {}", system(), crate::hardware::summary()),
+        ),
         ("instance", game.trim().to_owned()),
     ];
     let logs = launcher.data_dir.join("logs");

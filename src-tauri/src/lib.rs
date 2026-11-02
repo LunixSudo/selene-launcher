@@ -6,6 +6,7 @@ mod discord;
 mod error;
 mod game_window;
 mod gpu;
+mod hardware;
 mod state;
 mod watch;
 
@@ -151,11 +152,13 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     };
     app.handle().plugin(diagnostics_log(&data_dir))?;
     log::info!(
-        "Selene Launcher {} on {}, WebView2 {}, {} MB of memory{}",
+        "Selene Launcher {} on {}, WebView2 {}, {}, {} MB of memory, {}{}",
         app.package_info().version,
         commands::support::system(),
         tauri::webview_version().unwrap_or_default(),
+        hardware::summary(),
         state::total_memory_mb(),
+        hardware::disk(&data_dir),
         if portable_data_dir().is_some() {
             ", portable"
         } else {

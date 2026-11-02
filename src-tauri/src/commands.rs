@@ -532,11 +532,16 @@ fn log_start(instance: &Instance, options: &LaunchOptions) {
         .map(|loader| format!(" {:?} {}", loader.loader, loader.version))
         .unwrap_or_default();
     log::info!(
-        "starting {} ({}{loader}), {} MB, Java {}",
+        "starting {} ({}{loader}), {} MB, Java {}, arguments: {}",
         instance.id,
         instance.version,
         options.max_memory_mb,
-        options.java.display()
+        options.java.display(),
+        if options.extra_jvm_args.is_empty() {
+            "official only".to_owned()
+        } else {
+            options.extra_jvm_args.join(" ")
+        }
     );
 }
 
