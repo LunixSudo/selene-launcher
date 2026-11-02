@@ -16,6 +16,11 @@ Dependabot opens weekly pull requests for Cargo and npm updates and monthly ones
 Actions. Minor and patch updates come grouped; check the changelog of a major one before
 merging it.
 
+## Branches
+
+Work happens on `dev`, and pull requests target it. `main` holds released code only: each
+release lands there as a single commit tagged with its version.
+
 ## Commits
 
 [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`,
