@@ -20,6 +20,7 @@ import {
 import { t } from "#lib/i18n/index.svelte.ts";
 import { LOADER_NAMES } from "#lib/loaders.ts";
 import { notify } from "#lib/notify.ts";
+import { optimizers } from "#lib/optimizers.ts";
 import { goto } from "$app/navigation";
 import { settings } from "./settings.svelte";
 
@@ -60,10 +61,21 @@ export async function loadInstances() {
   library.loaded = true;
 }
 
-export async function createInstance(name: string, version: string, loader: LoaderVersion | null) {
+export async function createInstance(
+  name: string,
+  version: string,
+  loader: LoaderVersion | null,
+  withOptimizers = false,
+) {
   const instance = await api.createInstance(name, version, loader);
   library.instances = [instance, ...library.instances];
   prepare(instance.id);
+  if (loader && withOptimizers) {
+    // Mods without a build for this version are skipped; none at all is no error either.
+    void api
+      .installContent(instance.id, "mod", null, optimizers(loader.loader, version))
+      .catch(() => {});
+  }
 }
 
 /** Background downloads of new instances, which a start has to wait for. */

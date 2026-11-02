@@ -136,6 +136,9 @@ export const en: Messages = {
     starting: "Starting…",
   },
   create: {
+    optimizers: "Add performance mods",
+    optimizersHint:
+      "Sodium or Embeddium, FerriteCore, EntityCulling and more: higher FPS, less memory.",
     title: "New instance",
     name: "Name",
     namePlaceholder: "For example, Survival",

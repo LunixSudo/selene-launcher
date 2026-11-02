@@ -138,6 +138,9 @@ export const tr: Messages = {
     starting: "Başlatılıyor…",
   },
   create: {
+    optimizers: "Performans modlarını ekle",
+    optimizersHint:
+      "Sodium veya Embeddium, FerriteCore, EntityCulling ve diğerleri: daha fazla FPS, daha az bellek.",
     title: "Yeni profil",
     name: "Ad",
     namePlaceholder: "Örneğin Hayatta Kalma",

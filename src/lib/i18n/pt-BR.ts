@@ -138,6 +138,9 @@ export const ptBR: Messages = {
     starting: "Iniciando…",
   },
   create: {
+    optimizers: "Adicionar mods de desempenho",
+    optimizersHint:
+      "Sodium ou Embeddium, FerriteCore, EntityCulling e outros: mais FPS, menos memória.",
     title: "Nova instância",
     name: "Nome",
     namePlaceholder: "Por exemplo, Sobrevivência",

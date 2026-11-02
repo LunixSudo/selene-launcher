@@ -132,6 +132,8 @@ export const zhCN: Messages = {
     starting: "正在启动…",
   },
   create: {
+    optimizers: "添加优化模组",
+    optimizersHint: "Sodium 或 Embeddium、FerriteCore、EntityCulling 等：更高帧率，更少内存。",
     title: "新建实例",
     name: "名称",
     namePlaceholder: "例如：生存",

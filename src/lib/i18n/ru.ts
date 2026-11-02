@@ -133,6 +133,9 @@ export const ru = {
     starting: "Запуск…",
   },
   create: {
+    optimizers: "Добавить моды для оптимизации",
+    optimizersHint:
+      "Sodium или Embeddium, FerriteCore, EntityCulling и другие: больше FPS, меньше памяти.",
     title: "Новая сборка",
     name: "Название",
     namePlaceholder: "Например, Выживание",

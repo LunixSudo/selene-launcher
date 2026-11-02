@@ -136,6 +136,9 @@ export const uk: Messages = {
     starting: "Запуск…",
   },
   create: {
+    optimizers: "Додати моди для оптимізації",
+    optimizersHint:
+      "Sodium або Embeddium, FerriteCore, EntityCulling та інші: більше FPS, менше пам'яті.",
     title: "Нова збірка",
     name: "Назва",
     namePlaceholder: "Наприклад, Виживання",
