@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/i18n/index.svelte";
+  import { t } from "#lib/i18n/index.svelte.ts";
   import {
     BEAUTIFUL,
     currentLook,
@@ -7,8 +7,8 @@
     type Look,
     matchesLook,
     settings,
-  } from "$lib/state/settings.svelte";
-  import { tooltip } from "$lib/tooltip";
+  } from "#lib/state/settings.svelte.ts";
+  import { tooltip } from "#lib/tooltip.ts";
 
   const NAME_LENGTH = 24;
 

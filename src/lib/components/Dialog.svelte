@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { openModal } from "$lib/dialog";
+  import { openModal } from "#lib/dialog.ts";
 
   let {
     open = $bindable(),

@@ -1,16 +1,16 @@
 <script lang="ts">
   import { getVersion } from "@tauri-apps/api/app";
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import { api, type LauncherConfig } from "$lib/api";
-  import BackdropPicker from "$lib/components/BackdropPicker.svelte";
-  import BackLink from "$lib/components/BackLink.svelte";
-  import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
-  import Segmented from "$lib/components/Segmented.svelte";
-  import Select from "$lib/components/Select.svelte";
-  import StylePresets from "$lib/components/StylePresets.svelte";
-  import { describeError } from "$lib/errors";
-  import { CHECKED_LOCALES, LANGUAGES, locale, setLocale, t } from "$lib/i18n/index.svelte";
-  import { scrollFade } from "$lib/scroll-fade";
+  import { api, type LauncherConfig } from "#lib/api.ts";
+  import BackdropPicker from "#lib/components/BackdropPicker.svelte";
+  import BackLink from "#lib/components/BackLink.svelte";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+  import Segmented from "#lib/components/Segmented.svelte";
+  import Select from "#lib/components/Select.svelte";
+  import StylePresets from "#lib/components/StylePresets.svelte";
+  import { describeError } from "#lib/errors.ts";
+  import { CHECKED_LOCALES, LANGUAGES, locale, setLocale, t } from "#lib/i18n/index.svelte.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
   import {
     ACCENTS,
     type Accent,
@@ -20,9 +20,9 @@
     STYLES,
     settings,
     THEMES,
-  } from "$lib/state/settings.svelte";
-  import { checkForUpdate, installUpdate, launcherUpdate } from "$lib/state/update.svelte";
-  import { tooltip } from "$lib/tooltip";
+  } from "#lib/state/settings.svelte.ts";
+  import { checkForUpdate, installUpdate, launcherUpdate } from "#lib/state/update.svelte.ts";
+  import { tooltip } from "#lib/tooltip.ts";
 
   const REPOSITORY_URL = "https://github.com/LunixSudo/selene-launcher/blob/main";
   const PARALLEL = ["auto", "2", "4", "8", "16"];

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { goBack } from "$lib/history";
-  import { t } from "$lib/i18n/index.svelte";
+  import { goBack } from "#lib/history.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
 
   function back(event: MouseEvent) {
     if (goBack()) {

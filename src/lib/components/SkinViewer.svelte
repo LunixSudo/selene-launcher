@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { PlayerAnimation, SkinViewer } from "skinview3d";
-  import type { SkinVariant } from "$lib/api";
-  import { t } from "$lib/i18n/index.svelte";
-  import type { SkinAnimation } from "$lib/state/settings.svelte";
+  import type { SkinVariant } from "#lib/api.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import type { SkinAnimation } from "#lib/state/settings.svelte.ts";
 
   let {
     skin,

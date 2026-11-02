@@ -5,12 +5,12 @@
     type ContentUpdate,
     type InstalledFile,
     type ProjectRef,
-  } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { t } from "$lib/i18n/index.svelte";
-  import { UI_ICONS } from "$lib/icons";
-  import { notify } from "$lib/notify";
-  import { library } from "$lib/state/instances.svelte";
+  } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { UI_ICONS } from "#lib/icons.ts";
+  import { notify } from "#lib/notify.ts";
+  import { library } from "#lib/state/instances.svelte.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ContextMenu, { type MenuItem } from "./ContextMenu.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";

@@ -4,11 +4,11 @@
 </script>
 
 <script lang="ts">
-  import { api, type ContentKind, type Instance } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { t } from "$lib/i18n/index.svelte";
-  import { LOADER_NAMES, preferredRelease } from "$lib/loaders";
-  import { isPreparing, prepare, replaceInstance } from "$lib/state/instances.svelte";
+  import { api, type ContentKind, type Instance } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { LOADER_NAMES, preferredRelease } from "#lib/loaders.ts";
+  import { isPreparing, prepare, replaceInstance } from "#lib/state/instances.svelte.ts";
 
   let {
     instance,

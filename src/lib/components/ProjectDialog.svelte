@@ -6,13 +6,13 @@
     type ProjectPage,
     type ProjectRef,
     type ProjectVersion,
-  } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { externalLinks } from "$lib/external-links";
-  import { relativeTime } from "$lib/format";
-  import { t } from "$lib/i18n/index.svelte";
-  import { renderMarkup } from "$lib/markup";
-  import { scrollFade } from "$lib/scroll-fade";
+  } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { externalLinks } from "#lib/external-links.ts";
+  import { relativeTime } from "#lib/format.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { renderMarkup } from "#lib/markup.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
   import Dialog from "./Dialog.svelte";
   import Segmented from "./Segmented.svelte";
 

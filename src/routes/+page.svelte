@@ -1,19 +1,18 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import { goto } from "$app/navigation";
-  import { api, type Instance } from "$lib/api";
-  import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
-  import ContextMenu, { type MenuItem } from "$lib/components/ContextMenu.svelte";
-  import CreateInstanceDialog from "$lib/components/CreateInstanceDialog.svelte";
-  import EditInstanceDialog from "$lib/components/EditInstanceDialog.svelte";
-  import InstanceCard from "$lib/components/InstanceCard.svelte";
-  import Select from "$lib/components/Select.svelte";
-  import ShareDialog from "$lib/components/ShareDialog.svelte";
-  import { t } from "$lib/i18n/index.svelte";
-  import { UI_ICONS } from "$lib/icons";
-  import { scrollFade } from "$lib/scroll-fade";
-  import { shortcutIcon } from "$lib/shortcut-icon";
+  import { api, type Instance } from "#lib/api.ts";
+  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+  import ContextMenu, { type MenuItem } from "#lib/components/ContextMenu.svelte";
+  import CreateInstanceDialog from "#lib/components/CreateInstanceDialog.svelte";
+  import EditInstanceDialog from "#lib/components/EditInstanceDialog.svelte";
+  import InstanceCard from "#lib/components/InstanceCard.svelte";
+  import Select from "#lib/components/Select.svelte";
+  import ShareDialog from "#lib/components/ShareDialog.svelte";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { UI_ICONS } from "#lib/icons.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
+  import { shortcutIcon } from "#lib/shortcut-icon.ts";
   import {
     deleteInstance,
     importPack,
@@ -21,8 +20,9 @@
     loadInstances,
     play,
     stop,
-  } from "$lib/state/instances.svelte";
-  import { SORT_ORDERS, type SortOrder, settings } from "$lib/state/settings.svelte";
+  } from "#lib/state/instances.svelte.ts";
+  import { SORT_ORDERS, type SortOrder, settings } from "#lib/state/settings.svelte.ts";
+  import { goto } from "$app/navigation";
 
   let creating = $state(false);
   let selected = $state<Instance | null>(null);

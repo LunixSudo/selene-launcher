@@ -5,17 +5,17 @@
     type Loader,
     type LoaderRelease,
     type VersionSummary,
-  } from "$lib/api";
-  import { openModal } from "$lib/dialog";
-  import { t } from "$lib/i18n/index.svelte";
+  } from "#lib/api.ts";
+  import { openModal } from "#lib/dialog.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
   import {
     hasHiddenBetas,
     LOADER_NAMES,
     LOADERS,
     preferredRelease,
     releaseOptions,
-  } from "$lib/loaders";
-  import { createInstance } from "$lib/state/instances.svelte";
+  } from "#lib/loaders.ts";
+  import { createInstance } from "#lib/state/instances.svelte.ts";
   import Select from "./Select.svelte";
 
   let { open = $bindable() }: { open: boolean } = $props();

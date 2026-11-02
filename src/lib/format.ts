@@ -1,4 +1,4 @@
-import { locale, t } from "$lib/i18n/index.svelte";
+import { locale, t } from "#lib/i18n/index.svelte.ts";
 
 export function playTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);

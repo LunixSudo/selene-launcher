@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { api, type NameChange, type NameStatus } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { locale, t } from "$lib/i18n/index.svelte";
-  import { activeAccount, savePlayerName, session } from "$lib/state/accounts.svelte";
+  import { api, type NameChange, type NameStatus } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { locale, t } from "#lib/i18n/index.svelte.ts";
+  import { activeAccount, savePlayerName, session } from "#lib/state/accounts.svelte.ts";
   import Dialog from "./Dialog.svelte";
 
   const CHECK_DELAY_MS = 400;

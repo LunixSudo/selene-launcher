@@ -1,4 +1,4 @@
-import { locale } from "$lib/i18n/index.svelte";
+import { locale } from "#lib/i18n/index.svelte.ts";
 
 // Modrinth sends tag slugs and CurseForge English names; neither is translated.
 const RUSSIAN: Record<string, string> = {

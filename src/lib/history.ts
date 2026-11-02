@@ -1,15 +1,16 @@
-import type { AfterNavigate } from "@sveltejs/kit";
+import type { AfterNavigate } from "$app/navigation";
 
 /** How many steps back the window's history still stays inside the launcher. */
 let depth = 0;
 
 /** Call from the root layout's `afterNavigate`. */
-export function trackNavigation({ type, from, to, delta }: AfterNavigate) {
-  if (type === "enter" || !from || !to) {
+export function trackNavigation(navigation: AfterNavigate) {
+  const { from, to } = navigation;
+  if (navigation.type === "enter" || !from || !to) {
     return;
   }
-  if (type === "popstate") {
-    depth = Math.max(0, depth + (delta ?? -1));
+  if (navigation.type === "popstate") {
+    depth = Math.max(0, depth + navigation.delta);
   } else if (from.url.href !== to.url.href) {
     depth += 1;
   }

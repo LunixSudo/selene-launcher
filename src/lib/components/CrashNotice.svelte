@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { CrashReport } from "$lib/api";
-  import { t } from "$lib/i18n/index.svelte";
+  import type { CrashReport } from "#lib/api.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
 
   let {
     crash,

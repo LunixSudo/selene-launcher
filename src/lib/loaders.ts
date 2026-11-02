@@ -1,5 +1,5 @@
-import type { Loader, LoaderRelease } from "$lib/api";
-import { t } from "$lib/i18n/index.svelte";
+import type { Loader, LoaderRelease } from "#lib/api.ts";
+import { t } from "#lib/i18n/index.svelte.ts";
 
 export const LOADERS: Loader[] = ["fabric", "neoforge", "forge", "quilt"];
 

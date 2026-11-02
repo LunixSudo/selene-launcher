@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends string">
-  import { previewImage, SHADER_BACKDROPS, type ShaderBackdrop } from "$lib/backdrops";
-  import { t } from "$lib/i18n/index.svelte";
-  import { settings } from "$lib/state/settings.svelte";
+  import { previewImage, SHADER_BACKDROPS, type ShaderBackdrop } from "#lib/backdrops.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { settings } from "#lib/state/settings.svelte.ts";
 
   let {
     value = $bindable(),

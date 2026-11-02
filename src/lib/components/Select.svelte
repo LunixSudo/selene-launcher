@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends string">
   import { tick } from "svelte";
-  import { scrollFade } from "$lib/scroll-fade";
+  import { scrollFade } from "#lib/scroll-fade.ts";
 
   type Props = { options: { value: T; label: string }[]; id?: string; placeholder?: string } & (
     | { multiple?: false; value: T }

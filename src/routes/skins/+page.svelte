@@ -8,17 +8,17 @@
     type SavedSkin,
     type SkinProfile,
     type SkinVariant,
-  } from "$lib/api";
-  import BackLink from "$lib/components/BackLink.svelte";
-  import PlayerHead from "$lib/components/PlayerHead.svelte";
-  import Segmented from "$lib/components/Segmented.svelte";
-  import SkinViewer from "$lib/components/SkinViewer.svelte";
-  import TextureCrop from "$lib/components/TextureCrop.svelte";
-  import { t } from "$lib/i18n/index.svelte";
-  import { scrollFade } from "$lib/scroll-fade";
-  import { activeAccount, loadAccounts } from "$lib/state/accounts.svelte";
-  import { SKIN_ANIMATIONS, settings } from "$lib/state/settings.svelte";
-  import { tooltip } from "$lib/tooltip";
+  } from "#lib/api.ts";
+  import BackLink from "#lib/components/BackLink.svelte";
+  import PlayerHead from "#lib/components/PlayerHead.svelte";
+  import Segmented from "#lib/components/Segmented.svelte";
+  import SkinViewer from "#lib/components/SkinViewer.svelte";
+  import TextureCrop from "#lib/components/TextureCrop.svelte";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
+  import { activeAccount, loadAccounts } from "#lib/state/accounts.svelte.ts";
+  import { SKIN_ANIMATIONS, settings } from "#lib/state/settings.svelte.ts";
+  import { tooltip } from "#lib/tooltip.ts";
 
   let profile = $state<SkinProfile | null>(null);
   let profileError = $state<CommandError | null>(null);

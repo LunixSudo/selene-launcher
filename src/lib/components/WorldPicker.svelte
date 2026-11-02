@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { api, type World } from "$lib/api";
-  import { t } from "$lib/i18n/index.svelte";
+  import { api, type World } from "#lib/api.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
   import Select from "./Select.svelte";
 
   let { instanceId, value = $bindable() }: { instanceId: string; value: string | null } = $props();

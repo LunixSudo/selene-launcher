@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { api, type Server } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { t } from "$lib/i18n/index.svelte";
-  import { UI_ICONS } from "$lib/icons";
-  import { library, play } from "$lib/state/instances.svelte";
-  import { tooltip } from "$lib/tooltip";
+  import { api, type Server } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { UI_ICONS } from "#lib/icons.ts";
+  import { library, play } from "#lib/state/instances.svelte.ts";
+  import { tooltip } from "#lib/tooltip.ts";
   import Dialog from "./Dialog.svelte";
 
   let { instanceId }: { instanceId: string } = $props();

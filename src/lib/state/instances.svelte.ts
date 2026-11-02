@@ -1,6 +1,5 @@
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { goto } from "$app/navigation";
 import {
   api,
   type CommandError,
@@ -17,10 +16,11 @@ import {
   type LoaderVersion,
   type ManualDownload,
   type Source,
-} from "$lib/api";
-import { t } from "$lib/i18n/index.svelte";
-import { LOADER_NAMES } from "$lib/loaders";
-import { notify } from "$lib/notify";
+} from "#lib/api.ts";
+import { t } from "#lib/i18n/index.svelte.ts";
+import { LOADER_NAMES } from "#lib/loaders.ts";
+import { notify } from "#lib/notify.ts";
+import { goto } from "$app/navigation";
 import { settings } from "./settings.svelte";
 
 export type LaunchState =

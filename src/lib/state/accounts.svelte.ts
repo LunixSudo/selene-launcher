@@ -1,4 +1,4 @@
-import { type Account, api, type CommandError, isCommandError } from "$lib/api";
+import { type Account, api, type CommandError, isCommandError } from "#lib/api.ts";
 import { prepareAll } from "./instances.svelte";
 
 export const session = $state({

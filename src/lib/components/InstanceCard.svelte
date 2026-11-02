@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { Instance } from "$lib/api";
-  import { coverOf, iconOf } from "$lib/appearance";
-  import { playTime, relativeTime } from "$lib/format";
-  import { t } from "$lib/i18n/index.svelte";
-  import { UI_ICONS } from "$lib/icons";
-  import { LOADER_NAMES } from "$lib/loaders";
-  import { activity, type LaunchState, library, play, stop } from "$lib/state/instances.svelte";
+  import type { Instance } from "#lib/api.ts";
+  import { coverOf, iconOf } from "#lib/appearance.ts";
+  import { playTime, relativeTime } from "#lib/format.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { UI_ICONS } from "#lib/icons.ts";
+  import { LOADER_NAMES } from "#lib/loaders.ts";
+  import { activity, type LaunchState, library, play, stop } from "#lib/state/instances.svelte.ts";
 
   let {
     instance,

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { api, type Instance } from "$lib/api";
-  import { COVERS, coverOf, DEFAULT_ICON, ICONS, iconOf } from "$lib/appearance";
-  import { describeError } from "$lib/errors";
-  import { t } from "$lib/i18n/index.svelte";
-  import { shortcutIcon } from "$lib/shortcut-icon";
-  import { library, replaceInstance } from "$lib/state/instances.svelte";
+  import { api, type Instance } from "#lib/api.ts";
+  import { COVERS, coverOf, DEFAULT_ICON, ICONS, iconOf } from "#lib/appearance.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { shortcutIcon } from "#lib/shortcut-icon.ts";
+  import { library, replaceInstance } from "#lib/state/instances.svelte.ts";
   import Dialog from "./Dialog.svelte";
 
   let { instance, open = $bindable() }: { instance: Instance; open: boolean } = $props();

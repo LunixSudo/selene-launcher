@@ -10,10 +10,10 @@
     type InstallPreview,
     type ManualDownload,
     type Source,
-  } from "$lib/api";
-  import { categoryName } from "$lib/categories";
-  import { describeError } from "$lib/errors";
-  import { locale, t } from "$lib/i18n/index.svelte";
+  } from "#lib/api.ts";
+  import { categoryName } from "#lib/categories.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { locale, t } from "#lib/i18n/index.svelte.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import InstallPreviewDialog from "./InstallPreviewDialog.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";

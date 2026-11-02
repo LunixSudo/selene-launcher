@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { describeError } from "$lib/errors";
-  import { t } from "$lib/i18n/index.svelte";
+  import { describeError } from "#lib/errors.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
   import Dialog from "./Dialog.svelte";
 
   let {

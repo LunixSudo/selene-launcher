@@ -1,8 +1,8 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { api, type LogLine } from "$lib/api";
-  import { t } from "$lib/i18n/index.svelte";
-  import { onGameLog } from "$lib/state/instances.svelte";
+  import { api, type LogLine } from "#lib/api.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { onGameLog } from "#lib/state/instances.svelte.ts";
 
   let { instanceId }: { instanceId: string } = $props();
 

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import PlayerHead from "$lib/components/PlayerHead.svelte";
-  import PlayerNameDialog from "$lib/components/PlayerNameDialog.svelte";
-  import { t } from "$lib/i18n/index.svelte";
+  import PlayerHead from "#lib/components/PlayerHead.svelte";
+  import PlayerNameDialog from "#lib/components/PlayerNameDialog.svelte";
+  import { t } from "#lib/i18n/index.svelte.ts";
   import {
     activeAccount,
     cancelSignIn,
@@ -10,7 +10,7 @@
     signIn,
     signOut,
     switchAccount,
-  } from "$lib/state/accounts.svelte";
+  } from "#lib/state/accounts.svelte.ts";
 
   let open = $state(false);
   let root: HTMLDivElement;

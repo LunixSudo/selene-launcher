@@ -1,23 +1,23 @@
 <script lang="ts">
+  import { api, type ContentKind } from "#lib/api.ts";
+  import ContentCatalog from "#lib/components/ContentCatalog.svelte";
+  import ContentList from "#lib/components/ContentList.svelte";
+  import CrashNotice from "#lib/components/CrashNotice.svelte";
+  import GameConsole from "#lib/components/GameConsole.svelte";
+  import InstanceSettings from "#lib/components/InstanceSettings.svelte";
+  import ScreenshotGallery from "#lib/components/ScreenshotGallery.svelte";
+  import Segmented from "#lib/components/Segmented.svelte";
+  import ServerList from "#lib/components/ServerList.svelte";
+  import ShareDialog from "#lib/components/ShareDialog.svelte";
+  import UpdateNotice from "#lib/components/UpdateNotice.svelte";
+  import WorldList from "#lib/components/WorldList.svelte";
+  import WorldPicker from "#lib/components/WorldPicker.svelte";
+  import { playTime } from "#lib/format.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { LOADER_NAMES } from "#lib/loaders.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
+  import { activity, library, loadInstances, play, stop } from "#lib/state/instances.svelte.ts";
   import { page } from "$app/state";
-  import { api, type ContentKind } from "$lib/api";
-  import ContentCatalog from "$lib/components/ContentCatalog.svelte";
-  import ContentList from "$lib/components/ContentList.svelte";
-  import CrashNotice from "$lib/components/CrashNotice.svelte";
-  import GameConsole from "$lib/components/GameConsole.svelte";
-  import InstanceSettings from "$lib/components/InstanceSettings.svelte";
-  import ScreenshotGallery from "$lib/components/ScreenshotGallery.svelte";
-  import Segmented from "$lib/components/Segmented.svelte";
-  import ServerList from "$lib/components/ServerList.svelte";
-  import ShareDialog from "$lib/components/ShareDialog.svelte";
-  import UpdateNotice from "$lib/components/UpdateNotice.svelte";
-  import WorldList from "$lib/components/WorldList.svelte";
-  import WorldPicker from "$lib/components/WorldPicker.svelte";
-  import { playTime } from "$lib/format";
-  import { t } from "$lib/i18n/index.svelte";
-  import { LOADER_NAMES } from "$lib/loaders";
-  import { scrollFade } from "$lib/scroll-fade";
-  import { activity, library, loadInstances, play, stop } from "$lib/state/instances.svelte";
 
   type Tab = "content" | "catalog" | "worlds" | "servers" | "screenshots" | "settings" | "logs";
 

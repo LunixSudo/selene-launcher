@@ -1,12 +1,12 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
-  import { api, type World } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { relativeTime } from "$lib/format";
-  import { t } from "$lib/i18n/index.svelte";
-  import { UI_ICONS } from "$lib/icons";
-  import { library } from "$lib/state/instances.svelte";
-  import { tooltip } from "$lib/tooltip";
+  import { api, type World } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { relativeTime } from "#lib/format.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { UI_ICONS } from "#lib/icons.ts";
+  import { library } from "#lib/state/instances.svelte.ts";
+  import { tooltip } from "#lib/tooltip.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import Dialog from "./Dialog.svelte";
 

@@ -1,5 +1,5 @@
-import { api, type LauncherUpdate } from "$lib/api";
-import { describeError } from "$lib/errors";
+import { api, type LauncherUpdate } from "#lib/api.ts";
+import { describeError } from "#lib/errors.ts";
 
 export const launcherUpdate = $state({
   available: null as LauncherUpdate | null,

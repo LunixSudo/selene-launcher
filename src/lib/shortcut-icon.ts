@@ -1,5 +1,5 @@
-import type { Instance } from "$lib/api";
-import { coverOf, iconOf } from "$lib/appearance";
+import type { Instance } from "#lib/api.ts";
+import { coverOf, iconOf } from "#lib/appearance.ts";
 
 /** Sizes Explorer shows, so it never has to scale an image down itself. */
 const SIZES = [16, 20, 24, 32, 40, 48, 64, 96, 256];

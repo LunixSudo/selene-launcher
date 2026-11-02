@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { SHADER_BACKDROPS, type ShaderBackdrop, startShader } from "$lib/backdrops";
-  import type { Backdrop } from "$lib/state/settings.svelte";
+  import { SHADER_BACKDROPS, type ShaderBackdrop, startShader } from "#lib/backdrops.ts";
+  import type { Backdrop } from "#lib/state/settings.svelte.ts";
 
   const STAR_COUNT = 170;
   /** Shooting stars come every few seconds, sometimes two or three together. */

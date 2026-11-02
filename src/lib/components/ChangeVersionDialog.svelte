@@ -6,12 +6,12 @@
     type LoaderRelease,
     type LoaderVersion,
     type VersionChange,
-  } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { t } from "$lib/i18n/index.svelte";
-  import { hasHiddenBetas, LOADER_NAMES, preferredRelease, releaseOptions } from "$lib/loaders";
-  import { scrollFade } from "$lib/scroll-fade";
-  import { isPreparing, prepare, replaceInstance } from "$lib/state/instances.svelte";
+  } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { hasHiddenBetas, LOADER_NAMES, preferredRelease, releaseOptions } from "#lib/loaders.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
+  import { isPreparing, prepare, replaceInstance } from "#lib/state/instances.svelte.ts";
   import Dialog from "./Dialog.svelte";
   import Select from "./Select.svelte";
 

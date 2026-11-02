@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { openModal } from "$lib/dialog";
-  import { t } from "$lib/i18n/index.svelte";
-  import { BEAUTIFUL, FAST, settings } from "$lib/state/settings.svelte";
+  import { openModal } from "#lib/dialog.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { BEAUTIFUL, FAST, settings } from "#lib/state/settings.svelte.ts";
 
   let { open }: { open: boolean } = $props();
 

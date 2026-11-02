@@ -1,5 +1,5 @@
 import { Effect, getCurrentWindow } from "@tauri-apps/api/window";
-import { SHADER_BACKDROPS, type ShaderBackdrop } from "$lib/backdrops";
+import { SHADER_BACKDROPS, type ShaderBackdrop } from "#lib/backdrops.ts";
 
 export type Theme = "system" | "light" | "dark";
 export type Style = "glass" | "mica" | "solid";

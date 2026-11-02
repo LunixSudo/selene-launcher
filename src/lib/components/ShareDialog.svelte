@@ -1,8 +1,8 @@
 <script lang="ts">
   import { save } from "@tauri-apps/plugin-dialog";
-  import { api, type Instance, type PackFormat } from "$lib/api";
-  import { describeError } from "$lib/errors";
-  import { type MessageKey, t } from "$lib/i18n/index.svelte";
+  import { api, type Instance, type PackFormat } from "#lib/api.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { type MessageKey, t } from "#lib/i18n/index.svelte.ts";
   import Segmented from "./Segmented.svelte";
 
   let { instance, open = $bindable() }: { instance: Instance; open: boolean } = $props();

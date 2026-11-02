@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { InstallPreview } from "$lib/api";
-  import { t } from "$lib/i18n/index.svelte";
-  import { scrollFade } from "$lib/scroll-fade";
+  import type { InstallPreview } from "#lib/api.ts";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
   import Dialog from "./Dialog.svelte";
 
   let {

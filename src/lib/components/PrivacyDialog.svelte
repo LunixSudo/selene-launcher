@@ -1,11 +1,11 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import { api } from "$lib/api";
-  import { openModal } from "$lib/dialog";
-  import { externalLinks } from "$lib/external-links";
-  import { locale, t } from "$lib/i18n/index.svelte";
-  import { renderMarkup } from "$lib/markup";
-  import { scrollFade } from "$lib/scroll-fade";
+  import { api } from "#lib/api.ts";
+  import { openModal } from "#lib/dialog.ts";
+  import { externalLinks } from "#lib/external-links.ts";
+  import { locale, t } from "#lib/i18n/index.svelte.ts";
+  import { renderMarkup } from "#lib/markup.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
   import privacyEn from "../../../PRIVACY.md?raw";
   import privacyRu from "../../../PRIVACY.ru.md?raw";
 

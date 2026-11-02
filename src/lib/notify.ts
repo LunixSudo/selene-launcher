@@ -3,7 +3,7 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
-import { settings } from "$lib/state/settings.svelte";
+import { settings } from "#lib/state/settings.svelte.ts";
 
 /** Shows a Windows notification, but only while the launcher is in the background. */
 export async function notify(title: string, body: string) {

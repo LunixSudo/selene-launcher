@@ -1,13 +1,17 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
-  import { api, type Instance, type MemoryInfo } from "$lib/api";
-  import { coverOf } from "$lib/appearance";
-  import { describeError } from "$lib/errors";
-  import { locale, t } from "$lib/i18n/index.svelte";
-  import { hasFlag, JAVA_FLAGS, type JavaFlag, toggleFlag } from "$lib/java-args";
-  import { LOADER_NAMES } from "$lib/loaders";
-  import { replaceInstance } from "$lib/state/instances.svelte";
-  import { INSTANCE_BACKDROPS, type InstanceBackdrop, settings } from "$lib/state/settings.svelte";
+  import { api, type Instance, type MemoryInfo } from "#lib/api.ts";
+  import { coverOf } from "#lib/appearance.ts";
+  import { describeError } from "#lib/errors.ts";
+  import { locale, t } from "#lib/i18n/index.svelte.ts";
+  import { hasFlag, JAVA_FLAGS, type JavaFlag, toggleFlag } from "#lib/java-args.ts";
+  import { LOADER_NAMES } from "#lib/loaders.ts";
+  import { replaceInstance } from "#lib/state/instances.svelte.ts";
+  import {
+    INSTANCE_BACKDROPS,
+    type InstanceBackdrop,
+    settings,
+  } from "#lib/state/settings.svelte.ts";
   import BackdropPicker from "./BackdropPicker.svelte";
   import ChangeVersionDialog from "./ChangeVersionDialog.svelte";
 

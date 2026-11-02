@@ -1,10 +1,10 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
-  import logo from "$lib/assets/logo.png";
-  import AccountMenu from "$lib/components/AccountMenu.svelte";
-  import { t } from "$lib/i18n/index.svelte";
-  import { installUpdate, launcherUpdate } from "$lib/state/update.svelte";
-  import { tooltip } from "$lib/tooltip";
+  import logo from "#lib/assets/logo.png";
+  import AccountMenu from "#lib/components/AccountMenu.svelte";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { installUpdate, launcherUpdate } from "#lib/state/update.svelte.ts";
+  import { tooltip } from "#lib/tooltip.ts";
 
   const appWindow = getCurrentWindow();
 </script>

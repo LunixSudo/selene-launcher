@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/i18n/index.svelte";
-  import { scrollFade } from "$lib/scroll-fade";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { scrollFade } from "#lib/scroll-fade.ts";
 
   let text = $state<string | null>(null);
   let failed = $state(false);

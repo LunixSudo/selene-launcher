@@ -111,6 +111,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Moved the interface to SvelteKit 3, which also clears its security warnings.
 - The launcher keeps a small log in `logs/launcher.log` in its data folder: which sources
   answered, which failed and why. It holds no tokens or keys.
 

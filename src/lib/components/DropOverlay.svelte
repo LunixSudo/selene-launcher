@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getCurrentWebview } from "@tauri-apps/api/webview";
-  import { t } from "$lib/i18n/index.svelte";
-  import { importPack } from "$lib/state/instances.svelte";
+  import { t } from "#lib/i18n/index.svelte.ts";
+  import { importPack } from "#lib/state/instances.svelte.ts";
 
   let dragging = $state(false);
 
