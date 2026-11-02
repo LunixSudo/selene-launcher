@@ -128,7 +128,8 @@ All notable changes to this project are documented here. The format follows
 - The modpack catalog filters by game version, and catalogs load the next page before the
   end of the list.
 - An "Add performance mods" button in the mods tab: Sodium or Embeddium, Lithium, FerriteCore,
-  EntityCulling and ImmediatelyFast, or EntityCulling and FoamFix up to 1.12.2, each only where
+  EntityCulling and ImmediatelyFast, or PolyPatcher, EntityCulling and FoamFix up to
+  1.12.2, each only where
   it has a build. They are known to work together, Fabric API comes along where needed, and no
   new renderer is added next to OptiFine. A setting, off by default, adds them to every new
   instance.

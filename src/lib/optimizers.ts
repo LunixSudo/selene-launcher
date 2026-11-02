@@ -8,6 +8,8 @@ const FERRITE_CORE = "uXXizFIs";
 const ENTITY_CULLING = "NNAgCjsB";
 const IMMEDIATELY_FAST = "5ZwdcRci";
 const FOAM_FIX = "jupr7Bf5";
+/** Fixes and speed-ups for 1.8.9 and 1.12.2, which have no Sodium of their own. */
+const POLY_PATCHER = "YknNc5nN";
 
 function parse(gameVersion: string): [number, number] {
   // Versions since 2026 are numbered by year, like 26.1.
@@ -37,7 +39,7 @@ export function optimizers(
   const [major, minor] = parse(gameVersion);
   const legacy = major === 1 && minor <= 12;
   const ids = legacy
-    ? [ENTITY_CULLING, FOAM_FIX]
+    ? [POLY_PATCHER, ENTITY_CULLING, FOAM_FIX]
     : [
         ...(hasOptiFine ? [] : [renderer(loader, gameVersion)]),
         FERRITE_CORE,
