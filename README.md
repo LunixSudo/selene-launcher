@@ -59,6 +59,9 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
 
 ## Download
 
+Official builds come only from this repository. Copies from other sites are not ours and may
+be changed.
+
 There is no release yet. Until the first one goes to
 [GitHub Releases](https://github.com/LunixSudo/selene-launcher/releases), test builds are
 attached to runs of the [Build](https://github.com/LunixSudo/selene-launcher/actions/workflows/build.yml)

@@ -12,6 +12,7 @@
   import BackdropPicker from "#lib/components/BackdropPicker.svelte";
   import BackLink from "#lib/components/BackLink.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+  import ReportDialog from "#lib/components/ReportDialog.svelte";
   import Segmented from "#lib/components/Segmented.svelte";
   import Select from "#lib/components/Select.svelte";
   import StylePresets from "#lib/components/StylePresets.svelte";
@@ -41,6 +42,7 @@
   let saveError = $state<string | null>(null);
   let canUninstall = $state(false);
   let confirmingUninstall = $state(false);
+  let reporting = $state(false);
   let section = $state<Section>(lastSection);
 
   $effect(() => {
@@ -456,6 +458,20 @@
             {t("instances.openFolder")}
           </button>
         </div>
+        <div class="row">
+          <div>
+            <h3>{t("settings.problem")}</h3>
+            <p>{t("settings.problemHint")}</p>
+          </div>
+          <div class="buttons">
+            <button type="button" class="button" onclick={() => api.openLogsFolder()}>
+              {t("settings.openLogs")}
+            </button>
+            <button type="button" class="button" onclick={() => (reporting = true)}>
+              {t("settings.report")}
+            </button>
+          </div>
+        </div>
       </section>
     {/if}
 
@@ -610,6 +626,8 @@
     {/if}
   </div>
 </section>
+
+<ReportDialog bind:open={reporting} />
 
 <ConfirmDialog
   bind:open={confirmingUninstall}
@@ -900,6 +918,13 @@
 
   .switch-row {
     cursor: pointer;
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
   }
 
   .button {

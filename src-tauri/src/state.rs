@@ -300,7 +300,7 @@ impl Launcher {
     }
 }
 
-fn total_memory_mb() -> u64 {
+pub(crate) fn total_memory_mb() -> u64 {
     let mut system = sysinfo::System::new();
     system.refresh_memory();
     system.total_memory() / 1024 / 1024

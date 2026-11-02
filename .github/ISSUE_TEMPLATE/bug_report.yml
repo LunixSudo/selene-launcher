@@ -17,6 +17,11 @@ body:
     validations:
       required: true
   - type: input
+    id: system
+    attributes:
+      label: System
+      placeholder: Windows 11 (26100), x86_64
+  - type: input
     id: instance
     attributes:
       label: Game version and loader
@@ -25,4 +30,7 @@ body:
     id: log
     attributes:
       label: Launcher log
-      description: Attach `logs/launcher.log` from the launcher's data folder. It holds no passwords or tokens.
+      description: >-
+        Optional, but it helps a lot. "Report a problem" in the launcher settings fills this in
+        for you; otherwise attach `logs/launcher.log` from the launcher folder. It holds no
+        passwords or tokens.

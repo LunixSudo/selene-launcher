@@ -298,6 +298,25 @@ export const ptBR: Messages = {
     gameLanguageSystem: "Igual ao sistema",
     dataFolder: "Pasta do launcher",
     dataFolderHint: "Aqui ficam as instâncias, as versões do jogo e o Java.",
+    problem: "Relatar um problema",
+    problemHint:
+      "Um relatório de erro no GitHub. O log do launcher ajuda a achar a causa mais rápido.",
+    openLogs: "Pasta do log",
+    report: "Relatar",
+  },
+  report: {
+    title: "Relatar um problema",
+    what: "O que aconteceu",
+    whatHint: "O que você fez, o que esperava e o que aconteceu no lugar",
+    instance: "Instância",
+    noInstance: "Não é sobre uma instância",
+    withLog: "Anexar o log do launcher",
+    hint: "O GitHub abrirá com o relatório preenchido, basta clicar em Submit. É preciso uma conta no GitHub. O log não tem senhas nem tokens, e seu nome de usuário do Windows fica oculto.",
+    send: "Enviar",
+    sent: "O relatório está aberto no navegador. Confira e clique em Submit.",
+    sentWithLog:
+      'O relatório está aberto no navegador, ao lado de uma pasta com selene-report.log. Arraste o arquivo para o campo "Launcher log" e clique em Submit.',
+    done: "Pronto",
   },
   content: {
     optimize: "Adicionar mods de desempenho",
@@ -434,6 +453,7 @@ export const ptBR: Messages = {
   crash: {
     title: "O jogo fechou com um erro",
     showLogs: "Abrir registro",
+    report: "Relatar problema",
     blamed: "O mod culpado: {mods}",
     unfit:
       "Há mods ativados feitos para outra versão do jogo: {mods}. Desative-os ou instale versões compatíveis na aba Complementos.",

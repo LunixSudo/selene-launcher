@@ -133,6 +133,13 @@ All notable changes to this project are documented here. The format follows
   it has a build. They are known to work together, Fabric API comes along where needed, and no
   new renderer is added next to OptiFine. A setting, off by default, adds them to every new
   instance.
+- "Report a problem" in the settings: describe what went wrong and GitHub opens with a filled-in
+  bug report, the launcher version and system, and the end of the launcher log. The whole log
+  is saved with the Windows user name hidden, its folder opens, and the file only needs to be
+  dropped into the report. A button opens the log folder too.
+- The launcher log records much more: the system at startup, game starts and exits, every
+  error shown, interface errors, crashes of the launcher itself, failed download sources, and
+  the game's last lines when it crashes.
 - An "Install OptiFine" button for Forge instances opens the official OptiFine site in a
   launcher window, and the jar downloaded there goes straight into the instance's mods.
   The button shows only for game versions OptiFine has a build for, and warns when

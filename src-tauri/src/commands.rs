@@ -10,6 +10,7 @@ pub mod privacy;
 pub mod saves;
 pub mod shortcut;
 pub mod skins;
+pub mod support;
 pub mod update;
 
 use std::collections::HashMap;
@@ -59,6 +60,8 @@ const CLOSE_LOG_LINES: usize = 30;
 const MENU_CLOSE_TIMEOUT: Duration = Duration::from_secs(3);
 const UNFIT_LOOKUP_TIMEOUT: Duration = Duration::from_secs(5);
 const LOG_DRAIN_TIMEOUT: Duration = Duration::from_secs(3);
+/// How much of the game's output goes into the launcher log when it crashes.
+const CRASH_LOG_LINES: usize = 40;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -522,6 +525,21 @@ fn game_java(instance: &Instance, installed: &Installed, fast_gpu: bool) -> Comm
     }
 }
 
+fn log_start(instance: &Instance, options: &LaunchOptions) {
+    let loader = instance
+        .loader
+        .as_ref()
+        .map(|loader| format!(" {:?} {}", loader.loader, loader.version))
+        .unwrap_or_default();
+    log::info!(
+        "starting {} ({}{loader}), {} MB, Java {}",
+        instance.id,
+        instance.version,
+        options.max_memory_mb,
+        options.java.display()
+    );
+}
+
 async fn run_game(
     app: &AppHandle,
     launcher: &Launcher,
@@ -569,6 +587,7 @@ async fn run_game(
                 .collect()
         },
     };
+    log_start(&instance, &options);
     launch::extract_natives(&installed.version, &options)?;
     let language = launcher
         .config
@@ -765,8 +784,24 @@ async fn watch_game(
     launcher.stop_running(&instance_id);
     add_play_time(&launcher, &instance_id, started.elapsed().as_secs()).await;
 
-    let mut crash =
-        (!killed && code != Some(0)).then(|| crash::analyze(&launcher.log(&instance_id).lines));
+    log::info!(
+        "{instance_id} closed with code {code:?} after {} s{}",
+        started.elapsed().as_secs(),
+        if killed {
+            ", stopped from the launcher"
+        } else {
+            ""
+        }
+    );
+    let mut crash = (!killed && code != Some(0)).then(|| {
+        let lines = launcher.log(&instance_id).lines;
+        let tail = &lines[lines.len().saturating_sub(CRASH_LOG_LINES)..];
+        log::warn!(
+            "{instance_id} crashed, the game's last lines:\n{}",
+            tail.join("\n")
+        );
+        crash::analyze(&lines)
+    });
     if let Some(crash) = &mut crash
         && instance_has_mods(&launcher, &instance_id).await
     {

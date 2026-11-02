@@ -296,6 +296,25 @@ export const tr: Messages = {
     gameLanguageSystem: "Sistemle aynı",
     dataFolder: "Başlatıcı klasörü",
     dataFolderHint: "Profiller, oyun sürümleri ve Java burada durur.",
+    problem: "Sorun bildir",
+    problemHint:
+      "GitHub'da bir hata raporu. Başlatıcı günlüğü nedeni daha hızlı bulmaya yardım eder.",
+    openLogs: "Günlük klasörü",
+    report: "Bildir",
+  },
+  report: {
+    title: "Sorun bildir",
+    what: "Ne oldu",
+    whatHint: "Ne yaptınız, ne beklediniz ve bunun yerine ne oldu",
+    instance: "Kurulum",
+    noInstance: "Bir kurulumla ilgili değil",
+    withLog: "Başlatıcı günlüğünü ekle",
+    hint: "GitHub, doldurulmuş raporla açılır; yalnızca Submit'e basarsınız. GitHub hesabı gerekir. Günlükte şifre veya token yoktur, Windows kullanıcı adınız gizlenir.",
+    send: "Gönder",
+    sent: "Rapor tarayıcıda açıldı. Kontrol edip Submit'e basın.",
+    sentWithLog:
+      'Rapor tarayıcıda açıldı, yanında selene-report.log dosyasının olduğu klasör var. Dosyayı "Launcher log" alanına sürükleyip Submit\'e basın.',
+    done: "Tamam",
   },
   content: {
     optimize: "Performans modları ekle",
@@ -432,6 +451,7 @@ export const tr: Messages = {
   crash: {
     title: "Oyun bir hatayla kapandı",
     showLogs: "Günlüğü aç",
+    report: "Sorunu bildir",
     blamed: "Sorunlu mod: {mods}",
     unfit:
       "Başka bir oyun sürümü için yapılmış modlar açık: {mods}. Kapatın veya Eklentiler sekmesinden uygun sürümleri kurun.",

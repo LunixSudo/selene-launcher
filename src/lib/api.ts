@@ -391,6 +391,10 @@ export const api = {
   duplicateInstance: (id: string, name: string) =>
     invoke<Instance>("duplicate_instance", { id, name }),
   openDataFolder: () => invoke<void>("open_data_folder"),
+  openLogsFolder: () => invoke<void>("open_logs_folder"),
+  logUiError: (message: string) => invoke<void>("log_ui_error", { message }),
+  reportProblem: (description: string, game: string, withLog: boolean) =>
+    invoke<void>("report_problem", { description, game, withLog }),
   setLaunchOptions: (
     instanceId: string,
     autoJavaArgs: boolean,

@@ -293,6 +293,24 @@ export const en: Messages = {
     gameLanguageSystem: "Same as the system",
     dataFolder: "Launcher folder",
     dataFolderHint: "Instances, game versions and Java live here.",
+    problem: "Report a problem",
+    problemHint: "A bug report on GitHub. The launcher log helps find the cause sooner.",
+    openLogs: "Log folder",
+    report: "Report",
+  },
+  report: {
+    title: "Report a problem",
+    what: "What happened",
+    whatHint: "What you did, what you expected and what you got instead",
+    instance: "Instance",
+    noInstance: "Not about an instance",
+    withLog: "Attach the launcher log",
+    hint: "GitHub opens with the report filled in, you only press Submit. You need a GitHub account. The log holds no passwords or tokens, and your Windows user name is hidden.",
+    send: "Send",
+    sent: "The report is open in your browser. Check it and press Submit.",
+    sentWithLog:
+      'The report is open in your browser, next to a folder with selene-report.log. Drop the file into the "Launcher log" box and press Submit.',
+    done: "Done",
   },
   content: {
     optimize: "Add performance mods",
@@ -428,6 +446,7 @@ export const en: Messages = {
   crash: {
     title: "The game closed with an error",
     showLogs: "Open logs",
+    report: "Report a problem",
     blamed: "The mod at fault: {mods}",
     unfit:
       "Mods made for another game version are turned on: {mods}. Turn them off or install fitting builds on the Add-ons tab.",

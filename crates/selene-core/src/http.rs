@@ -269,7 +269,14 @@ where
                             return response;
                         }
                     }
-                    _ => mark_down(&url),
+                    Ok(answer) => {
+                        log::warn!("{} answered {}", host_of(&url), answer.status());
+                        mark_down(&url);
+                    }
+                    Err(err) => {
+                        log::warn!("{} did not answer: {}", host_of(&url), failure(err));
+                        mark_down(&url);
+                    }
                 }
                 last = Some(response);
             }
@@ -281,6 +288,16 @@ where
         }
     }
     last.expect("at least one source is asked")
+}
+
+fn failure(err: &reqwest::Error) -> &'static str {
+    if err.is_timeout() {
+        "timed out"
+    } else if err.is_connect() {
+        "could not connect"
+    } else {
+        "the request failed"
+    }
 }
 
 fn host_of(url: &str) -> &str {

@@ -5,8 +5,14 @@
   let {
     crash,
     onlogs,
+    onreport,
     ondismiss,
-  }: { crash: CrashReport; onlogs: () => void; ondismiss: () => void } = $props();
+  }: {
+    crash: CrashReport;
+    onlogs: () => void;
+    onreport: () => void;
+    ondismiss: () => void;
+  } = $props();
 </script>
 
 <div class="crash" role="alert">
@@ -25,6 +31,7 @@
   </div>
   <div class="actions">
     <button type="button" onclick={onlogs}>{t("crash.showLogs")}</button>
+    <button type="button" onclick={onreport}>{t("crash.report")}</button>
     <button type="button" class="ghost" onclick={ondismiss}>{t("account.dismiss")}</button>
   </div>
 </div>

@@ -5,6 +5,7 @@
   import CrashNotice from "#lib/components/CrashNotice.svelte";
   import GameConsole from "#lib/components/GameConsole.svelte";
   import InstanceSettings from "#lib/components/InstanceSettings.svelte";
+  import ReportDialog from "#lib/components/ReportDialog.svelte";
   import ScreenshotGallery from "#lib/components/ScreenshotGallery.svelte";
   import Segmented from "#lib/components/Segmented.svelte";
   import ServerList from "#lib/components/ServerList.svelte";
@@ -26,6 +27,7 @@
   let chosenKind = $state<ContentKind>("mod");
   let world = $state<string | null>(null);
   let sharing = $state(false);
+  let reporting = $state(false);
   let recheck = $state(0);
   let checking = $state(false);
 
@@ -120,9 +122,12 @@
       <CrashNotice
         {crash}
         onlogs={() => (chosenTab = "logs")}
+        onreport={() => (reporting = true)}
         ondismiss={() => delete library.crashes[instance.id]}
       />
     {/if}
+
+    <ReportDialog bind:open={reporting} instanceId={instance.id} />
 
     <UpdateNotice
       {instance}

@@ -281,6 +281,24 @@ export const zhCN: Messages = {
     gameLanguageSystem: "跟随系统",
     dataFolder: "启动器文件夹",
     dataFolderHint: "实例、游戏版本和 Java 都在这里。",
+    problem: "报告问题",
+    problemHint: "在 GitHub 上提交错误报告。启动器日志有助于更快找到原因。",
+    openLogs: "日志文件夹",
+    report: "报告",
+  },
+  report: {
+    title: "报告问题",
+    what: "发生了什么",
+    whatHint: "你做了什么、期望什么、实际发生了什么",
+    instance: "实例",
+    noInstance: "与实例无关",
+    withLog: "附上启动器日志",
+    hint: "将打开已填写好的 GitHub 报告，只需点击 Submit。需要 GitHub 账号。日志中没有密码或令牌，Windows 用户名已隐藏。",
+    send: "发送",
+    sent: "报告已在浏览器中打开。检查后点击 Submit。",
+    sentWithLog:
+      "报告已在浏览器中打开，旁边打开了包含 selene-report.log 的文件夹。将该文件拖入“Launcher log”框并点击 Submit。",
+    done: "完成",
   },
   content: {
     optimize: "添加优化模组",
@@ -414,6 +432,7 @@ export const zhCN: Messages = {
   crash: {
     title: "游戏因错误而关闭",
     showLogs: "打开日志",
+    report: "报告问题",
     blamed: "出问题的模组：{mods}",
     unfit: "已启用为其他游戏版本制作的模组：{mods}。请禁用它们，或在“附加内容”页安装合适的版本。",
     causes: {

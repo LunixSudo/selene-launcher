@@ -295,6 +295,24 @@ export const pl: Messages = {
     gameLanguageSystem: "Jak w systemie",
     dataFolder: "Folder launchera",
     dataFolderHint: "Tu są instancje, wersje gry i Java.",
+    problem: "Zgłoś problem",
+    problemHint: "Zgłoszenie błędu na GitHubie. Log launchera pomaga szybciej znaleźć przyczynę.",
+    openLogs: "Folder logu",
+    report: "Zgłoś",
+  },
+  report: {
+    title: "Zgłoś problem",
+    what: "Co się stało",
+    whatHint: "Co robiłeś, czego oczekiwałeś i co stało się zamiast tego",
+    instance: "Instancja",
+    noInstance: "Nie dotyczy instancji",
+    withLog: "Dołącz log launchera",
+    hint: "Otworzy się GitHub z wypełnionym zgłoszeniem, wystarczy kliknąć Submit. Potrzebne jest konto GitHub. Log nie zawiera haseł ani tokenów, a nazwa użytkownika Windows jest ukryta.",
+    send: "Wyślij",
+    sent: "Zgłoszenie jest otwarte w przeglądarce. Sprawdź je i kliknij Submit.",
+    sentWithLog:
+      "Zgłoszenie jest otwarte w przeglądarce, obok folder z plikiem selene-report.log. Przeciągnij go do pola „Launcher log” i kliknij Submit.",
+    done: "Gotowe",
   },
   content: {
     optimize: "Dodaj optymalizację",
@@ -431,6 +449,7 @@ export const pl: Messages = {
   crash: {
     title: "Gra zamknęła się z błędem",
     showLogs: "Otwórz dziennik",
+    report: "Zgłoś problem",
     blamed: "Winny mod: {mods}",
     unfit:
       "Włączone są mody dla innej wersji gry: {mods}. Wyłącz je lub zainstaluj pasujące wersje w karcie Dodatki.",

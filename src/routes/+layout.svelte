@@ -129,6 +129,19 @@
       void unlisten.then((stop) => stop());
     };
   });
+
+  function onerror(event: Event) {
+    if (event instanceof ErrorEvent) {
+      void api.logUiError(`${event.message} at ${event.filename}:${event.lineno}`).catch(() => {});
+    }
+  }
+
+  function onunhandledrejection(event: PromiseRejectionEvent) {
+    const reason = event.reason;
+    const text =
+      reason instanceof Error ? (reason.stack ?? reason.message) : JSON.stringify(reason);
+    void api.logUiError(`unhandled: ${text}`).catch(() => {});
+  }
 </script>
 
 <svelte:window
@@ -137,6 +150,8 @@
   {onpointerdown}
   onclick={blockNewWindow}
   onauxclick={blockNewWindow}
+  {onerror}
+  {onunhandledrejection}
 />
 
 <Backdrop kind={backdrop} cover={instance ? coverOf(instance.id, instance.cover) : null} />

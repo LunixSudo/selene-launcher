@@ -115,6 +115,9 @@ impl Serialize for CommandError {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
 
+        if !matches!(self, Self::Cancelled | Self::SignInCancelled) {
+            log::warn!("{}: {self}", self.kind());
+        }
         let mut state = serializer.serialize_struct("CommandError", 2)?;
         state.serialize_field("kind", self.kind())?;
         state.serialize_field("message", &self.to_string())?;

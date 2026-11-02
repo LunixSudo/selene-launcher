@@ -115,6 +115,9 @@ pub fn run() {
             commands::content::version_change::preview_version_change,
             commands::content::version_change::change_version,
             commands::content::version_change::change_loader_build,
+            commands::support::log_ui_error,
+            commands::support::open_logs_folder,
+            commands::support::report_problem,
             commands::optifine::optifine_versions,
             commands::optifine::open_optifine,
             commands::packs::import_pack,
@@ -147,6 +150,23 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         None => app.path().data_dir()?.join("SeleneLauncher"),
     };
     app.handle().plugin(diagnostics_log(&data_dir))?;
+    log::info!(
+        "Selene Launcher {} on {}, WebView2 {}, {} MB of memory{}",
+        app.package_info().version,
+        commands::support::system(),
+        tauri::webview_version().unwrap_or_default(),
+        state::total_memory_mb(),
+        if portable_data_dir().is_some() {
+            ", portable"
+        } else {
+            ""
+        }
+    );
+    let report_panic = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        log::error!("{info}");
+        report_panic(info);
+    }));
     // World icons and screenshots are shown straight from the instance folders.
     app.asset_protocol_scope()
         .allow_directory(&data_dir, true)?;
