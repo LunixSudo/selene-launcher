@@ -88,8 +88,8 @@ All notable changes to this project are documented here. The format follows
   version from Adoptium (or its TUNA mirror), then Azul Zulu, each checked against its
   vendor's SHA-256, and only then tries Mojang's Java on BMCLAPI.
 - Importing a modpack, installing from the catalog and updating add-ons show their progress
-  on the instance card and the instance page, file by file. These downloads go ahead of a game
-  download running in the background, which waits for them.
+  on the instance card and the instance page, file by file. Several instances download side by
+  side; only background work like fetching Java ahead of time waits for them.
 - Stop asks the game to close as its window would, so it saves the world, and only kills it
   when it has not quit after 20 seconds.
 - After a crash the launcher opens the instance, and the crash notice names the mod at fault
@@ -108,6 +108,25 @@ All notable changes to this project are documented here. The format follows
 - Machine translations of the interface into Ukrainian, German, Spanish, Brazilian Portuguese,
   Polish, Turkish and Simplified Chinese. The language follows the system on first start.
 - The Back link in the settings and on the skins page returns to the page you came from.
+- Settings are split into Appearance, Game, Downloads and General.
+- Fullscreen and a custom window size are launcher settings and exclude each other. The game
+  opens in a window while it loads and goes fullscreen once it has, so Windows no longer marks
+  it as not responding.
+- Instances pick tuned Java arguments by themselves; turned off, a searchable list of flags
+  explains each one.
+- A world without an icon shows a tile for its game mode.
+- Add-on lists follow their folder: files copied in through Explorer show up on their own.
+- When two copies of one mod are on, only the newest stays enabled, and enabling an older
+  copy switches the newer one off.
+- Installing a modpack asks which version to install. Packs already installed show as
+  installed in the catalog, with buttons to update one or add another copy.
+- Updating a modpack moves its add-ons to the new version and removes only those the new
+  version dropped; what the player added stays, and switched-off add-ons stay off. The update
+  notice offers the newer pack version, unchecked by default.
+- The modpack catalog filters by game version, and catalogs load the next page before the
+  end of the list.
+- Java the launcher installed is brought up to Mojang's newest build at startup, with a
+  switch in the settings. Java picked by hand is never changed.
 
 ### Changed
 
@@ -133,6 +152,8 @@ All notable changes to this project are documented here. The format follows
   turns animations off.
 - The game console stays light with thousands of lines.
 - New instances start the game in fullscreen.
+- Live backgrounds draw at most 30 frames a second, fewer when the PC falls behind, and every
+  endless animation stops while the launcher window is in the background.
 - "Prettier" now picks Mica and the northern lights.
 - Worlds are no longer started from the launcher, which was unreliable across game versions;
   joining a server straight from the launcher stays.
@@ -156,6 +177,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Two launcher windows can no longer open at once.
+- Forge progress no longer jumps from 100% back to 0% between steps.
+- A resumed download starts at the percent it stopped at.
+- A modpack installed while another downloads shows up in the list right away.
+- Deleting an instance while its modpack imports closes the dialog instead of reporting that
+  the instance is gone.
 - The worlds, servers and screenshots tabs no longer reread their folders on every download
   progress update.
 - The update notice checks again only when the game version or loader changes, not after every

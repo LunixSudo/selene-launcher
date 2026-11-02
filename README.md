@@ -32,15 +32,19 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
 - **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts drawn
   with the instance's own icon and cover, and
   moving an instance to another game version with its mods swapped for matching builds, and
-  picking a newer or older mod loader build. Common Java flags are a tick away.
+  picking a newer or older mod loader build. Tuned Java arguments are picked for you, or
+  chosen from a searchable list of flags, and Java the launcher installed stays up to date.
+  The game opens in a window while it loads and then goes fullscreen.
 - **Add-ons.** Mods, resource packs, shaders and data packs from Modrinth and CurseForge in
   one tab. Filter the catalog by several categories at once, remove a project right from its
   catalog entry, and get required dependencies added for you, even a mod that a resource pack
   needs. Updates stay on the release channel you
-  installed, two copies of one mod are flagged even when added by hand, and the launcher warns before you turn on something made for another version.
+  installed, only the newest of two copies of one mod stays on, lists follow files copied in
+  by hand, and the launcher warns before you turn on something made for another version.
   Data packs go into the world you pick.
-- **Modpacks.** Find and install modpacks from Modrinth and CurseForge in one click, import
-  and export `.mrpack` and CurseForge `.zip` files, or drop them on the window.
+- **Modpacks.** Find modpacks from Modrinth and CurseForge by game version, install the
+  version you pick, and update a pack later without losing the add-ons you put in yourself.
+  Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the window.
 - **Playing.** Worlds (renaming moves the folder too, and backups), servers and screenshots per instance,
   joining a server in one click, a game console, crash analysis, play time and a Discord status.
 - **Skins.** An animated 3D preview, a library of saved skins, saving the skin you wear now
