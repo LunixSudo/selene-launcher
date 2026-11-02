@@ -7,7 +7,6 @@ const LITHIUM = "gvQqBUqZ";
 const FERRITE_CORE = "uXXizFIs";
 const ENTITY_CULLING = "NNAgCjsB";
 const IMMEDIATELY_FAST = "5ZwdcRci";
-const MODERN_FIX = "nmDcB62a";
 
 /** Sodium came to NeoForge with 1.21; Embeddium covers it before that and covers Forge. */
 function renderer(loader: Loader, gameVersion: string): string {
@@ -30,7 +29,6 @@ export function optimizers(loader: Loader, gameVersion: string): CatalogItem[] {
     FERRITE_CORE,
     ENTITY_CULLING,
     IMMEDIATELY_FAST,
-    MODERN_FIX,
   ];
   if (loader !== "forge") {
     ids.push(LITHIUM);

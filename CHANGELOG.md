@@ -128,7 +128,8 @@ All notable changes to this project are documented here. The format follows
 - The modpack catalog filters by game version, and catalogs load the next page before the
   end of the list.
 - A new instance with a mod loader can start with performance mods (Sodium or Embeddium,
-  Lithium, FerriteCore, EntityCulling, ImmediatelyFast, ModernFix) where they have a build.
+  Lithium, FerriteCore, EntityCulling and ImmediatelyFast) where they have a build. These
+  are known to work together, and Fabric API comes along where they need it.
 - On laptops with two graphics cards the game runs on the faster one, with a switch in the
   settings. Windows keeps this choice for the launcher's Java only.
 - Java the launcher installed is brought up to Mojang's newest build at startup, with a
