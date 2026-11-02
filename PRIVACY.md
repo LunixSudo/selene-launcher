@@ -7,7 +7,7 @@ Selene Launcher is a free, open-source launcher for Minecraft: Java Edition. It 
 ## What stays on your computer
 
 - **Sign-in.** You sign in on a Microsoft page, and the launcher never sees your password. The token used to sign you in again is kept in the Windows credential store (Credential Manager), not in a plain file. Your player name, UUID and skin are saved in the launcher folder to show your accounts.
-- **Game data.** Instances, worlds, mods, saved skins, logs, crash reports and settings live in `%APPDATA%\SeleneLauncher`, or next to the program in the portable version.
+- **Game data.** Instances, worlds, mods, saved skins, logs, crash reports and settings live in `%APPDATA%\SeleneLauncher`, or next to the program in the portable version. The launcher's own log, `logs\launcher.log`, records which download sources answered and why some failed; it holds no tokens or keys and never leaves your PC.
 
 None of this is sent anywhere, except as described below.
 
@@ -16,7 +16,7 @@ None of this is sent anywhere, except as described below.
 | Service | Why | What is sent |
 | --- | --- | --- |
 | Microsoft and Xbox Live | Signing in | Sign-in tokens |
-| Mojang and Minecraft Services | Checking you own the game, downloading the game and Java, skins and capes | Your Minecraft token, the skin you choose |
+| Mojang and Minecraft Services | Checking you own the game, downloading the game and Java, skins and capes, creating and changing your player name | Your Minecraft token, the skin you choose, the player name you type |
 | Fabric, Quilt, Forge and NeoForge | Mod loaders: the list of builds and the loader itself, which Forge and NeoForge download with their own installer. When a site cannot be reached, the same files come from the official mirrors the project lists, for Forge that is CreeperHost | The game version |
 | BMCLAPI (bmclapi2.bangbang93.com, run by bangbang93) | A spare copy of the game, Java and loader files, used only when the official servers and their mirrors cannot be reached. BMCLAPI hands each file out from one of its download nodes, run by volunteers and Chinese university mirrors (CERNET), which also see your IP address. Files are checked against the official checksums whenever those can be had | The address of the requested file |
 | Adoptium (api.adoptium.net, run by the Eclipse Foundation), GitHub and the TUNA mirror (mirrors.tuna.tsinghua.edu.cn, Tsinghua University) | Eclipse Temurin Java, used only when Mojang's Java cannot be downloaded. The file is checked against Adoptium's SHA-256 checksum | The Java version, your system and processor type |
