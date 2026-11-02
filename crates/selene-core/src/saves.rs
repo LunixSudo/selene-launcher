@@ -212,7 +212,7 @@ fn folder_for(saves: &Path, name: &str, current: &str) -> String {
         "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
         "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     ];
-    let mut base: String = name
+    let cleaned: String = name
         .chars()
         .map(|ch| {
             if ch.is_control() || r#"<>:"/\|?*"#.contains(ch) {
@@ -222,10 +222,8 @@ fn folder_for(saves: &Path, name: &str, current: &str) -> String {
             }
         })
         .collect();
-    base = base.trim_end_matches(['.', ' ']).trim_start().to_owned();
-    if base.is_empty() {
-        base = "World".to_owned();
-    }
+    let trimmed = cleaned.trim_end_matches(['.', ' ']).trim_start();
+    let mut base = if trimmed.is_empty() { "World" } else { trimmed }.to_owned();
     let stem = base.split('.').next().unwrap_or_default();
     if RESERVED
         .iter()
@@ -239,10 +237,14 @@ fn folder_for(saves: &Path, name: &str, current: &str) -> String {
     if free(&base) {
         return base;
     }
-    (2..)
-        .map(|n| format!("{base} ({n})"))
-        .find(|candidate| free(candidate))
-        .expect("some number is free")
+    let mut n = 2;
+    loop {
+        let candidate = format!("{base} ({n})");
+        if free(&candidate) {
+            return candidate;
+        }
+        n += 1;
+    }
 }
 
 /// Resolves a world folder, refusing names that would point outside `saves`.
