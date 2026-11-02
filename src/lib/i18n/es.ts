@@ -271,6 +271,9 @@ export const es: Messages = {
     autoUpdateJava: "Actualizar Java automáticamente",
     autoUpdateJavaHint:
       "El Java que descargó el launcher pasa a las nuevas versiones de Mojang. El Java que elegiste tú no se toca.",
+    highPerformanceGpu: "Usar la tarjeta gráfica más rápida",
+    highPerformanceGpuHint:
+      "Para portátiles con dos gráficas: Windows da a Java la dedicada en lugar de la integrada.",
     downloads: "Descargas",
     maxDownloads: "Archivos a la vez",
     maxDownloadsHint: "Menos es más estable con una conexión débil.",

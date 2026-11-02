@@ -40,8 +40,8 @@ use crate::account::{Account, AccountList};
 use crate::config::{Config, GameWindow};
 use crate::discord::Presence;
 use crate::error::{CommandError, CommandResult};
-use crate::game_window;
 use crate::state::{Launcher, LogSnapshot};
+use crate::{game_window, gpu};
 
 /// Placeholder tokens like the offline "0" would blank out every matching character.
 const MIN_HIDDEN_TOKEN_LEN: usize = 8;
@@ -507,6 +507,20 @@ async fn prepare_game(
     install_game(app, launcher, instance).await
 }
 
+/// The Java chosen for the instance, or the one installed for its version, which then runs
+/// on the faster graphics card if asked.
+fn game_java(instance: &Instance, installed: &Installed, fast_gpu: bool) -> CommandResult<PathBuf> {
+    match &instance.java_path {
+        Some(path) if path.is_file() => Ok(path.clone()),
+        Some(path) => Err(CommandError::JavaNotFound(path.clone())),
+        None => {
+            let java = installed.java.executable();
+            gpu::set_high_performance(&java, fast_gpu);
+            Ok(java)
+        }
+    }
+}
+
 async fn run_game(
     app: &AppHandle,
     launcher: &Launcher,
@@ -517,12 +531,9 @@ async fn run_game(
 ) -> CommandResult<()> {
     let dirs = &launcher.dirs;
     let token = account.access_token.clone();
-    let game_window = launcher.config.get().game_window;
-    let java = match &instance.java_path {
-        Some(path) if path.is_file() => path.clone(),
-        Some(path) => return Err(CommandError::JavaNotFound(path.clone())),
-        None => installed.java.executable(),
-    };
+    let config = launcher.config.get();
+    let game_window = config.game_window;
+    let java = game_java(&instance, &installed, config.high_performance_gpu)?;
     let game_dir = launcher.instances.game_dir(&instance.id);
     let game_assets_dir = installed.game_assets(dirs, &game_dir)?;
     let options = LaunchOptions {

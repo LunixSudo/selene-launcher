@@ -127,6 +127,8 @@ All notable changes to this project are documented here. The format follows
   notice offers the newer pack version, unchecked by default.
 - The modpack catalog filters by game version, and catalogs load the next page before the
   end of the list.
+- On laptops with two graphics cards the game runs on the faster one, with a switch in the
+  settings. Windows keeps this choice for the launcher's Java only.
 - Java the launcher installed is brought up to Mojang's newest build at startup, with a
   switch in the settings. Java picked by hand is never changed.
 

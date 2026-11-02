@@ -268,6 +268,9 @@ export const pl: Messages = {
     autoUpdateJava: "Aktualizuj Javę automatycznie",
     autoUpdateJavaHint:
       "Java pobrana przez launcher przechodzi na nowsze wydania Mojang. Javy wybranej ręcznie launcher nie rusza.",
+    highPerformanceGpu: "Uruchamiaj grę na szybszej karcie graficznej",
+    highPerformanceGpuHint:
+      "Dla laptopów z dwiema kartami: Windows daje Javie kartę dedykowaną zamiast zintegrowanej.",
     downloads: "Pobieranie",
     maxDownloads: "Plików naraz",
     maxDownloadsHint: "Mniej to stabilniej przy słabym łączu.",

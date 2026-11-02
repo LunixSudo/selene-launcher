@@ -11,6 +11,8 @@ pub struct Config {
     pub auto_update_mods: bool,
     /// Move the Java the launcher installed to Mojang's newer builds.
     pub auto_update_java: bool,
+    /// Ask Windows to run the game on the faster of two graphics cards.
+    pub high_performance_gpu: bool,
     /// Files downloaded at once; `None` lets each task pick.
     pub max_downloads: Option<usize>,
     /// Download speed cap in KiB/s.
@@ -27,6 +29,7 @@ impl Default for Config {
         Self {
             auto_update_mods: false,
             auto_update_java: true,
+            high_performance_gpu: true,
             max_downloads: None,
             speed_limit_kib: None,
             game_language: None,

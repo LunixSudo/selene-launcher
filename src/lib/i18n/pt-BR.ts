@@ -270,6 +270,9 @@ export const ptBR: Messages = {
     autoUpdateJava: "Atualizar o Java automaticamente",
     autoUpdateJavaHint:
       "O Java baixado pelo launcher passa para as versões novas da Mojang. O Java escolhido por você nunca é alterado.",
+    highPerformanceGpu: "Rodar o jogo na placa de vídeo mais rápida",
+    highPerformanceGpuHint:
+      "Para notebooks com duas placas: o Windows usa a dedicada para o Java em vez da integrada.",
     downloads: "Downloads",
     maxDownloads: "Arquivos ao mesmo tempo",
     maxDownloadsHint: "Menos é mais estável numa conexão fraca.",

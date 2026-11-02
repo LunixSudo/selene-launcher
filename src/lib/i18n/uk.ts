@@ -266,6 +266,9 @@ export const uk: Messages = {
     autoUpdateJava: "Оновлювати Java автоматично",
     autoUpdateJavaHint:
       "Java, яку завантажив лаунчер, переходить на нові збірки Mojang. Java, обрану вручну, лаунчер не чіпає.",
+    highPerformanceGpu: "Запускати гру на потужній відеокарті",
+    highPerformanceGpuHint:
+      "Для ноутбуків із двома відеокартами: Windows віддає Java дискретну відеокарту замість вбудованої.",
     downloads: "Завантаження",
     maxDownloads: "Файлів одночасно",
     maxDownloadsHint: "Менше — стабільніше на слабкому з’єднанні.",

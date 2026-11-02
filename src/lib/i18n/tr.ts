@@ -268,6 +268,9 @@ export const tr: Messages = {
     autoUpdateJava: "Java'yı otomatik güncelle",
     autoUpdateJavaHint:
       "Başlatıcının indirdiği Java, Mojang'ın yeni sürümlerine geçer. Kendi seçtiğiniz Java'ya dokunulmaz.",
+    highPerformanceGpu: "Oyunu daha hızlı ekran kartında çalıştır",
+    highPerformanceGpuHint:
+      "İki ekran kartlı dizüstüler için: Windows, Java'ya dahili yerine harici kartı verir.",
     downloads: "İndirmeler",
     maxDownloads: "Aynı anda dosya",
     maxDownloadsHint: "Zayıf bağlantıda daha azı daha kararlıdır.",

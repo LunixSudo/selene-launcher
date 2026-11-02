@@ -5,6 +5,7 @@ mod config;
 mod discord;
 mod error;
 mod game_window;
+mod gpu;
 mod state;
 mod watch;
 

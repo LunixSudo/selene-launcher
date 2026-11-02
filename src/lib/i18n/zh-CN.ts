@@ -258,6 +258,8 @@ export const zhCN: Messages = {
     autoUpdateJava: "自动更新 Java",
     autoUpdateJavaHint:
       "启动器下载的 Java 会更新到 Mojang 的新版本。你手动选择的 Java 不会被改动。",
+    highPerformanceGpu: "使用高性能显卡运行游戏",
+    highPerformanceGpuHint: "适用于双显卡笔记本：Windows 会让 Java 使用独立显卡而不是集成显卡。",
     downloads: "下载",
     maxDownloads: "同时下载的文件数",
     maxDownloadsHint: "网络较差时，数量少一些会更稳定。",

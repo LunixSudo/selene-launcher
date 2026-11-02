@@ -265,6 +265,9 @@ export const ru = {
     autoUpdateJava: "Обновлять Java автоматически",
     autoUpdateJavaHint:
       "Java, которую скачал лаунчер, переходит на новые сборки Mojang. Java, выбранную вручную, лаунчер не трогает.",
+    highPerformanceGpu: "Запускать игру на мощной видеокарте",
+    highPerformanceGpuHint:
+      "Для ноутбуков с двумя видеокартами: Windows отдаёт Java дискретной видеокарте вместо встроенной.",
     downloads: "Загрузки",
     maxDownloads: "Файлов одновременно",
     maxDownloadsHint: "Меньше — стабильнее на слабом интернете.",

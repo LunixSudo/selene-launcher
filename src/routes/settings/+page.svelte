@@ -409,6 +409,18 @@
               onchange={(event) => saveConfig({ autoUpdateJava: event.currentTarget.checked })}
             >
           </label>
+          <label class="row switch-row">
+            <div>
+              <h3>{t("settings.highPerformanceGpu")}</h3>
+              <p>{t("settings.highPerformanceGpuHint")}</p>
+            </div>
+            <input
+              class="switch"
+              type="checkbox"
+              checked={config.highPerformanceGpu}
+              onchange={(event) => saveConfig({ highPerformanceGpu: event.currentTarget.checked })}
+            >
+          </label>
         {/if}
         {#if config}
           {@const current = config}

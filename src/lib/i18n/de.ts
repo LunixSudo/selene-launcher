@@ -275,6 +275,9 @@ export const de: Messages = {
     autoUpdateJava: "Java automatisch aktualisieren",
     autoUpdateJavaHint:
       "Vom Launcher geladenes Java wechselt auf neuere Builds von Mojang. Selbst gewähltes Java bleibt unangetastet.",
+    highPerformanceGpu: "Spiel auf der schnelleren Grafikkarte starten",
+    highPerformanceGpuHint:
+      "Für Laptops mit zwei Grafikkarten: Windows gibt Java die dedizierte statt der integrierten Karte.",
     downloads: "Downloads",
     maxDownloads: "Dateien gleichzeitig",
     maxDownloadsHint: "Weniger ist bei schwacher Verbindung stabiler.",
