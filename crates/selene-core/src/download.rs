@@ -17,6 +17,8 @@ use crate::{Error, Result, http};
 const MAX_ATTEMPTS: u32 = 3;
 const RETRY_DELAY: Duration = Duration::from_secs(1);
 const READ_BUFFER_SIZE: usize = 64 * 1024;
+/// Checking files only reads the disk, so more of them can go at once than downloads.
+const HASH_CONCURRENCY: usize = 16;
 
 /// User limits shared by every download in the process. Zero means no limit.
 static MAX_PARALLEL: AtomicUsize = AtomicUsize::new(0);
@@ -176,24 +178,42 @@ where
         .collect();
     let bytes_total = downloads.iter().map(|download| download.size).sum();
     let files_total = downloads.len();
-    let bytes_done = &AtomicU64::new(0);
-    let files_done = &AtomicUsize::new(0);
-    let on_progress = &on_progress;
     let background = is_background();
     let _foreground = (!background).then(Foreground::start);
 
-    stream::iter(downloads)
+    // Files already in place are counted first, so a resumed download starts from where the
+    // last one stopped instead of creeping back up between the files it still has to fetch.
+    let checked: Vec<(Download, bool)> = stream::iter(downloads)
         .map(|download| async move {
             let present = match check {
                 Check::Size if download.size > 0 => has_size(&download.path, download.size).await,
                 _ => is_valid(&download.path, &download.sha1).await,
             };
-            if !present {
-                if background {
-                    wait_for_foreground().await;
-                }
-                fetch_with_retry(client, &download).await?;
+            (download, present)
+        })
+        .buffer_unordered(HASH_CONCURRENCY)
+        .collect()
+        .await;
+    let (present, missing): (Vec<_>, Vec<_>) =
+        checked.into_iter().partition(|(_, present)| *present);
+    let bytes_done = &AtomicU64::new(present.iter().map(|(download, _)| download.size).sum());
+    let files_done = &AtomicUsize::new(present.len());
+    if !present.is_empty() {
+        on_progress(Progress {
+            bytes_done: bytes_done.load(Ordering::Relaxed),
+            bytes_total,
+            files_done: present.len(),
+            files_total,
+        });
+    }
+    let on_progress = &on_progress;
+
+    stream::iter(missing)
+        .map(|(download, _)| async move {
+            if background {
+                wait_for_foreground().await;
             }
+            fetch_with_retry(client, &download).await?;
             let done = bytes_done.fetch_add(download.size, Ordering::Relaxed) + download.size;
             on_progress(Progress {
                 bytes_done: done,
