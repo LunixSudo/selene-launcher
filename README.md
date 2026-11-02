@@ -11,33 +11,37 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
 ## Features
 
 - **Accounts.** Sign in with a Microsoft account; game ownership is verified on every login.
-  Several accounts, with the player's head in the title bar.
+  Several accounts, with the player's head in the title bar. A new account picks its player
+  name right in the launcher, and the name can be changed later, with a check that it is free
+  and Mojang's 30-day limit shown up front.
 - **Game.** Every version from the first alphas to the newest snapshots. Versions, libraries
   and assets come straight from Mojang, and the right Java
-  runtime is downloaded for each version. Fabric, Quilt, Forge and NeoForge are supported;
-  Forge and NeoForge run their own installer in the background, without any windows. A new
-  instance downloads all of it right away, so the first start is quick. If a site is down,
+  runtime is downloaded for each version. Fabric, Quilt, Forge (from 1.7.10) and NeoForge are
+  supported; Forge and NeoForge run their own installer in the background, without any
+  windows, and the old Forge installers that need one are unpacked instead. A new
+  instance downloads all of it right away, so the first start is quick. A source that hangs no
+  longer holds things up: after a second and a half the next one is asked as well. If a site is down,
   the launcher falls back to the official mirrors of Mojang, Fabric and Forge, and then to
   [BMCLAPI](https://bmclapidoc.bangbang93.com/), with checksums from the official index. Java
   falls back to Eclipse Temurin from [Adoptium](https://adoptium.net/) and to
   [Azul Zulu](https://www.azul.com/downloads/) before BMCLAPI. A
   download in progress can be cancelled by deleting the instance or changing its version, and
-  a new game starts in the system language. An installed
+  a new game starts in the system language or one picked in the settings. An installed
   game starts without hashing its files again, and without a connection too: an account that
   has signed in before can play single player offline, as in the official launcher.
 - **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts drawn
   with the instance's own icon and cover, and
   moving an instance to another game version with its mods swapped for matching builds, and
-  picking a newer or older mod loader build.
+  picking a newer or older mod loader build. Common Java flags are a tick away.
 - **Add-ons.** Mods, resource packs, shaders and data packs from Modrinth and CurseForge in
   one tab. Filter the catalog by several categories at once, remove a project right from its
   catalog entry, and get required dependencies added for you, even a mod that a resource pack
   needs. Updates stay on the release channel you
-  installed, and the launcher warns before you turn on something made for another version.
+  installed, two copies of one mod are flagged even when added by hand, and the launcher warns before you turn on something made for another version.
   Data packs go into the world you pick.
 - **Modpacks.** Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the
   window.
-- **Playing.** Worlds (with renaming and backups), servers and screenshots per instance,
+- **Playing.** Worlds (renaming moves the folder too, and backups), servers and screenshots per instance,
   joining a server in one click, a game console, crash analysis, play time and a Discord status.
 - **Skins.** An animated 3D preview, a library of saved skins, saving the skin you wear now
   and a row of capes under the character to try on.
