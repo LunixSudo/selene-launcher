@@ -12,6 +12,30 @@ use crate::state::Launcher;
 const SITES: [&str; 2] = ["optifine.net", "adfoc.us"];
 const DOWNLOADS: &str = "https://optifine.net/downloads";
 
+/// Game versions with an `OptiFine` build, as listed on its downloads page.
+#[tauri::command]
+pub async fn optifine_versions(launcher: State<'_, Launcher>) -> CommandResult<Vec<String>> {
+    let page = launcher
+        .client
+        .get(DOWNLOADS)
+        .send()
+        .await
+        .and_then(reqwest::Response::error_for_status)
+        .map_err(selene_core::Error::from)?
+        .text()
+        .await
+        .map_err(selene_core::Error::from)?;
+    Ok(listed_versions(&page))
+}
+
+fn listed_versions(page: &str) -> Vec<String> {
+    page.split("<h2>Minecraft ")
+        .skip(1)
+        .filter_map(|rest| rest.split_once("</h2>"))
+        .map(|(version, _)| version.trim().to_owned())
+        .collect()
+}
+
 #[tauri::command]
 pub async fn open_optifine(
     app: AppHandle,
@@ -119,6 +143,12 @@ mod tests {
         assert!(!is_site("notoptifine.net"));
         assert!(!is_site("optifine.net.example.com"));
         assert!(is_site("adfoc.us"));
+    }
+
+    #[test]
+    fn reads_listed_versions() {
+        let page = "<h2>Minecraft 26.1.2</h2><p>x</p>\n<h2>Minecraft 1.8.9</h2><h2>Other</h2>";
+        assert_eq!(listed_versions(page), ["26.1.2", "1.8.9"]);
     }
 
     #[test]

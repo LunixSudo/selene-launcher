@@ -21,6 +21,7 @@ What the launcher connects to
 - Azul (api.azul.com, cdn.azul.com, Azul Systems): Azul Zulu Java, used only when neither Mojang's Java nor Temurin can be downloaded. The file is checked against Azul's SHA-256 checksum. Sent: the Java version, your system and processor type.
 - MCIM (mod.mcimirror.top): a spare copy of the Modrinth and CurseForge catalogs and mod files, used only when those sites cannot be reached. Mod files are checked against the catalog checksums, which come from MCIM too while the catalog itself is down. Sent: search queries, checksums of installed files.
 - Modrinth and CurseForge: the catalog, installing and updating mods. Sent: search queries, and checksums of installed files to recognise them and find updates.
+- OptiFine (optifine.net): the official OptiFine site, opened in a launcher window only when you press "Install OptiFine". Before that, the mods tab of a Forge instance reads its downloads page once per launch to see whether there is a build for the game version. Sent: what any website sees, your IP address and what you click.
 - GitHub: checking for launcher updates. Sent: nothing beyond the request itself.
 - Discord (the app on your computer): the "Playing Selene Launcher" status. Sent: the game version and instance name. Can be turned off in settings.
 

@@ -310,6 +310,10 @@ export const ptBR: Messages = {
     optifineHint:
       "Abre o site oficial do OptiFine. Clique em Download na versão desejada e o arquivo vai direto para os mods desta instância.",
     optifineAdded: "OptiFine adicionado",
+    optifineClashTitle: "OptiFine e Embeddium não são compatíveis",
+    optifineClash:
+      "Esta instância tem Embeddium. O jogo não abre com os dois, desative um deles antes de jogar.",
+    optifineClashConfirm: "Abrir mesmo assim",
     kinds: {
       mod: "Mods",
       resourcePack: "Pacotes de recursos",

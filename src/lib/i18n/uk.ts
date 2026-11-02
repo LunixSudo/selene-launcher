@@ -304,6 +304,10 @@ export const uk: Messages = {
     optifineHint:
       "Відкриється офіційний сайт OptiFine. Натисніть Download біля потрібної версії, і файл сам потрапить у моди цієї збірки.",
     optifineAdded: "OptiFine додано",
+    optifineClashTitle: "OptiFine і Embeddium несумісні",
+    optifineClash:
+      "У цій збірці є Embeddium. З OptiFine гра не запуститься: перед грою вимкніть один із них.",
+    optifineClashConfirm: "Все одно відкрити",
     kinds: {
       mod: "Моди",
       resourcePack: "Ресурспаки",

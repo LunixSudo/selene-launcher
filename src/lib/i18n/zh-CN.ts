@@ -293,6 +293,9 @@ export const zhCN: Messages = {
     optifineHint:
       "将打开 OptiFine 官方网站。点击所需版本旁的 Download，文件会直接放入此实例的模组文件夹。",
     optifineAdded: "已添加 OptiFine",
+    optifineClashTitle: "OptiFine 与 Embeddium 不兼容",
+    optifineClash: "此实例已安装 Embeddium。两者同时存在时游戏无法启动，请在游戏前停用其中一个。",
+    optifineClashConfirm: "仍然打开",
     kinds: {
       mod: "模组",
       resourcePack: "资源包",

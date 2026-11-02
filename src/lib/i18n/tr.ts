@@ -308,6 +308,10 @@ export const tr: Messages = {
     optifineHint:
       "Resmi OptiFine sitesi açılır. İstediğiniz sürümün yanındaki Download'a basın, dosya doğrudan bu kurulumun modlarına gider.",
     optifineAdded: "OptiFine eklendi",
+    optifineClashTitle: "OptiFine ve Embeddium uyumsuz",
+    optifineClash:
+      "Bu kurulumda Embeddium var. İkisiyle oyun açılmaz, oynamadan önce birini kapatın.",
+    optifineClashConfirm: "Yine de aç",
     kinds: {
       mod: "Modlar",
       resourcePack: "Kaynak paketleri",

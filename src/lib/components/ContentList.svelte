@@ -13,6 +13,7 @@
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
   import { notify } from "#lib/notify.ts";
+  import { hasOptifineBuild } from "#lib/optifine.ts";
   import { optimizers } from "#lib/optimizers.ts";
   import { library } from "#lib/state/instances.svelte.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
@@ -141,6 +142,38 @@
     }
   }
 
+  let optifineBuild = $state(false);
+  let clashing = $state(false);
+
+  $effect(() => {
+    const version = instance?.version;
+    optifineBuild = false;
+    if (version && instance?.loader?.loader === "forge") {
+      void hasOptifineBuild(version).then((found) => {
+        optifineBuild = found && instance?.version === version;
+      });
+    }
+  });
+
+  function installOptifine() {
+    const embeddium = (files ?? []).some((file) =>
+      /embeddium|rubidium/i.test(`${file.fileName} ${file.title ?? ""}`),
+    );
+    if (embeddium) {
+      clashing = true;
+    } else {
+      void openOptifine();
+    }
+  }
+
+  async function openOptifine() {
+    try {
+      await api.openOptifine(instanceId);
+    } catch (err) {
+      error = describeError(err);
+    }
+  }
+
   async function checkUpdates() {
     checking = true;
     error = null;
@@ -224,13 +257,12 @@
     >
       {optimizing ? t("content.optimizing") : t("content.optimize")}
     </button>
-    {#if instance.loader.loader === "forge"}
+    {#if optifineBuild}
       <button
         type="button"
         class="pill-button"
         title={t("content.optifineHint")}
-        onclick={() =>
-          void api.openOptifine(instanceId).catch((err) => (error = describeError(err)))}
+        onclick={installOptifine}
       >
         {t("content.optifine")}
       </button>
@@ -337,6 +369,14 @@
     onconfirm={() => setEnabled(file, true)}
   />
 {/if}
+
+<ConfirmDialog
+  bind:open={clashing}
+  title={t("content.optifineClashTitle")}
+  message={t("content.optifineClash")}
+  confirmLabel={t("content.optifineClashConfirm")}
+  onconfirm={openOptifine}
+/>
 
 {#if shown}
   <ProjectDialog

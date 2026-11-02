@@ -135,6 +135,8 @@ All notable changes to this project are documented here. The format follows
   instance.
 - An "Install OptiFine" button for Forge instances opens the official OptiFine site in a
   launcher window, and the jar downloaded there goes straight into the instance's mods.
+  The button shows only for game versions OptiFine has a build for, and warns when
+  Embeddium is installed.
 - On laptops with two graphics cards the game runs on the faster one, with a switch in the
   settings. Windows keeps this choice for the launcher's Java only.
 - Java the launcher installed is brought up to Mojang's newest build at startup, with a

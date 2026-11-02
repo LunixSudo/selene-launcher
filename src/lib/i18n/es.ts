@@ -312,6 +312,10 @@ export const es: Messages = {
     optifineHint:
       "Abre la web oficial de OptiFine. Pulsa Download junto a la versión que quieras y el archivo irá directo a los mods de esta instancia.",
     optifineAdded: "OptiFine añadido",
+    optifineClashTitle: "OptiFine y Embeddium no son compatibles",
+    optifineClash:
+      "Esta instancia tiene Embeddium. El juego no arrancará con ambos, desactiva uno antes de jugar.",
+    optifineClashConfirm: "Abrir de todos modos",
     kinds: {
       mod: "Mods",
       resourcePack: "Paquetes de recursos",

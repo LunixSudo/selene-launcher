@@ -307,6 +307,10 @@ export const pl: Messages = {
     optifineHint:
       "Otworzy się oficjalna strona OptiFine. Kliknij Download przy wybranej wersji, a plik trafi prosto do modów tej instancji.",
     optifineAdded: "Dodano OptiFine",
+    optifineClashTitle: "OptiFine i Embeddium się gryzą",
+    optifineClash:
+      "Ta instancja ma Embeddium. Z oboma gra się nie uruchomi, przed grą wyłącz jeden z nich.",
+    optifineClashConfirm: "Otwórz mimo to",
     kinds: {
       mod: "Mody",
       resourcePack: "Paczki zasobów",

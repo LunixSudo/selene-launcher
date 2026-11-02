@@ -305,6 +305,10 @@ export const ru = {
     optifineHint:
       "Откроется официальный сайт OptiFine. Нажмите Download у нужной версии, и файл сам попадёт в моды этой сборки.",
     optifineAdded: "OptiFine добавлен",
+    optifineClashTitle: "OptiFine и Embeddium несовместимы",
+    optifineClash:
+      "В этой сборке стоит Embeddium. С OptiFine игра не запустится: перед игрой выключите один из них.",
+    optifineClashConfirm: "Всё равно открыть",
     kinds: { mod: "Моды", resourcePack: "Ресурспаки", shaderPack: "Шейдеры", dataPack: "Датапаки" },
     empty: {
       mod: "Модов пока нет",
