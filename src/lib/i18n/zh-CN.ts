@@ -253,8 +253,6 @@ export const zhCN: Messages = {
     afterLaunchOptions: { keep: "保持", minimize: "最小化", close: "关闭" },
     restoreAfterGame: "游戏结束后恢复启动器",
     restoreAfterGameHint: "关闭 Minecraft 后窗口会重新出现。",
-    autoOptimizers: "为新实例添加优化模组",
-    autoOptimizersHint: "带加载器的新实例会自动获得“添加优化模组”中的模组。",
     autoUpdateMods: "启动前更新模组",
     autoUpdateModsHint: "每次游戏前，启动器都会从 Modrinth 安装最新的模组版本。",
     autoUpdateJava: "自动更新 Java",

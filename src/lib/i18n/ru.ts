@@ -260,9 +260,6 @@ export const ru = {
     afterLaunchOptions: { keep: "Оставить", minimize: "Свернуть", close: "Закрыть" },
     restoreAfterGame: "Вернуть лаунчер после игры",
     restoreAfterGameHint: "Окно развернётся, когда вы закроете Minecraft.",
-    autoOptimizers: "Добавлять оптимизацию в новые сборки",
-    autoOptimizersHint:
-      "Новая сборка с загрузчиком сразу получает моды из кнопки «Добавить оптимизацию».",
     autoUpdateMods: "Обновлять моды перед запуском",
     autoUpdateModsHint: "Перед каждой игрой лаунчер ставит свежие версии модов с Modrinth.",
     autoUpdateJava: "Обновлять Java автоматически",

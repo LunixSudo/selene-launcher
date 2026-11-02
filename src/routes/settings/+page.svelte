@@ -385,13 +385,6 @@
             </div>
             <input class="switch" type="checkbox" bind:checked={settings.restoreAfterGame}>
           </label>
-          <label class="row switch-row">
-            <div>
-              <h3>{t("settings.autoOptimizers")}</h3>
-              <p>{t("settings.autoOptimizersHint")}</p>
-            </div>
-            <input class="switch" type="checkbox" bind:checked={settings.autoOptimizers}>
-          </label>
         {/if}
         {#if config}
           <label class="row switch-row">

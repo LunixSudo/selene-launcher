@@ -264,9 +264,6 @@ export const ptBR: Messages = {
     afterLaunchOptions: { keep: "Manter", minimize: "Minimizar", close: "Fechar" },
     restoreAfterGame: "Trazer o launcher de volta depois de jogar",
     restoreAfterGameHint: "A janela volta quando você fecha o Minecraft.",
-    autoOptimizers: "Adicionar mods de desempenho a novas instâncias",
-    autoOptimizersHint:
-      "Uma nova instância com loader recebe os mods do botão “Adicionar mods de desempenho”.",
     autoUpdateMods: "Atualizar mods antes de jogar",
     autoUpdateModsHint:
       "Antes de cada partida o launcher instala as versões novas dos mods do Modrinth.",

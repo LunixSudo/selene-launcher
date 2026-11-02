@@ -269,9 +269,6 @@ export const de: Messages = {
     afterLaunchOptions: { keep: "Offen lassen", minimize: "Minimieren", close: "Schließen" },
     restoreAfterGame: "Launcher nach dem Spielen zurückholen",
     restoreAfterGameHint: "Das Fenster erscheint wieder, wenn du Minecraft schließt.",
-    autoOptimizers: "Leistungs-Mods zu neuen Instanzen hinzufügen",
-    autoOptimizersHint:
-      "Eine neue Instanz mit Mod-Loader bekommt die Mods der Schaltfläche „Leistungs-Mods hinzufügen“.",
     autoUpdateMods: "Mods vor dem Start aktualisieren",
     autoUpdateModsHint:
       "Vor jedem Spiel installiert der Launcher die neuesten Mod-Versionen von Modrinth.",

@@ -263,9 +263,6 @@ export const tr: Messages = {
     afterLaunchOptions: { keep: "Açık kalsın", minimize: "Küçült", close: "Kapat" },
     restoreAfterGame: "Oyundan sonra başlatıcıyı geri getir",
     restoreAfterGameHint: "Minecraft'ı kapattığında pencere geri gelir.",
-    autoOptimizers: "Yeni profillere performans modları ekle",
-    autoOptimizersHint:
-      "Mod yükleyicili yeni bir profil, “Performans modları ekle” düğmesindeki modları alır.",
     autoUpdateMods: "Başlatmadan önce modları güncelle",
     autoUpdateModsHint: "Her oyundan önce başlatıcı Modrinth'ten en yeni mod sürümlerini kurar.",
     autoUpdateJava: "Java'yı otomatik güncelle",

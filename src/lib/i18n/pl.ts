@@ -263,9 +263,6 @@ export const pl: Messages = {
     afterLaunchOptions: { keep: "Zostaw", minimize: "Minimalizuj", close: "Zamknij" },
     restoreAfterGame: "Przywracaj launcher po grze",
     restoreAfterGameHint: "Okno wróci, gdy zamkniesz Minecrafta.",
-    autoOptimizers: "Dodawaj optymalizację do nowych instancji",
-    autoOptimizersHint:
-      "Nowa instancja z loaderem od razu dostaje mody z przycisku „Dodaj optymalizację”.",
     autoUpdateMods: "Aktualizuj mody przed uruchomieniem",
     autoUpdateModsHint: "Przed każdą grą launcher instaluje świeże wersje modów z Modrinth.",
     autoUpdateJava: "Aktualizuj Javę automatycznie",

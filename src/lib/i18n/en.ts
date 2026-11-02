@@ -260,9 +260,6 @@ export const en: Messages = {
     afterLaunchOptions: { keep: "Keep", minimize: "Minimize", close: "Close" },
     restoreAfterGame: "Bring the launcher back after playing",
     restoreAfterGameHint: "The window comes back when you close Minecraft.",
-    autoOptimizers: "Add performance mods to new instances",
-    autoOptimizersHint:
-      "A new instance with a mod loader gets the mods from the “Add performance mods” button.",
     autoUpdateMods: "Update mods before launch",
     autoUpdateModsHint: "Before every game the launcher installs fresh mod versions from Modrinth.",
     autoUpdateJava: "Update Java automatically",

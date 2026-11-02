@@ -261,9 +261,6 @@ export const uk: Messages = {
     afterLaunchOptions: { keep: "Залишити", minimize: "Згорнути", close: "Закрити" },
     restoreAfterGame: "Повертати лаунчер після гри",
     restoreAfterGameHint: "Вікно з’явиться знову, коли ви закриєте Minecraft.",
-    autoOptimizers: "Додавати оптимізацію в нові збірки",
-    autoOptimizersHint:
-      "Нова збірка із завантажувачем одразу отримує моди з кнопки «Додати оптимізацію».",
     autoUpdateMods: "Оновлювати моди перед запуском",
     autoUpdateModsHint: "Перед кожною грою лаунчер встановлює свіжі версії модів із Modrinth.",
     autoUpdateJava: "Оновлювати Java автоматично",
