@@ -23,6 +23,7 @@ None of this is sent anywhere, except as described below.
 | Azul (api.azul.com, cdn.azul.com, Azul Systems) | Azul Zulu Java, used only when neither Mojang's Java nor Temurin can be downloaded. The file is checked against Azul's SHA-256 checksum | The Java version, your system and processor type |
 | MCIM (mod.mcimirror.top) | A spare copy of the Modrinth and CurseForge catalogs and mod files, used only when those sites cannot be reached. Mod files are checked against the catalog checksums, which come from MCIM too while the catalog itself is down. The launcher's CurseForge key is never sent there | Search queries, checksums of installed files |
 | Modrinth and CurseForge | The catalog, installing and updating mods | Search queries, and checksums of installed files to recognise them and find updates |
+| OptiFine (optifine.net) | The official OptiFine site, opened in a launcher window only when you press "Install OptiFine". The site and its ads work as in any browser | What any website sees: your IP address and what you click |
 | GitHub | Checking for launcher updates | Nothing beyond the request itself |
 | Discord (the app on your computer) | The "Playing Selene Launcher" status | The game version and instance name. Can be turned off in settings |
 

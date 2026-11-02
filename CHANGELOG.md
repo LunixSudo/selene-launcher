@@ -133,6 +133,8 @@ All notable changes to this project are documented here. The format follows
   it has a build. They are known to work together, Fabric API comes along where needed, and no
   new renderer is added next to OptiFine. A setting, off by default, adds them to every new
   instance.
+- An "Install OptiFine" button for Forge instances opens the official OptiFine site in a
+  launcher window, and the jar downloaded there goes straight into the instance's mods.
 - On laptops with two graphics cards the game runs on the faster one, with a switch in the
   settings. Windows keeps this choice for the launcher's Java only.
 - Java the launcher installed is brought up to Mojang's newest build at startup, with a

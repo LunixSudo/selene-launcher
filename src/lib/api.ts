@@ -497,6 +497,7 @@ export const api = {
   watchContent: (instanceId: string, kind: ContentKind, world: string | null) =>
     invoke<void>("watch_content", { instanceId, kind, world }),
   unwatchContent: () => invoke<void>("unwatch_content"),
+  openOptifine: (instanceId: string) => invoke<void>("open_optifine", { instanceId }),
   removeContent: (instanceId: string, kind: ContentKind, world: string | null, fileName: string) =>
     invoke<void>("remove_content", { instanceId, kind, world, fileName }),
   checkUpdates: (instanceId: string, kind: ContentKind, world: string | null) =>

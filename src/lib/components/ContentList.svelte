@@ -57,9 +57,16 @@
   });
 
   const unlisten = listen("content-changed", () => void load());
+  const unlistenOptifine = listen<string>("optifine-installed", (event) => {
+    if (event.payload === instanceId) {
+      optimized = t("content.optifineAdded");
+      void load();
+    }
+  });
 
   onDestroy(() => {
     void unlisten.then((stop) => stop());
+    void unlistenOptifine.then((stop) => stop());
     void api.unwatchContent();
   });
 
@@ -217,6 +224,17 @@
     >
       {optimizing ? t("content.optimizing") : t("content.optimize")}
     </button>
+    {#if instance.loader.loader === "forge"}
+      <button
+        type="button"
+        class="pill-button"
+        title={t("content.optifineHint")}
+        onclick={() =>
+          void api.openOptifine(instanceId).catch((err) => (error = describeError(err)))}
+      >
+        {t("content.optifine")}
+      </button>
+    {/if}
     {#if optimized}
       <span class="muted">{optimized}</span>
     {/if}

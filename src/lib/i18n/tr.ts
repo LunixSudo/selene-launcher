@@ -304,6 +304,10 @@ export const tr: Messages = {
       "FPS ve bellek için denenmiş set: Sodium veya Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Yalnızca bu sürüme uyanlar eklenir.",
     optimized: "Eklenen mod: {count}",
     optimizedNothing: "Zaten kurulu ya da bu sürüm için yok",
+    optifine: "OptiFine'ı yükle",
+    optifineHint:
+      "Resmi OptiFine sitesi açılır. İstediğiniz sürümün yanındaki Download'a basın, dosya doğrudan bu kurulumun modlarına gider.",
+    optifineAdded: "OptiFine eklendi",
     kinds: {
       mod: "Modlar",
       resourcePack: "Kaynak paketleri",

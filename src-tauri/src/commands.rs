@@ -4,6 +4,7 @@
 )]
 
 pub mod content;
+pub mod optifine;
 pub mod packs;
 pub mod privacy;
 pub mod saves;

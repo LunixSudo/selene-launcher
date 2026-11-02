@@ -300,6 +300,10 @@ export const uk: Messages = {
       "Перевірений набір модів для FPS і пам'яті: Sodium або Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Ставляться лише ті, що підходять до цієї версії.",
     optimized: "Додано модів: {count}",
     optimizedNothing: "Усе вже встановлено або немає версій під цю гру",
+    optifine: "Встановити OptiFine",
+    optifineHint:
+      "Відкриється офіційний сайт OptiFine. Натисніть Download біля потрібної версії, і файл сам потрапить у моди цієї збірки.",
+    optifineAdded: "OptiFine додано",
     kinds: {
       mod: "Моди",
       resourcePack: "Ресурспаки",

@@ -41,7 +41,8 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
   needs. Updates stay on the release channel you
   installed, only the newest of two copies of one mod stays on, lists follow files copied in
   by hand, and the launcher warns before you turn on something made for another version.
-  Data packs go into the world you pick.
+  Data packs go into the world you pick. On Forge, OptiFine installs from its official site
+  opened inside the launcher.
 - **Modpacks.** Find modpacks from Modrinth and CurseForge by game version, install the
   version you pick, and update a pack later without losing the add-ons you put in yourself.
   Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the window.

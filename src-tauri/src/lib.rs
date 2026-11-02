@@ -115,6 +115,7 @@ pub fn run() {
             commands::content::version_change::preview_version_change,
             commands::content::version_change::change_version,
             commands::content::version_change::change_loader_build,
+            commands::optifine::open_optifine,
             commands::packs::import_pack,
             commands::packs::export_pack,
             commands::update::check_update,

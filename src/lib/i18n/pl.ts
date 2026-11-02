@@ -303,6 +303,10 @@ export const pl: Messages = {
       "Sprawdzony zestaw na FPS i pamięć: Sodium lub Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Dodawane są tylko te z wersją dla tej gry.",
     optimized: "Dodano modów: {count}",
     optimizedNothing: "Wszystko już jest lub brak wersji dla tej gry",
+    optifine: "Zainstaluj OptiFine",
+    optifineHint:
+      "Otworzy się oficjalna strona OptiFine. Kliknij Download przy wybranej wersji, a plik trafi prosto do modów tej instancji.",
+    optifineAdded: "Dodano OptiFine",
     kinds: {
       mod: "Mody",
       resourcePack: "Paczki zasobów",
