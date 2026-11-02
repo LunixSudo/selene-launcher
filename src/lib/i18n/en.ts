@@ -136,9 +136,6 @@ export const en: Messages = {
     starting: "Starting…",
   },
   create: {
-    optimizers: "Add performance mods",
-    optimizersHint:
-      "Sodium or Embeddium, FerriteCore, EntityCulling and more: higher FPS, less memory.",
     title: "New instance",
     name: "Name",
     namePlaceholder: "For example, Survival",
@@ -263,6 +260,9 @@ export const en: Messages = {
     afterLaunchOptions: { keep: "Keep", minimize: "Minimize", close: "Close" },
     restoreAfterGame: "Bring the launcher back after playing",
     restoreAfterGameHint: "The window comes back when you close Minecraft.",
+    autoOptimizers: "Add performance mods to new instances",
+    autoOptimizersHint:
+      "A new instance with a mod loader gets the mods from the “Add performance mods” button.",
     autoUpdateMods: "Update mods before launch",
     autoUpdateModsHint: "Before every game the launcher installs fresh mod versions from Modrinth.",
     autoUpdateJava: "Update Java automatically",
@@ -295,6 +295,12 @@ export const en: Messages = {
     dataFolderHint: "Instances, game versions and Java live here.",
   },
   content: {
+    optimize: "Add performance mods",
+    optimizing: "Adding…",
+    optimizeHint:
+      "A tested set of mods for FPS and memory: Sodium or Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Only those with a build for this version are added.",
+    optimized: "Mods added: {count}",
+    optimizedNothing: "Already installed, or none for this version",
     kinds: {
       mod: "Mods",
       resourcePack: "Resource packs",

@@ -136,9 +136,6 @@ export const uk: Messages = {
     starting: "Запуск…",
   },
   create: {
-    optimizers: "Додати моди для оптимізації",
-    optimizersHint:
-      "Sodium або Embeddium, FerriteCore, EntityCulling та інші: більше FPS, менше пам'яті.",
     title: "Нова збірка",
     name: "Назва",
     namePlaceholder: "Наприклад, Виживання",
@@ -264,6 +261,9 @@ export const uk: Messages = {
     afterLaunchOptions: { keep: "Залишити", minimize: "Згорнути", close: "Закрити" },
     restoreAfterGame: "Повертати лаунчер після гри",
     restoreAfterGameHint: "Вікно з’явиться знову, коли ви закриєте Minecraft.",
+    autoOptimizers: "Додавати оптимізацію в нові збірки",
+    autoOptimizersHint:
+      "Нова збірка із завантажувачем одразу отримує моди з кнопки «Додати оптимізацію».",
     autoUpdateMods: "Оновлювати моди перед запуском",
     autoUpdateModsHint: "Перед кожною грою лаунчер встановлює свіжі версії модів із Modrinth.",
     autoUpdateJava: "Оновлювати Java автоматично",
@@ -294,6 +294,12 @@ export const uk: Messages = {
     dataFolderHint: "Тут лежать збірки, версії гри та Java.",
   },
   content: {
+    optimize: "Додати оптимізацію",
+    optimizing: "Додаємо…",
+    optimizeHint:
+      "Перевірений набір модів для FPS і пам'яті: Sodium або Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Ставляться лише ті, що підходять до цієї версії.",
+    optimized: "Додано модів: {count}",
+    optimizedNothing: "Усе вже встановлено або немає версій під цю гру",
     kinds: {
       mod: "Моди",
       resourcePack: "Ресурспаки",

@@ -138,9 +138,6 @@ export const ptBR: Messages = {
     starting: "Iniciando…",
   },
   create: {
-    optimizers: "Adicionar mods de desempenho",
-    optimizersHint:
-      "Sodium ou Embeddium, FerriteCore, EntityCulling e outros: mais FPS, menos memória.",
     title: "Nova instância",
     name: "Nome",
     namePlaceholder: "Por exemplo, Sobrevivência",
@@ -267,6 +264,9 @@ export const ptBR: Messages = {
     afterLaunchOptions: { keep: "Manter", minimize: "Minimizar", close: "Fechar" },
     restoreAfterGame: "Trazer o launcher de volta depois de jogar",
     restoreAfterGameHint: "A janela volta quando você fecha o Minecraft.",
+    autoOptimizers: "Adicionar mods de desempenho a novas instâncias",
+    autoOptimizersHint:
+      "Uma nova instância com loader recebe os mods do botão “Adicionar mods de desempenho”.",
     autoUpdateMods: "Atualizar mods antes de jogar",
     autoUpdateModsHint:
       "Antes de cada partida o launcher instala as versões novas dos mods do Modrinth.",
@@ -300,6 +300,12 @@ export const ptBR: Messages = {
     dataFolderHint: "Aqui ficam as instâncias, as versões do jogo e o Java.",
   },
   content: {
+    optimize: "Adicionar mods de desempenho",
+    optimizing: "Adicionando…",
+    optimizeHint:
+      "Um conjunto testado para FPS e memória: Sodium ou Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Só entram os que têm versão para este jogo.",
+    optimized: "Mods adicionados: {count}",
+    optimizedNothing: "Já instalados ou sem versão para este jogo",
     kinds: {
       mod: "Mods",
       resourcePack: "Pacotes de recursos",

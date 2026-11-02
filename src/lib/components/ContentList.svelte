@@ -6,12 +6,14 @@
     type ContentKind,
     type ContentUpdate,
     type InstalledFile,
+    isCommandError,
     type ProjectRef,
   } from "#lib/api.ts";
   import { describeError } from "#lib/errors.ts";
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
   import { notify } from "#lib/notify.ts";
+  import { optimizers } from "#lib/optimizers.ts";
   import { library } from "#lib/state/instances.svelte.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ContextMenu, { type MenuItem } from "./ContextMenu.svelte";
@@ -96,6 +98,42 @@
     await load();
   }
 
+  const instance = $derived(library.instances.find((entry) => entry.id === instanceId));
+  let optimizing = $state(false);
+  let optimized = $state<string | null>(null);
+
+  async function addOptimizers() {
+    const loader = instance?.loader?.loader;
+    if (!loader || !instance) {
+      return;
+    }
+    optimizing = true;
+    error = null;
+    optimized = null;
+    const hasOptiFine = (files ?? []).some((file) => /optifine/i.test(file.fileName));
+    try {
+      const result = await api.installContent(
+        instanceId,
+        "mod",
+        null,
+        optimizers(loader, instance.version, hasOptiFine),
+      );
+      optimized = t("content.optimized", { count: result.installed });
+      await load();
+    } catch (err) {
+      // Nothing new to add: everything is in place already or has no build for this version.
+      optimized =
+        isCommandError(err) && err.kind === "noCompatibleVersion"
+          ? t("content.optimizedNothing")
+          : null;
+      if (!optimized) {
+        error = describeError(err);
+      }
+    } finally {
+      optimizing = false;
+    }
+  }
+
   async function checkUpdates() {
     checking = true;
     error = null;
@@ -169,6 +207,20 @@
 </script>
 
 <div class="toolbar">
+  {#if kind === "mod" && instance?.loader}
+    <button
+      type="button"
+      class="pill-button"
+      disabled={optimizing}
+      title={t("content.optimizeHint")}
+      onclick={addOptimizers}
+    >
+      {optimizing ? t("content.optimizing") : t("content.optimize")}
+    </button>
+    {#if optimized}
+      <span class="muted">{optimized}</span>
+    {/if}
+  {/if}
   {#if updates && updates.length > 0}
     <button type="button" class="pill-button primary" disabled={updating} onclick={updateAll}>
       {updating ? t("instance.updating") : t("instance.updateAll", { count: updates.length })}

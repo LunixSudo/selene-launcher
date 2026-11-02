@@ -61,19 +61,14 @@ export async function loadInstances() {
   library.loaded = true;
 }
 
-export async function createInstance(
-  name: string,
-  version: string,
-  loader: LoaderVersion | null,
-  withOptimizers = false,
-) {
+export async function createInstance(name: string, version: string, loader: LoaderVersion | null) {
   const instance = await api.createInstance(name, version, loader);
   library.instances = [instance, ...library.instances];
   prepare(instance.id);
-  if (loader && withOptimizers) {
+  if (loader && settings.autoOptimizers) {
     // Mods without a build for this version are skipped; none at all is no error either.
     void api
-      .installContent(instance.id, "mod", null, optimizers(loader.loader, version))
+      .installContent(instance.id, "mod", null, optimizers(loader.loader, version, false))
       .catch(() => {});
   }
 }

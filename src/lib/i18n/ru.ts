@@ -133,9 +133,6 @@ export const ru = {
     starting: "Запуск…",
   },
   create: {
-    optimizers: "Добавить моды для оптимизации",
-    optimizersHint:
-      "Sodium или Embeddium, FerriteCore, EntityCulling и другие: больше FPS, меньше памяти.",
     title: "Новая сборка",
     name: "Название",
     namePlaceholder: "Например, Выживание",
@@ -263,6 +260,9 @@ export const ru = {
     afterLaunchOptions: { keep: "Оставить", minimize: "Свернуть", close: "Закрыть" },
     restoreAfterGame: "Вернуть лаунчер после игры",
     restoreAfterGameHint: "Окно развернётся, когда вы закроете Minecraft.",
+    autoOptimizers: "Добавлять оптимизацию в новые сборки",
+    autoOptimizersHint:
+      "Новая сборка с загрузчиком сразу получает моды из кнопки «Добавить оптимизацию».",
     autoUpdateMods: "Обновлять моды перед запуском",
     autoUpdateModsHint: "Перед каждой игрой лаунчер ставит свежие версии модов с Modrinth.",
     autoUpdateJava: "Обновлять Java автоматически",
@@ -295,6 +295,12 @@ export const ru = {
     dataFolderHint: "Здесь лежат сборки, версии игры и Java.",
   },
   content: {
+    optimize: "Добавить оптимизацию",
+    optimizing: "Добавляем…",
+    optimizeHint:
+      "Проверенный набор модов для FPS и памяти: Sodium или Embeddium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast. Ставятся только те, что подходят к этой версии.",
+    optimized: "Добавлено модов: {count}",
+    optimizedNothing: "Всё уже стоит или нет версий под эту игру",
     kinds: { mod: "Моды", resourcePack: "Ресурспаки", shaderPack: "Шейдеры", dataPack: "Датапаки" },
     empty: {
       mod: "Модов пока нет",

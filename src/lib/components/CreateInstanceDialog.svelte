@@ -28,7 +28,6 @@
   let showOld = $state(false);
   let showBetas = $state(false);
   let loader = $state<Loader | null>(null);
-  let withOptimizers = $state(true);
   let loaderReleases = $state<LoaderRelease[] | null>(null);
   let loaderVersion = $state("");
   let error = $state<string | null>(null);
@@ -102,7 +101,7 @@
     try {
       const pinned = loader && loaderVersion ? { loader, version: loaderVersion } : null;
       const fallbackName = loader ? `${LOADER_NAMES[loader]} ${version}` : version;
-      await createInstance(name.trim() || fallbackName, version, pinned, withOptimizers);
+      await createInstance(name.trim() || fallbackName, version, pinned);
       name = "";
       open = false;
     } catch (err) {
@@ -181,13 +180,6 @@
           {/if}
         {/if}
       </div>
-      <label class="toggle">
-        <input type="checkbox" bind:checked={withOptimizers}>
-        <span>
-          {t("create.optimizers")}
-          <span class="hint">{t("create.optimizersHint")}</span>
-        </span>
-      </label>
     {/if}
 
     {#if error}

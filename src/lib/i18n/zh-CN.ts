@@ -132,8 +132,6 @@ export const zhCN: Messages = {
     starting: "正在启动…",
   },
   create: {
-    optimizers: "添加优化模组",
-    optimizersHint: "Sodium 或 Embeddium、FerriteCore、EntityCulling 等：更高帧率，更少内存。",
     title: "新建实例",
     name: "名称",
     namePlaceholder: "例如：生存",
@@ -255,6 +253,8 @@ export const zhCN: Messages = {
     afterLaunchOptions: { keep: "保持", minimize: "最小化", close: "关闭" },
     restoreAfterGame: "游戏结束后恢复启动器",
     restoreAfterGameHint: "关闭 Minecraft 后窗口会重新出现。",
+    autoOptimizers: "为新实例添加优化模组",
+    autoOptimizersHint: "带加载器的新实例会自动获得“添加优化模组”中的模组。",
     autoUpdateMods: "启动前更新模组",
     autoUpdateModsHint: "每次游戏前，启动器都会从 Modrinth 安装最新的模组版本。",
     autoUpdateJava: "自动更新 Java",
@@ -283,6 +283,12 @@ export const zhCN: Messages = {
     dataFolderHint: "实例、游戏版本和 Java 都在这里。",
   },
   content: {
+    optimize: "添加优化模组",
+    optimizing: "正在添加…",
+    optimizeHint:
+      "经过测试的帧率和内存优化组合：Sodium 或 Embeddium、Lithium、FerriteCore、EntityCulling、ImmediatelyFast。只添加适配此版本的模组。",
+    optimized: "已添加模组：{count}",
+    optimizedNothing: "已全部安装，或此版本没有可用模组",
     kinds: {
       mod: "模组",
       resourcePack: "资源包",

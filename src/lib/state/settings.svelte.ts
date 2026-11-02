@@ -42,6 +42,8 @@ interface Settings {
   font: Font;
   afterLaunch: AfterLaunch;
   restoreAfterGame: boolean;
+  /** Adds the performance mods to every new instance with a mod loader. */
+  autoOptimizers: boolean;
   sort: SortOrder;
   collapsedGroups: string[];
   notifications: boolean;
@@ -81,6 +83,7 @@ const DEFAULTS: Settings = {
   font: "rounded",
   afterLaunch: "close",
   restoreAfterGame: true,
+  autoOptimizers: false,
   sort: "lastPlayed",
   collapsedGroups: [],
   notifications: true,
@@ -135,6 +138,7 @@ function load(): Settings {
     ...checkLook(saved),
     afterLaunch: oneOf(saved.afterLaunch, AFTER_LAUNCH, DEFAULTS.afterLaunch),
     restoreAfterGame: oneOf(saved.restoreAfterGame, [true, false], DEFAULTS.restoreAfterGame),
+    autoOptimizers: oneOf(saved.autoOptimizers, [true, false], DEFAULTS.autoOptimizers),
     sort: oneOf(saved.sort, SORT_ORDERS, DEFAULTS.sort),
     collapsedGroups: Array.isArray(saved.collapsedGroups)
       ? saved.collapsedGroups.filter((group) => typeof group === "string")
