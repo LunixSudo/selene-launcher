@@ -392,30 +392,47 @@ fn language_for(version: &VersionInfo, language: &str) -> String {
     }
 }
 
-/// G1 tuned for short, rare pauses, which is what keeps the frame rate even while the game
-/// streams chunks. Every flag here is understood by Java 8 through current releases.
-pub const TUNED_JVM_ARGS: &[&str] = &[
-    "-XX:+UseG1GC",
+/// Added on top of the official arguments, which keep their 50 ms pause target. Every flag
+/// here is understood by Java 8 through current releases and costs nothing on a weak PC.
+const SAFE_JVM_ARGS: &[&str] = &[
     "-XX:+ParallelRefProcEnabled",
-    "-XX:MaxGCPauseMillis=200",
-    "-XX:+UnlockExperimentalVMOptions",
     "-XX:+DisableExplicitGC",
-    "-XX:G1NewSizePercent=30",
-    "-XX:G1MaxNewSizePercent=40",
-    "-XX:G1HeapRegionSize=8M",
-    "-XX:G1ReservePercent=20",
+    "-XX:+PerfDisableSharedMem",
+];
+
+/// Lets G1 clean up old memory in smaller steps, which only pays off with enough memory and
+/// cores to spare for it.
+const ROOMY_JVM_ARGS: &[&str] = &[
     "-XX:G1HeapWastePercent=5",
     "-XX:G1MixedGCCountTarget=4",
-    "-XX:InitiatingHeapOccupancyPercent=15",
     "-XX:G1MixedGCLiveThresholdPercent=90",
-    "-XX:SurvivorRatio=32",
-    "-XX:+PerfDisableSharedMem",
-    "-XX:MaxTenuringThreshold=1",
 ];
+
+const ROOMY_MEMORY_MB: u32 = 6144;
+const ROOMY_CORES: usize = 4;
+
+/// Arguments picked for the memory given to the game and the processor it runs on.
+pub fn tuned_jvm_args(max_memory_mb: u32, cores: usize) -> Vec<String> {
+    let mut args = SAFE_JVM_ARGS.to_vec();
+    if max_memory_mb >= ROOMY_MEMORY_MB && cores >= ROOMY_CORES {
+        args.extend(ROOMY_JVM_ARGS);
+    }
+    args.into_iter().map(str::to_owned).collect()
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tunes_more_only_with_room_to_spare() {
+        assert_eq!(tuned_jvm_args(3072, 2), SAFE_JVM_ARGS);
+        assert_eq!(tuned_jvm_args(8192, 2), SAFE_JVM_ARGS);
+        assert_eq!(
+            tuned_jvm_args(8192, 8).len(),
+            SAFE_JVM_ARGS.len() + ROOMY_JVM_ARGS.len()
+        );
+    }
 
     #[test]
     fn sets_one_option_and_keeps_the_rest() {

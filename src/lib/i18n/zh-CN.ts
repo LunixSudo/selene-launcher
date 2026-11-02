@@ -470,7 +470,7 @@ export const zhCN: Messages = {
     fullscreenHint: "游戏先以窗口启动，加载完成后再切换全屏，这样 Windows 不会提示“未响应”。",
     customSizeHint: "按设定尺寸打开游戏窗口。会关闭全屏。",
     autoArgs: "自动选择参数",
-    autoArgsHint: "经过测试的参数组合，流畅不卡顿，适用于所有版本。",
+    autoArgsHint: "Mojang 官方设置，并按本机内存和处理器加入安全的补充参数。",
     flagSearch: "搜索参数",
     flagsEmpty: "未找到",
     javaArgs: "Java 参数",

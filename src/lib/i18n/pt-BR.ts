@@ -494,7 +494,8 @@ export const ptBR: Messages = {
       "O jogo abre em janela e vai para tela cheia quando terminar de carregar, assim o Windows não diz que não está respondendo.",
     customSizeHint: "Janela do jogo no tamanho escolhido. Desliga a tela cheia.",
     autoArgs: "Escolher argumentos automaticamente",
-    autoArgsHint: "Um conjunto testado para jogar liso sem travadas, serve para qualquer versão.",
+    autoArgsHint:
+      "As configurações oficiais da Mojang com adições seguras para a memória e o processador deste PC.",
     flagSearch: "Buscar argumentos",
     flagsEmpty: "Nada encontrado",
     javaArgs: "Argumentos do Java",

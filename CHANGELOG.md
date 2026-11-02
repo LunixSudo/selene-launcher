@@ -114,8 +114,9 @@ All notable changes to this project are documented here. The format follows
 - Fullscreen and a custom window size are launcher settings and exclude each other. The game
   opens in a window while it loads and goes fullscreen once it has, so Windows no longer marks
   it as not responding.
-- Instances pick tuned Java arguments by themselves; turned off, a searchable list of flags
-  explains each one.
+- Instances pick Java arguments by themselves: Mojang's own settings, plus a few safe flags
+  chosen for the memory given to the game and the processor's cores. Turned off, a searchable
+  list of flags explains each one.
 - A world without an icon shows a tile for its game mode.
 - Add-on lists follow their folder: files copied in through Explorer show up on their own.
 - When two copies of one mod are on, only the newest stays enabled, and enabling an older

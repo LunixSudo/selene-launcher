@@ -555,6 +555,10 @@ async fn run_game(
     let java = game_java(&instance, &installed, config.high_performance_gpu)?;
     let game_dir = launcher.instances.game_dir(&instance.id);
     let game_assets_dir = installed.game_assets(dirs, &game_dir)?;
+    let max_memory_mb = match instance.max_memory_mb {
+        Some(amount) => amount,
+        None => recommended_memory(launcher, &instance.id).await?,
+    };
     let options = LaunchOptions {
         java,
         game_dir,
@@ -564,10 +568,7 @@ async fn run_game(
         versions_dir: dirs.versions(),
         natives_dir: dirs.natives(&installed.version.id),
         account,
-        max_memory_mb: match instance.max_memory_mb {
-            Some(amount) => amount,
-            None => recommended_memory(launcher, &instance.id).await?,
-        },
+        max_memory_mb,
         resolution: match game_window {
             GameWindow::Custom { width, height } => Some((width, height)),
             GameWindow::Fullscreen | GameWindow::Standard => None,
@@ -575,10 +576,8 @@ async fn run_game(
         fullscreen: false,
         server,
         extra_jvm_args: if instance.auto_java_args {
-            launch::TUNED_JVM_ARGS
-                .iter()
-                .map(|&arg| arg.to_owned())
-                .collect()
+            let cores = std::thread::available_parallelism().map_or(1, usize::from);
+            launch::tuned_jvm_args(max_memory_mb, cores)
         } else {
             instance
                 .java_args

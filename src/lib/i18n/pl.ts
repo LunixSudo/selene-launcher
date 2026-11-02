@@ -490,7 +490,8 @@ export const pl: Messages = {
       "Gra startuje w oknie i przechodzi na pełny ekran po załadowaniu, więc Windows nie pokazuje „nie odpowiada”.",
     customSizeHint: "Okno gry o wybranym rozmiarze. Wyłącza pełny ekran.",
     autoArgs: "Dobieraj argumenty automatycznie",
-    autoArgsHint: "Sprawdzony zestaw do płynnej gry bez przycięć, pasuje do każdej wersji.",
+    autoArgsHint:
+      "Oficjalne ustawienia Mojang z bezpiecznymi dodatkami dla pamięci i procesora tego komputera.",
     flagSearch: "Szukaj argumentów",
     flagsEmpty: "Nic nie znaleziono",
     javaArgs: "Argumenty Javy",

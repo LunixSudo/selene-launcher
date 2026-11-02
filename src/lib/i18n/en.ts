@@ -487,7 +487,8 @@ export const en: Messages = {
       "The game starts in a window and goes fullscreen once it has loaded, so Windows won't call it not responding.",
     customSizeHint: "A game window of the size you set. Turns fullscreen off.",
     autoArgs: "Pick arguments automatically",
-    autoArgsHint: "A tested set for smooth play without stutters, fits every version.",
+    autoArgsHint:
+      "Mojang's official settings plus safe additions for this PC's memory and processor.",
     flagSearch: "Search arguments",
     flagsEmpty: "Nothing found",
     javaArgs: "Java arguments",

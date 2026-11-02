@@ -502,7 +502,8 @@ export const de: Messages = {
       "Das Spiel startet im Fenster und wechselt nach dem Laden in den Vollbildmodus, damit Windows es nicht als „reagiert nicht“ meldet.",
     customSizeHint: "Spielfenster in der gewählten Größe. Schaltet Vollbild aus.",
     autoArgs: "Argumente automatisch wählen",
-    autoArgsHint: "Ein erprobter Satz für flüssiges Spielen ohne Ruckler, passt zu jeder Version.",
+    autoArgsHint:
+      "Die offiziellen Einstellungen von Mojang plus sichere Ergänzungen für Speicher und Prozessor dieses PCs.",
     flagSearch: "Argumente suchen",
     flagsEmpty: "Nichts gefunden",
     javaArgs: "Java-Argumente",

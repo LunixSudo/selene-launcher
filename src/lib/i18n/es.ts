@@ -500,7 +500,7 @@ export const es: Messages = {
     customSizeHint: "Ventana del juego con el tamaño que elijas. Desactiva la pantalla completa.",
     autoArgs: "Elegir argumentos automáticamente",
     autoArgsHint:
-      "Un conjunto probado para jugar fluido sin tirones, sirve para cualquier versión.",
+      "Los ajustes oficiales de Mojang con añadidos seguros para la memoria y el procesador de este PC.",
     flagSearch: "Buscar argumentos",
     flagsEmpty: "No se encontró nada",
     javaArgs: "Argumentos de Java",
