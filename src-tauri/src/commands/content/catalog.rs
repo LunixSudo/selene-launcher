@@ -224,7 +224,8 @@ pub async fn install_version(
             .and_then(|file| file.remote_file()),
     }
     .ok_or(CommandError::NoCompatibleVersion)?;
-    Ok(mods::replace(&launcher.client, &game_dir, kind, &old, &remote).await?)
+    mods::replace(&launcher.client, &game_dir, kind, &old, &remote).await?;
+    super::modpacks::follow_renames(&launcher, &instance_id, kind, &[(old, remote)]).await
 }
 
 /// Everything the project page shows, without leaving the launcher.

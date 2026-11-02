@@ -6,11 +6,12 @@ use chrono::{DateTime, Utc};
 use selene_core::download::{self, Download};
 use selene_core::instance::{PackOrigin, PackSource};
 use selene_core::modrinth;
-use selene_core::mods::CatalogSort;
+use selene_core::mods::{CatalogSort, ContentKind, DISABLED_SUFFIX, ModFile, RemoteFile};
 use selene_core::mrpack;
 use serde::Serialize;
 use tauri::{AppHandle, State};
 
+use super::version_change::move_mods;
 use super::{CatalogHit, CatalogPage, ContentTask, PAGE_SIZE, Source, Stage, curseforge_api};
 use crate::commands::packs::{ImportResult, Pack, create, discard_on_error, while_importing};
 use crate::error::{CommandError, CommandResult};
@@ -328,6 +329,7 @@ pub async fn update_modpack(
     if launcher.is_preparing_in_background(&instance_id) {
         launcher.cancel_preparing(&instance_id).await?;
     }
+    let before = (instance.version.clone(), instance.loader.clone());
     let task = ContentTask::start(&app, &instance_id, Stage::Updating);
     let result = while_importing(&launcher, &instance_id, async {
         instance.pack = Some(PackOrigin {
@@ -360,7 +362,58 @@ pub async fn update_modpack(
     })
     .await;
     drop(task);
-    result
+    let result = result?;
+    // The player's own mods follow the pack to its new game version or loader.
+    let updated = &result.instance;
+    if (&updated.version, &updated.loader) != (&before.0, &before.1) {
+        let pack_files = updated
+            .pack
+            .as_ref()
+            .map(|pack| pack.addons.clone())
+            .unwrap_or_default();
+        move_mods(
+            &app,
+            &launcher,
+            &instance_id,
+            &updated.version,
+            updated.loader.as_ref(),
+            &pack_files,
+        )
+        .await?;
+    }
+    Ok(result)
+}
+
+/// Keeps the pack's list of its add-ons right when the player updates one of them, so the next
+/// pack update replaces that file instead of leaving it next to the pack's own copy.
+pub(crate) async fn follow_renames(
+    launcher: &Launcher,
+    instance_id: &str,
+    kind: ContentKind,
+    swaps: &[(ModFile, RemoteFile)],
+) -> CommandResult<()> {
+    let Some(mut instance) = launcher.instances.get(instance_id).await else {
+        return Ok(());
+    };
+    let Some(pack) = instance.pack.as_mut() else {
+        return Ok(());
+    };
+    let mut changed = false;
+    for (old, new) in swaps {
+        let old_path = format!(
+            "{}/{}",
+            kind.folder(),
+            old.file_name.trim_end_matches(DISABLED_SUFFIX)
+        );
+        if let Some(entry) = pack.addons.iter_mut().find(|path| **path == old_path) {
+            *entry = format!("{}/{}", kind.folder(), new.file_name);
+            changed = true;
+        }
+    }
+    if changed {
+        launcher.instances.save(&instance).await?;
+    }
+    Ok(())
 }
 
 fn pack_source(source: Source) -> PackSource {

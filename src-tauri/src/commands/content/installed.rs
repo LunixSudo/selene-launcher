@@ -493,6 +493,7 @@ pub(crate) async fn update_all(
         task.report(progress);
     })
     .await?;
+    super::modpacks::follow_renames(launcher, instance_id, kind, &swaps).await?;
     Ok(u32::try_from(swaps.len()).unwrap_or(u32::MAX))
 }
 

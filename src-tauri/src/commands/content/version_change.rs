@@ -25,7 +25,7 @@ pub async fn preview_version_change(
     version: String,
     loader: Option<LoaderVersion>,
 ) -> CommandResult<VersionChange> {
-    let plan = change_plan(&launcher, &instance_id, &version, loader.as_ref()).await?;
+    let plan = change_plan(&launcher, &instance_id, &version, loader.as_ref(), &[]).await?;
     Ok(VersionChange {
         updated: plan
             .updates
@@ -56,14 +56,40 @@ pub async fn change_version(
     if launcher.manifest().await?.get(&version).is_none() {
         return Err(CommandError::UnknownVersion(version));
     }
-    let plan = change_plan(&launcher, &instance_id, &version, loader.as_ref()).await?;
-    let game_dir = launcher.game_dir(&instance_id)?;
+    move_mods(
+        &app,
+        &launcher,
+        &instance_id,
+        &version,
+        loader.as_ref(),
+        &[],
+    )
+    .await?;
+    let mut instance = instance(&launcher, &instance_id).await?;
+    instance.version = version;
+    instance.loader = loader;
+    launcher.instances.save(&instance).await?;
+    Ok(instance)
+}
+
+/// Swaps the instance's mods for builds that run on `version` and switches off the ones without
+/// any. Mods at the `skip` paths are left alone: a modpack brings its own.
+pub(crate) async fn move_mods(
+    app: &AppHandle,
+    launcher: &Launcher,
+    instance_id: &str,
+    version: &str,
+    loader: Option<&LoaderVersion>,
+    skip: &[String],
+) -> CommandResult<()> {
+    let plan = change_plan(launcher, instance_id, version, loader, skip).await?;
+    let game_dir = launcher.game_dir(instance_id)?;
     let swaps: Vec<(ModFile, RemoteFile)> = plan
         .updates
         .iter()
         .map(|(file, remote, _)| (file.clone(), remote.clone()))
         .collect();
-    let task = ContentTask::start(&app, &instance_id, Stage::Updating);
+    let task = ContentTask::start(app, instance_id, Stage::Updating);
     mods::replace_all(
         &launcher.client,
         &game_dir,
@@ -75,14 +101,19 @@ pub async fn change_version(
     )
     .await?;
     drop(task);
+    super::modpacks::follow_renames(launcher, instance_id, ContentKind::Mod, &swaps).await?;
     for (file, _) in &plan.incompatible {
         mods::set_enabled(&game_dir, ContentKind::Mod, &file.file_name, false).await?;
     }
-    let mut instance = instance(&launcher, &instance_id).await?;
-    instance.version = version;
-    instance.loader = loader;
-    launcher.instances.save(&instance).await?;
-    Ok(instance)
+    Ok(())
+}
+
+fn addon_path(file: &ModFile) -> String {
+    format!(
+        "{}/{}",
+        ContentKind::Mod.folder(),
+        file.file_name.trim_end_matches(mods::DISABLED_SUFFIX)
+    )
 }
 
 /// Moves the instance to another build of the loader it already has. Mods stay as they are:
@@ -108,6 +139,7 @@ async fn change_plan(
     instance_id: &str,
     version: &str,
     loader: Option<&LoaderVersion>,
+    skip: &[String],
 ) -> CommandResult<ChangePlan> {
     let mut plan = ChangePlan {
         updates: Vec::new(),
@@ -119,7 +151,9 @@ async fn change_plan(
         // Without a loader no mod runs at all.
         plan.incompatible = installed
             .into_iter()
-            .filter(|installed| installed.file.enabled)
+            .filter(|installed| {
+                installed.file.enabled && !skip.contains(&addon_path(&installed.file))
+            })
             .map(|installed| {
                 let title = display_name(&installed).to_owned();
                 (installed.file, title)
@@ -135,12 +169,17 @@ async fn change_plan(
         .collect();
     let current = modrinth::versions_by_hash(&launcher.client, &hashes).await?;
     let mut builds = modrinth::updates_by_hash(&launcher.client, &current, target).await?;
+    // Switched-off mods get the new build too, so turning one on later just works; only
+    // switched-on ones are worth a warning when there is none.
     for installed in installed
         .into_iter()
-        .filter(|installed| installed.file.enabled)
+        .filter(|installed| !skip.contains(&addon_path(&installed.file)))
     {
         let title = display_name(&installed).to_owned();
         let build = builds.remove(&installed.file.sha1);
+        if build.is_none() && !installed.file.enabled {
+            continue;
+        }
         match (&installed.project, build) {
             (_, Some(build)) => {
                 let Some(remote) = build.remote_file() else {
