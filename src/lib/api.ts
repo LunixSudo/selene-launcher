@@ -204,7 +204,9 @@ export interface ProjectRef {
   id: string;
 }
 
-export type Issue = { kind: "requires" | "conflictsWith" | "duplicate"; title: string };
+export type Issue =
+  | { kind: "requires"; title: string; project: ProjectRef }
+  | { kind: "conflictsWith" | "duplicate"; title: string };
 
 export interface InstalledFile {
   fileName: string;

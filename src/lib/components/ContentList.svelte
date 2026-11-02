@@ -183,6 +183,35 @@
     }
   }
 
+  const missing = $derived.by(() => {
+    const projects = new Map<string, ProjectRef>();
+    for (const file of files ?? []) {
+      if (!file.enabled) {
+        continue;
+      }
+      for (const issue of file.issues) {
+        if (issue.kind === "requires") {
+          projects.set(issue.project.id, issue.project);
+        }
+      }
+    }
+    return [...projects.values()];
+  });
+  let installingMissing = $state(false);
+
+  async function installMissing(projects: ProjectRef[]) {
+    installingMissing = true;
+    error = null;
+    try {
+      await api.installContent(instanceId, kind, world, projects);
+      await load();
+    } catch (err) {
+      error = describeError(err);
+    } finally {
+      installingMissing = false;
+    }
+  }
+
   function show(file: InstalledFile, view: "about" | "versions") {
     if (file.project) {
       shown = { file, project: file.project };
@@ -229,6 +258,18 @@
   {#if kind === "mod" && optifineBuild}
     <button type="button" class="pill-button" onclick={installOptifine}>
       {optifineStatus ?? t("content.optifine")}
+    </button>
+  {/if}
+  {#if missing.length > 0}
+    <button
+      type="button"
+      class="pill-button"
+      disabled={installingMissing}
+      onclick={() => installMissing(missing)}
+    >
+      {installingMissing
+        ? t("content.installingMissing")
+        : t("content.installMissing", { count: missing.length })}
     </button>
   {/if}
   {#if updates && updates.length > 0}
@@ -290,9 +331,20 @@
                 </span>
               {/if}
               {#each file.issues as issue, index (index)}
-                <span class="issue {issue.kind}"
-                  >{t(`content.${issue.kind}`, { title: issue.title })}</span
-                >
+                {#if issue.kind === "requires"}
+                  <button
+                    type="button"
+                    class="issue requires"
+                    disabled={installingMissing}
+                    onclick={() => installMissing([issue.project])}
+                  >
+                    {t("content.requiresInstall", { title: issue.title })}
+                  </button>
+                {:else}
+                  <span class="issue {issue.kind}"
+                    >{t(`content.${issue.kind}`, { title: issue.title })}</span
+                  >
+                {/if}
               {/each}
             </span>
           {/if}
@@ -397,6 +449,19 @@
   .issue.requires {
     background: color-mix(in srgb, #e0a100 18%, transparent);
     color: #c98a00;
+  }
+
+  button.issue {
+    border: 0;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  button.issue:hover:not(:disabled) {
+    background: color-mix(in srgb, #e0a100 30%, transparent);
   }
 
   .issue.conflictsWith,

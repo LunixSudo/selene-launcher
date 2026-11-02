@@ -137,8 +137,8 @@ pub struct ProjectRef {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Issue {
-    /// A required mod is not installed.
-    Requires { title: String },
+    /// A required mod is not installed; `project` is where to get it.
+    Requires { title: String, project: ProjectRef },
     /// An installed mod is marked as incompatible with this one.
     ConflictsWith { title: String },
     /// Another enabled file, named by `title`, is the same mod: often an older copy added

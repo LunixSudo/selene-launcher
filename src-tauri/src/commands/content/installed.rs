@@ -312,6 +312,10 @@ fn issues(
             match dependency.dependency_type {
                 DependencyType::Required if !satisfied(id) => Some(Issue::Requires {
                     title: title_of(id),
+                    project: ProjectRef {
+                        source: Source::Modrinth,
+                        id: id.to_owned(),
+                    },
                 }),
                 DependencyType::Incompatible if installed.contains(id) => {
                     Some(Issue::ConflictsWith {
