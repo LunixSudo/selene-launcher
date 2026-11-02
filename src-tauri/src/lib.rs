@@ -50,6 +50,8 @@ pub fn run() {
             commands::sign_in,
             commands::cancel_sign_in,
             commands::content::modpacks::search_modpacks,
+            commands::content::modpacks::modpack_versions,
+            commands::content::modpacks::update_modpack,
             commands::content::modpacks::install_modpack,
             commands::player_name_status,
             commands::create_player,

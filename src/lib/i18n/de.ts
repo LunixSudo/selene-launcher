@@ -57,6 +57,21 @@ export const de: Messages = {
     search: "Modpacks suchen",
     install: "Installieren",
     installing: "Wird installiert…",
+    anyVersion: "Jede Version",
+    installed: "Installiert",
+    installedCount: "Installiert: {count}",
+    update: "Aktualisieren",
+    add: "Hinzufügen",
+    version: "Modpack-Version",
+    instance: "Instanz",
+    current: "aktuell",
+    installTitle: "{title} installieren",
+    updateTitle: "{title} aktualisieren",
+    loadingVersions: "Versionen werden geladen…",
+    noVersions: "Keine Versionen zum Installieren",
+    betas: "Betas anzeigen",
+    updateHint:
+      "Erweiterungen, die die alte Version hatte und die neue nicht mehr, werden entfernt. Alles, was du selbst hinzugefügt hast, bleibt.",
   },
   instance: {
     backdrop: "Hintergrund der Instanz",
@@ -108,7 +123,7 @@ export const de: Messages = {
     added: "Installiert",
     downloads: "{count} Downloads",
     nothingFound: "Nichts gefunden",
-    more: "Mehr anzeigen",
+    loadingMore: "Wird geladen…",
   },
   launch: {
     importing: "Wird importiert…",
@@ -385,6 +400,7 @@ export const de: Messages = {
     empty: "Hier erscheint die Ausgabe des Spiels, sobald es startet.",
   },
   updates: {
+    pack: "Modpack: {from} → {to}",
     title: "Updates verfügbar",
     none: "Alles ist aktuell",
     check: "Nach Updates suchen",

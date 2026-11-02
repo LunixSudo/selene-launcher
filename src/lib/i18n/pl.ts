@@ -57,6 +57,21 @@ export const pl: Messages = {
     search: "Szukaj modpacków",
     install: "Zainstaluj",
     installing: "Instalowanie…",
+    anyVersion: "Dowolna wersja",
+    installed: "Zainstalowano",
+    installedCount: "Zainstalowano: {count}",
+    update: "Aktualizuj",
+    add: "Dodaj",
+    version: "Wersja paczki",
+    instance: "Instancja",
+    current: "obecna",
+    installTitle: "Instalacja: {title}",
+    updateTitle: "Aktualizacja: {title}",
+    loadingVersions: "Wczytywanie wersji…",
+    noVersions: "Brak wersji do instalacji",
+    betas: "Pokaż wersje beta",
+    updateHint:
+      "Dodatki, które miała stara wersja, a nowa ich nie ma, zostaną usunięte. Wszystko, co dodałeś sam, zostanie.",
   },
   instance: {
     backdrop: "Tło instancji",
@@ -106,7 +121,7 @@ export const pl: Messages = {
     added: "Zainstalowano",
     downloads: "Pobrania: {count}",
     nothingFound: "Nic nie znaleziono",
-    more: "Pokaż więcej",
+    loadingMore: "Wczytywanie…",
   },
   launch: {
     importing: "Importowanie…",
@@ -375,6 +390,7 @@ export const pl: Messages = {
     empty: "Tu pojawi się wyjście gry, gdy się uruchomi.",
   },
   updates: {
+    pack: "Paczka: {from} → {to}",
     title: "Dostępne aktualizacje",
     none: "Wszystko jest aktualne",
     check: "Sprawdź aktualizacje",

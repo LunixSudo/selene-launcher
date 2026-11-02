@@ -36,6 +36,24 @@ export interface Instance {
   javaArgs: string;
   javaPath: string | null;
   group: string | null;
+  pack: PackOrigin | null;
+}
+
+/** The catalog modpack an instance was made from. */
+export interface PackOrigin {
+  source: Source;
+  projectId: string;
+  versionId: string;
+  versionName: string;
+}
+
+export interface PackVersion {
+  id: string;
+  name: string;
+  gameVersions: string[];
+  loaders: string[];
+  published: string | null;
+  release: boolean;
 }
 
 export type GameMode = "survival" | "creative" | "adventure" | "spectator" | "hardcore";
@@ -504,10 +522,19 @@ export const api = {
   projectPage: (kind: ContentKind, project: ProjectRef) =>
     invoke<ProjectPage>("project_page", { kind, project }),
   importPack: (path: string) => invoke<ImportResult>("import_pack", { path }),
-  searchModpacks: (source: Source, query: string, sort: CatalogSort, page: number) =>
-    invoke<CatalogPage>("search_modpacks", { source, query, sort, page }),
-  installModpack: (source: Source, projectId: string) =>
-    invoke<ImportResult>("install_modpack", { source, projectId }),
+  searchModpacks: (
+    source: Source,
+    query: string,
+    gameVersion: string | null,
+    sort: CatalogSort,
+    page: number,
+  ) => invoke<CatalogPage>("search_modpacks", { source, query, gameVersion, sort, page }),
+  modpackVersions: (source: Source, projectId: string) =>
+    invoke<PackVersion[]>("modpack_versions", { source, projectId }),
+  installModpack: (source: Source, projectId: string, versionId: string | null, title: string) =>
+    invoke<ImportResult>("install_modpack", { source, projectId, versionId, title }),
+  updateModpack: (instanceId: string, versionId: string | null) =>
+    invoke<ImportResult>("update_modpack", { instanceId, versionId }),
   exportPack: (instanceId: string, path: string, folders: string[], format: PackFormat) =>
     invoke<void>("export_pack", { instanceId, path, folders, format }),
 };

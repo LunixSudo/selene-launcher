@@ -14,6 +14,7 @@
   import { categoryName } from "#lib/categories.ts";
   import { describeError } from "#lib/errors.ts";
   import { locale, t } from "#lib/i18n/index.svelte.ts";
+  import { nearEnd } from "#lib/near-end.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import InstallPreviewDialog from "./InstallPreviewDialog.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
@@ -419,14 +420,16 @@
 </ul>
 
 {#if hasMore}
-  <button
-    type="button"
-    class="more"
-    disabled={loading}
-    onclick={() => lastRequest && search(lastRequest, page + 1)}
-  >
-    {t("instance.more")}
-  </button>
+  {#key hits.length}
+    <div
+      class="more"
+      {@attach nearEnd(() => !loading && lastRequest && search(lastRequest, page + 1))}
+    >
+      {#if loading}
+        {t("instance.loadingMore")}
+      {/if}
+    </div>
+  {/key}
 {/if}
 
 {#if removing}
@@ -612,13 +615,11 @@
   }
 
   .more {
-    display: block;
-    margin: 12px auto 0;
-    height: 32px;
-    padding: 0 16px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
+    min-height: 32px;
+    padding-top: 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
   }
 
   .error {

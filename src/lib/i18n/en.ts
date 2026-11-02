@@ -57,6 +57,21 @@ export const en: Messages = {
     search: "Search modpacks",
     install: "Install",
     installing: "Installing…",
+    anyVersion: "Any version",
+    installed: "Installed",
+    installedCount: "Installed: {count}",
+    update: "Update",
+    add: "Add",
+    version: "Pack version",
+    instance: "Instance",
+    current: "current",
+    installTitle: "Install {title}",
+    updateTitle: "Update {title}",
+    loadingVersions: "Loading versions…",
+    noVersions: "No versions to install",
+    betas: "Show betas",
+    updateHint:
+      "Add-ons the old version had and the new one dropped are removed. Everything you added yourself stays.",
   },
   instance: {
     backdrop: "Instance background",
@@ -105,7 +120,7 @@ export const en: Messages = {
     added: "Installed",
     downloads: "{count} downloads",
     nothingFound: "Nothing found",
-    more: "Show more",
+    loadingMore: "Loading…",
   },
   launch: {
     importing: "Importing…",
@@ -372,6 +387,7 @@ export const en: Messages = {
     empty: "Game output shows up here once it starts.",
   },
   updates: {
+    pack: "Modpack: {from} → {to}",
     title: "Updates available",
     none: "Everything is up to date",
     check: "Check for updates",

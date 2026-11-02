@@ -116,8 +116,16 @@ pub fn read_manifest(pack: &Path) -> Result<PackManifest> {
     Ok(manifest)
 }
 
-/// Downloads the pack's mods and unpacks its overrides. Returns the ids of mods whose authors
-/// only allow downloads from the CurseForge website.
+/// What installing a pack left to do and what it put in place.
+#[derive(Debug, Clone, Default)]
+pub struct Installed {
+    /// Mods whose authors only allow downloads from the CurseForge website.
+    pub manual: Vec<u32>,
+    /// The add-ons the pack put in the game folder, see [`mrpack::addon_path`].
+    pub addons: Vec<String>,
+}
+
+/// Downloads the pack's mods and unpacks its overrides.
 pub async fn install(
     client: &Client,
     curseforge: &CurseForge,
@@ -125,7 +133,7 @@ pub async fn install(
     manifest: &PackManifest,
     game_dir: &Path,
     on_progress: impl Fn(Progress) + Sync,
-) -> Result<Vec<u32>> {
+) -> Result<Installed> {
     let ids: Vec<u32> = manifest
         .files
         .iter()
@@ -157,6 +165,10 @@ pub async fn install(
             None => manual.push(file.mod_id),
         }
     }
+    let mut addons: Vec<String> = remote
+        .iter()
+        .map(|(kind, file)| format!("{}/{}", kind.folder(), file.file_name))
+        .collect();
     mods::install_many(client, game_dir, &remote, on_progress).await?;
 
     let pack = pack.to_owned();
@@ -166,10 +178,15 @@ pub async fn install(
     } else {
         manifest.overrides.trim_matches('/').to_owned()
     };
-    tokio::task::spawn_blocking(move || mrpack::extract_overrides(&pack, &target, &[&overrides]))
-        .await
-        .map_err(|err| Error::io(game_dir, std::io::Error::other(err)))??;
-    Ok(manual)
+    let unpacked = tokio::task::spawn_blocking(move || {
+        mrpack::extract_overrides(&pack, &target, &[&overrides])
+    })
+    .await
+    .map_err(|err| Error::io(game_dir, std::io::Error::other(err)))??;
+    addons.extend(unpacked.iter().filter_map(|path| mrpack::addon_path(path)));
+    addons.sort();
+    addons.dedup();
+    Ok(Installed { manual, addons })
 }
 
 /// Writes the instance as a CurseForge modpack. Mods CurseForge does not know are copied in.

@@ -55,6 +55,21 @@ export const ru = {
     search: "Поиск модпаков",
     install: "Установить",
     installing: "Установка…",
+    anyVersion: "Любая версия",
+    installed: "Установлен",
+    installedCount: "Установлено: {count}",
+    update: "Обновить",
+    add: "Добавить",
+    version: "Версия сборки",
+    instance: "Сборка",
+    current: "сейчас",
+    installTitle: "Установка: {title}",
+    updateTitle: "Обновление: {title}",
+    loadingVersions: "Загрузка версий…",
+    noVersions: "Нет версий для установки",
+    betas: "Показать бета-версии",
+    updateHint:
+      "Дополнения, которые были в старой версии и пропали из новой, удалятся. Всё, что вы добавили сами, останется.",
   },
   instance: {
     backdrop: "Фон сборки",
@@ -102,7 +117,7 @@ export const ru = {
     added: "Установлен",
     downloads: "{count} загрузок",
     nothingFound: "Ничего не нашлось",
-    more: "Показать ещё",
+    loadingMore: "Загрузка…",
   },
   launch: {
     importing: "Импорт сборки…",
@@ -367,6 +382,7 @@ export const ru = {
     empty: "Здесь появится вывод игры после запуска.",
   },
   updates: {
+    pack: "Сборка: {from} → {to}",
     title: "Есть обновления",
     none: "Всё уже обновлено",
     check: "Проверить обновления",

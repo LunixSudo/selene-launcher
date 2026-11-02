@@ -57,6 +57,21 @@ export const uk: Messages = {
     search: "Пошук модпаків",
     install: "Встановити",
     installing: "Встановлення…",
+    anyVersion: "Будь-яка версія",
+    installed: "Встановлено",
+    installedCount: "Встановлено: {count}",
+    update: "Оновити",
+    add: "Додати",
+    version: "Версія збірки",
+    instance: "Збірка",
+    current: "зараз",
+    installTitle: "Встановлення: {title}",
+    updateTitle: "Оновлення: {title}",
+    loadingVersions: "Завантаження версій…",
+    noVersions: "Немає версій для встановлення",
+    betas: "Показати бета-версії",
+    updateHint:
+      "Доповнення, що були в старій версії й зникли з нової, видаляться. Усе, що ви додали самі, залишиться.",
   },
   instance: {
     backdrop: "Фон збірки",
@@ -105,7 +120,7 @@ export const uk: Messages = {
     added: "Встановлено",
     downloads: "{count} завантажень",
     nothingFound: "Нічого не знайдено",
-    more: "Показати ще",
+    loadingMore: "Завантаження…",
   },
   launch: {
     importing: "Імпорт…",
@@ -371,6 +386,7 @@ export const uk: Messages = {
     empty: "Тут з’явиться вивід гри після запуску.",
   },
   updates: {
+    pack: "Збірка: {from} → {to}",
     title: "Є оновлення",
     none: "Усе оновлено",
     check: "Перевірити оновлення",

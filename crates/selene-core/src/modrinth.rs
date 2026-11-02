@@ -274,14 +274,18 @@ pub async fn search(client: &Client, query: &SearchQuery<'_>) -> Result<SearchRe
 pub async fn search_modpacks(
     client: &Client,
     text: &str,
+    game_version: Option<&str>,
     sort: CatalogSort,
     offset: u32,
     limit: u32,
 ) -> Result<SearchResults> {
-    let facets = vec![vec![format!(
+    let mut facets = vec![vec![format!(
         "project_type:{}",
         ProjectType::Modpack.as_str()
     )]];
+    if let Some(version) = game_version {
+        facets.push(vec![format!("versions:{version}")]);
+    }
     let results = http::send(
         client,
         client.get(format!("{API_URL}/search")).query(&[

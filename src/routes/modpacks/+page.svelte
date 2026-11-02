@@ -1,13 +1,15 @@
 <script lang="ts">
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import { api, type CatalogHit, type CatalogSort, type Source } from "#lib/api.ts";
+  import { api, type CatalogHit, type CatalogSort, type Instance, type Source } from "#lib/api.ts";
   import BackLink from "#lib/components/BackLink.svelte";
+  import ModpackDialog from "#lib/components/ModpackDialog.svelte";
   import Segmented from "#lib/components/Segmented.svelte";
   import Select from "#lib/components/Select.svelte";
   import { describeError } from "#lib/errors.ts";
   import { locale, t } from "#lib/i18n/index.svelte.ts";
+  import { nearEnd } from "#lib/near-end.ts";
   import { scrollFade } from "#lib/scroll-fade.ts";
-  import { installModpack, library } from "#lib/state/instances.svelte.ts";
+  import { library } from "#lib/state/instances.svelte.ts";
   import { goto } from "$app/navigation";
 
   const SEARCH_DELAY_MS = 300;
@@ -21,26 +23,43 @@
     text: string;
     from: Source;
     sort: CatalogSort;
+    gameVersion: string;
   }
 
   let source = $state<Source>("modrinth");
   let sort = $state<CatalogSort>("downloads");
   let query = $state("");
+  let gameVersion = $state("");
+  let releases = $state<string[]>([]);
   let hits = $state<CatalogHit[]>([]);
   let page = $state(0);
   let hasMore = $state(false);
   let loading = $state(false);
   let error = $state<string | null>(null);
   let installing = $state<Record<string, true>>({});
-  let installed = $state<Record<string, string>>({});
+  let dialogOpen = $state(false);
+  let chosen = $state<{ hit: CatalogHit; instances: Instance[] } | null>(null);
   let lastRequest: Request | null = null;
 
   const sortOptions = $derived(
     SORTS.map((value) => ({ value, label: t(`content.sorts.${value}`) })),
   );
+  const versionOptions = $derived([
+    { value: "", label: t("modpacks.anyVersion") },
+    ...releases.map((value) => ({ value, label: value })),
+  ]);
 
   $effect(() => {
-    const request = { text: query, from: source, sort };
+    api
+      .versions()
+      .then((all) => {
+        releases = all.filter((entry) => entry.kind === "release").map((entry) => entry.id);
+      })
+      .catch(() => {});
+  });
+
+  $effect(() => {
+    const request = { text: query, from: source, sort, gameVersion };
     const timer = setTimeout(() => void search(request, 0), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
   });
@@ -50,7 +69,13 @@
     loading = true;
     error = null;
     try {
-      const results = await api.searchModpacks(request.from, request.text, request.sort, next);
+      const results = await api.searchModpacks(
+        request.from,
+        request.text,
+        request.gameVersion || null,
+        request.sort,
+        next,
+      );
       if (request !== lastRequest) {
         return;
       }
@@ -69,14 +94,29 @@
     }
   }
 
-  async function install(hit: CatalogHit) {
+  function loadMore() {
+    if (!loading && hasMore && lastRequest) {
+      void search(lastRequest, page + 1);
+    }
+  }
+
+  function installedOf(hit: CatalogHit): Instance[] {
+    return library.instances.filter(
+      (instance) => instance.pack?.source === hit.source && instance.pack.projectId === hit.id,
+    );
+  }
+
+  function choose(hit: CatalogHit, instances: Instance[]) {
+    chosen = { hit, instances };
+    dialogOpen = true;
+  }
+
+  async function trackInstall(hit: CatalogHit, done: Promise<Instance | null>) {
     installing[key(hit)] = true;
     error = null;
-    const instance = await installModpack(hit.source, hit.id);
+    const instance = await done;
     delete installing[key(hit)];
-    if (instance) {
-      installed[key(hit)] = instance.id;
-    } else if (library.importError) {
+    if (!instance && library.importError) {
       error = t(`errors.${library.importError.kind}`);
     }
   }
@@ -111,7 +151,10 @@
       name="modpack-source"
       label={t("instance.source")}
     />
-    <div class="sort">
+    <div class="select">
+      <Select bind:value={gameVersion} options={versionOptions} />
+    </div>
+    <div class="select">
       <Select bind:value={sort} options={sortOptions} />
     </div>
   </div>
@@ -127,7 +170,7 @@
 
     <ul>
       {#each hits as hit (key(hit))}
-        {@const instanceId = installed[key(hit)]}
+        {@const instances = installedOf(hit)}
         <li>
           {#if hit.iconUrl}
             <img src={hit.iconUrl} alt="" loading="lazy">
@@ -148,40 +191,60 @@
               </button>
             </span>
           </div>
-          {#if instanceId}
-            <button
-              type="button"
-              class="install done"
-              onclick={() => goto(`/instance/${instanceId}`)}
-            >
-              {t("instances.open")}
-            </button>
-          {:else}
-            <button
-              type="button"
-              class="install"
-              disabled={installing[key(hit)]}
-              onclick={() => install(hit)}
-            >
-              {installing[key(hit)] ? t("modpacks.installing") : t("modpacks.install")}
-            </button>
-          {/if}
+          <div class="actions">
+            {#if installing[key(hit)]}
+              <button type="button" class="install" disabled>{t("modpacks.installing")}</button>
+            {:else if instances.length > 0}
+              <button
+                type="button"
+                class="install done"
+                title={instances.map((instance) => instance.name).join(", ")}
+                onclick={() =>
+                  instances.length === 1 ? goto(`/instance/${instances[0].id}`) : goto("/")}
+              >
+                {instances.length === 1
+                  ? t("modpacks.installed")
+                  : t("modpacks.installedCount", { count: instances.length })}
+              </button>
+              <button type="button" class="install ghost" onclick={() => choose(hit, instances)}>
+                {t("modpacks.update")}
+              </button>
+              <button type="button" class="install ghost" onclick={() => choose(hit, [])}>
+                {t("modpacks.add")}
+              </button>
+            {:else}
+              <button type="button" class="install" onclick={() => choose(hit, [])}>
+                {t("modpacks.install")}
+              </button>
+            {/if}
+          </div>
         </li>
       {/each}
     </ul>
 
     {#if hasMore}
-      <button
-        type="button"
-        class="more"
-        disabled={loading}
-        onclick={() => lastRequest && search(lastRequest, page + 1)}
-      >
-        {t("instance.more")}
-      </button>
+      {#key hits.length}
+        <div class="more" {@attach nearEnd(loadMore)}>
+          {#if loading}
+            {t("instance.loadingMore")}
+          {/if}
+        </div>
+      {/key}
     {/if}
   </div>
 </section>
+
+{#if chosen}
+  {@const hit = chosen.hit}
+  <ModpackDialog
+    bind:open={dialogOpen}
+    source={hit.source}
+    projectId={hit.id}
+    title={hit.title}
+    instances={chosen.instances}
+    oninstall={(done) => trackInstall(hit, done)}
+  />
+{/if}
 
 <style>
   header {
@@ -209,8 +272,15 @@
     font: inherit;
   }
 
-  .sort {
-    width: 200px;
+  .select {
+    width: 180px;
+  }
+
+  .actions {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .scroll {
@@ -298,18 +368,22 @@
   }
 
   .install.done {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+  }
+
+  .install.ghost {
     background: var(--field);
     color: var(--text);
+    font-weight: 500;
   }
 
   .more {
-    display: block;
-    margin: 12px auto 0;
-    height: 32px;
-    padding: 0 16px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
+    min-height: 32px;
+    padding-top: 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
   }
 
   .error {

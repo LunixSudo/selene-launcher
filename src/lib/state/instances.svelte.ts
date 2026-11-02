@@ -129,8 +129,13 @@ export function importPack(path: string): Promise<Instance | null> {
   return runImport(() => api.importPack(path));
 }
 
-export function installModpack(source: Source, projectId: string): Promise<Instance | null> {
-  return runImport(() => api.installModpack(source, projectId));
+export function installModpack(
+  source: Source,
+  projectId: string,
+  versionId: string | null,
+  title: string,
+): Promise<Instance | null> {
+  return runImport(() => api.installModpack(source, projectId, versionId, title));
 }
 
 async function runImport(task: () => Promise<ImportResult>): Promise<Instance | null> {

@@ -108,6 +108,9 @@ pub struct File {
     pub hashes: Vec<FileHash>,
     #[serde(default)]
     pub dependencies: Vec<FileDependency>,
+    /// Game versions mixed with loader names, as in `["1.20.1", "Forge"]`.
+    #[serde(default)]
+    pub game_versions: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -281,15 +284,16 @@ impl CurseForge {
         })
     }
 
-    /// Modpacks for any game version and loader, since a pack brings its own.
+    /// Modpacks for any loader, since a pack brings its own, and for one game version if given.
     pub async fn search_modpacks(
         &self,
         text: &str,
+        game_version: Option<&str>,
         sort: CatalogSort,
         offset: u32,
         limit: u32,
     ) -> Result<SearchResults> {
-        let params = [
+        let mut params = vec![
             ("gameId", MINECRAFT_GAME_ID.to_string()),
             ("classId", MODPACK_CLASS_ID.to_string()),
             ("searchFilter", text.to_owned()),
@@ -298,6 +302,9 @@ impl CurseForge {
             ("index", offset.to_string()),
             ("pageSize", limit.to_string()),
         ];
+        if let Some(version) = game_version {
+            params.push(("gameVersion", version.to_owned()));
+        }
         let response: Response<Vec<Mod>> =
             http::send(&self.client, self.get("/mods/search").query(&params))
                 .await?
@@ -328,6 +335,26 @@ impl CurseForge {
             .into_iter()
             .filter(|file| !file.is_server_pack)
             .max_by(|a, b| a.file_date.cmp(&b.file_date)))
+    }
+
+    /// Every file of a modpack players can install, newest first.
+    pub async fn pack_files(&self, mod_id: u32) -> Result<Vec<File>> {
+        let response: Response<Vec<File>> = http::send(
+            &self.client,
+            self.get(&format!("/mods/{mod_id}/files"))
+                .query(&[("pageSize", "50")]),
+        )
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+        let mut files: Vec<File> = response
+            .data
+            .into_iter()
+            .filter(|file| !file.is_server_pack)
+            .collect();
+        files.sort_by(|a, b| b.file_date.cmp(&a.file_date));
+        Ok(files)
     }
 
     /// Files of a project for this game version and, for mods, this loader. Newest first.

@@ -57,6 +57,21 @@ export const tr: Messages = {
     search: "Mod paketi ara",
     install: "Yükle",
     installing: "Yükleniyor…",
+    anyVersion: "Herhangi bir sürüm",
+    installed: "Kurulu",
+    installedCount: "Kurulu: {count}",
+    update: "Güncelle",
+    add: "Ekle",
+    version: "Paket sürümü",
+    instance: "Profil",
+    current: "şu anki",
+    installTitle: "{title} kur",
+    updateTitle: "{title} güncelle",
+    loadingVersions: "Sürümler yükleniyor…",
+    noVersions: "Kurulacak sürüm yok",
+    betas: "Betaları göster",
+    updateHint:
+      "Eski sürümde olup yenisinde olmayan eklentiler silinir. Kendi eklediğiniz her şey kalır.",
   },
   instance: {
     backdrop: "Profil arka planı",
@@ -107,7 +122,7 @@ export const tr: Messages = {
     added: "Kuruldu",
     downloads: "{count} indirme",
     nothingFound: "Hiçbir şey bulunamadı",
-    more: "Daha fazla göster",
+    loadingMore: "Yükleniyor…",
   },
   launch: {
     importing: "İçe aktarılıyor…",
@@ -376,6 +391,7 @@ export const tr: Messages = {
     empty: "Oyun başlayınca çıktısı burada görünür.",
   },
   updates: {
+    pack: "Mod paketi: {from} → {to}",
     title: "Güncellemeler var",
     none: "Her şey güncel",
     check: "Güncellemeleri denetle",

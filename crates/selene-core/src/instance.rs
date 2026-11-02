@@ -45,6 +45,29 @@ pub struct Instance {
     /// Group the instance is filed under on the home screen.
     #[serde(default)]
     pub group: Option<String>,
+    /// The catalog modpack the instance was made from.
+    #[serde(default)]
+    pub pack: Option<PackOrigin>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PackSource {
+    Modrinth,
+    Curseforge,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackOrigin {
+    pub source: PackSource,
+    pub project_id: String,
+    pub version_id: String,
+    pub version_name: String,
+    /// Add-ons the pack put in, so an update removes the ones it dropped and nothing the
+    /// player added.
+    #[serde(default)]
+    pub addons: Vec<String>,
 }
 
 /// Instances live in `root/<id>/`, each with its config and a `minecraft` game folder.
@@ -123,6 +146,7 @@ impl Instances {
             java_args: String::new(),
             java_path: None,
             group: None,
+            pack: None,
         };
         let game_dir = self.game_dir(&instance.id);
         fs::create_dir_all(&game_dir)
@@ -162,11 +186,15 @@ impl Instances {
         Ok(instance)
     }
 
+    /// Deleting an instance that is already gone is not an error: a cancelled import may
+    /// have cleaned it up first.
     pub async fn delete(&self, id: &str) -> Result<()> {
         let path = self.root.join(checked_id(id)?);
-        fs::remove_dir_all(&path)
-            .await
-            .map_err(|err| Error::io(&path, err))
+        match fs::remove_dir_all(&path).await {
+            Ok(()) => Ok(()),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(err) => Err(Error::io(&path, err)),
+        }
     }
 
     /// Creates an empty folder for `name` and returns its id. Creating the folder is what

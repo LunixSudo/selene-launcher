@@ -1,9 +1,10 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use selene_core::cfpack;
+use selene_core::cfpack::{self, PackManifest};
+use selene_core::download::Progress;
 use selene_core::instance::Instance;
 use selene_core::loader::LoaderVersion;
-use selene_core::mrpack::{self, ExportOptions};
+use selene_core::mrpack::{self, ExportOptions, PackIndex};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 
@@ -21,9 +22,90 @@ pub enum PackFormat {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportResult {
-    instance: Instance,
+    pub(crate) instance: Instance,
     /// Mods from a CurseForge pack that have to be downloaded from the website.
-    manual: Vec<ManualDownload>,
+    pub(crate) manual: Vec<ManualDownload>,
+}
+
+/// A pack file read from disk, in either format.
+pub(crate) enum Pack {
+    Modrinth(PackIndex),
+    Curseforge(PackManifest),
+}
+
+impl Pack {
+    pub(crate) async fn read(path: &Path) -> CommandResult<Self> {
+        let is_zip = path
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"));
+        let path = path.to_owned();
+        tokio::task::spawn_blocking(move || {
+            if is_zip {
+                cfpack::read_manifest(&path).map(Self::Curseforge)
+            } else {
+                mrpack::read_index(&path).map(Self::Modrinth)
+            }
+        })
+        .await
+        .map_err(|err| CommandError::Io(std::io::Error::other(err)))?
+        .map_err(Into::into)
+    }
+
+    fn name(&self) -> &str {
+        match self {
+            Self::Modrinth(index) => &index.name,
+            Self::Curseforge(manifest) => &manifest.name,
+        }
+    }
+
+    pub(crate) fn game_version(&self) -> CommandResult<&str> {
+        match self {
+            Self::Modrinth(index) => Ok(index.game_version()?),
+            Self::Curseforge(manifest) => Ok(manifest.game_version()),
+        }
+    }
+
+    pub(crate) fn loader(&self) -> CommandResult<Option<LoaderVersion>> {
+        match self {
+            Self::Modrinth(index) => Ok(index.loader()?),
+            Self::Curseforge(manifest) => Ok(manifest.loader()?),
+        }
+    }
+
+    /// Puts the pack's files in the game folder. Returns the add-ons it placed and the mods
+    /// that have to be downloaded by hand.
+    pub(crate) async fn install(
+        &self,
+        launcher: &Launcher,
+        path: &Path,
+        game_dir: &Path,
+        on_progress: impl Fn(Progress) + Sync,
+    ) -> CommandResult<(Vec<String>, Vec<ManualDownload>)> {
+        match self {
+            Self::Modrinth(index) => {
+                let addons =
+                    mrpack::install(&launcher.client, path, index, game_dir, on_progress).await?;
+                Ok((addons, Vec::new()))
+            }
+            Self::Curseforge(manifest) => {
+                let curseforge = launcher
+                    .curseforge
+                    .as_ref()
+                    .ok_or(CommandError::NoCompatibleVersion)?;
+                let installed = cfpack::install(
+                    &launcher.client,
+                    curseforge,
+                    path,
+                    manifest,
+                    game_dir,
+                    on_progress,
+                )
+                .await?;
+                let manual = manual_downloads(curseforge, &installed.manual).await;
+                Ok((installed.addons, manual))
+            }
+        }
+    }
 }
 
 /// Creates an instance from a `.mrpack` or a CurseForge `.zip`. A failed import leaves nothing
@@ -34,123 +116,57 @@ pub async fn import_pack(
     launcher: State<'_, Launcher>,
     path: PathBuf,
 ) -> CommandResult<ImportResult> {
-    import_file(&app, &launcher, path).await
-}
-
-pub(crate) async fn import_file(
-    app: &AppHandle,
-    launcher: &Launcher,
-    path: PathBuf,
-) -> CommandResult<ImportResult> {
-    let is_zip = path
-        .extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"));
-    if is_zip {
-        import_curseforge(app, launcher, path).await
-    } else {
-        import_mrpack(app, launcher, path).await
-    }
-}
-
-async fn import_mrpack(
-    app: &AppHandle,
-    launcher: &Launcher,
-    path: PathBuf,
-) -> CommandResult<ImportResult> {
-    let pack = path.clone();
-    let index = tokio::task::spawn_blocking(move || mrpack::read_index(&pack))
-        .await
-        .map_err(|err| CommandError::Io(std::io::Error::other(err)))??;
+    let pack = Pack::read(&path).await?;
     let instance = create(
-        app,
-        launcher,
-        &index.name,
-        index.game_version()?,
-        index.loader()?,
+        &app,
+        &launcher,
+        pack.name(),
+        pack.game_version()?,
+        pack.loader()?,
     )
     .await?;
     let game_dir = launcher.instances.game_dir(&instance.id);
-    let task = ContentTask::start(app, &instance.id, Stage::Importing);
+    let task = ContentTask::start(&app, &instance.id, Stage::Importing);
     let installed = while_importing(
-        launcher,
+        &launcher,
         &instance.id,
-        mrpack::install(&launcher.client, &path, &index, &game_dir, |progress| {
+        pack.install(&launcher, &path, &game_dir, |progress| {
             task.report(progress);
         }),
     )
     .await;
     drop(task);
-    if let Err(err) = installed {
-        let _ = launcher.instances.delete(&instance.id).await;
-        return Err(err);
-    }
-    Ok(ImportResult {
-        instance,
-        manual: Vec::new(),
-    })
+    let (_, manual) = discard_on_error(&launcher, &instance.id, installed).await?;
+    Ok(ImportResult { instance, manual })
 }
 
-async fn import_curseforge(
-    app: &AppHandle,
+/// A failed import removes the instance it made. A cancelled one was cancelled by deleting
+/// the instance, which removes it already.
+pub(crate) async fn discard_on_error<T>(
     launcher: &Launcher,
-    path: PathBuf,
-) -> CommandResult<ImportResult> {
-    let curseforge = launcher
-        .curseforge
-        .as_ref()
-        .ok_or(CommandError::NoCompatibleVersion)?;
-    let pack = path.clone();
-    let manifest = tokio::task::spawn_blocking(move || cfpack::read_manifest(&pack))
-        .await
-        .map_err(|err| CommandError::Io(std::io::Error::other(err)))??;
-    let instance = create(
-        app,
-        launcher,
-        &manifest.name,
-        manifest.game_version(),
-        manifest.loader()?,
-    )
-    .await?;
-    let game_dir = launcher.instances.game_dir(&instance.id);
-    let task = ContentTask::start(app, &instance.id, Stage::Importing);
-    let installed = while_importing(
-        launcher,
-        &instance.id,
-        cfpack::install(
-            &launcher.client,
-            curseforge,
-            &path,
-            &manifest,
-            &game_dir,
-            |progress| task.report(progress),
-        ),
-    )
-    .await;
-    drop(task);
-    match installed {
-        Ok(manual) => Ok(ImportResult {
-            instance,
-            manual: manual_downloads(curseforge, &manual).await,
-        }),
-        Err(err) => {
-            let _ = launcher.instances.delete(&instance.id).await;
-            Err(err)
-        }
+    id: &str,
+    result: CommandResult<T>,
+) -> CommandResult<T> {
+    if let Err(err) = &result
+        && !matches!(err, CommandError::Cancelled)
+    {
+        let _ = launcher.instances.delete(id).await;
     }
+    result
 }
 
 /// Runs a pack's download as the instance's download in progress, so deleting the instance
 /// meanwhile cancels it instead of racing it.
-async fn while_importing<T>(
+pub(crate) async fn while_importing<T>(
     launcher: &Launcher,
     id: &str,
-    install: impl Future<Output = selene_core::Result<T>>,
+    install: impl Future<Output = CommandResult<T>>,
 ) -> CommandResult<T> {
     let Some(cancelled) = launcher.start_running(id, false) else {
         return Err(CommandError::AlreadyRunning(id.to_owned()));
     };
     let result = tokio::select! {
-        result = install => result.map_err(Into::into),
+        result = install => result,
         _ = cancelled => Err(CommandError::Cancelled),
     };
     launcher.stop_running(id);
@@ -158,7 +174,7 @@ async fn while_importing<T>(
 }
 
 /// The instance shows up in the list right away, while its files are still downloading.
-async fn create(
+pub(crate) async fn create(
     app: &AppHandle,
     launcher: &Launcher,
     name: &str,

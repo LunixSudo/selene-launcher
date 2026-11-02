@@ -4,7 +4,7 @@
 </script>
 
 <script lang="ts">
-  import { api, type ContentKind, type Instance } from "#lib/api.ts";
+  import { api, type ContentKind, type Instance, type PackVersion } from "#lib/api.ts";
   import { describeError } from "#lib/errors.ts";
   import { t } from "#lib/i18n/index.svelte.ts";
   import { LOADER_NAMES, preferredRelease } from "#lib/loaders.ts";
@@ -26,6 +26,7 @@
   } = $props();
 
   let loaderTarget = $state<string | null>(null);
+  let packTarget = $state<PackVersion | null>(null);
   let counts = $state<Partial<Record<ContentKind, number>>>({});
   let skipped = $state<Record<string, boolean>>({});
   let working = $state(false);
@@ -43,10 +44,16 @@
     loaderId ? ["mod", "resourcePack", "shaderPack"] : ["resourcePack"],
   );
   const pending = $derived(kinds.filter((kind) => (counts[kind] ?? 0) > 0));
+  const pack = $derived(instance.pack);
+  const packSource = $derived(pack?.source ?? null);
+  const packProject = $derived(pack?.projectId ?? null);
+  const packVersion = $derived(pack?.versionId ?? null);
   const chosen = $derived(
-    (loaderTarget !== null && !skipped.loader) || pending.some((kind) => !skipped[kind]),
+    (packTarget !== null && !skipped.pack) ||
+      (loaderTarget !== null && !skipped.loader) ||
+      pending.some((kind) => !skipped[kind]),
   );
-  const found = $derived(loaderTarget !== null || pending.length > 0);
+  const found = $derived(packTarget !== null || loaderTarget !== null || pending.length > 0);
   const visible = $derived(
     !dismissed[instance.id] && (found || error !== null || (recheck > 0 && !checking)),
   );
@@ -61,11 +68,26 @@
     let stale = false;
     checking = true;
     loaderTarget = null;
+    packTarget = null;
     counts = {};
-    skipped = {};
+    // Moving to another version of the pack can replace mods, so it waits to be asked for.
+    skipped = { pack: true };
     error = null;
 
     const checks: Promise<void>[] = [];
+    if (packSource && packProject) {
+      const current = packVersion;
+      const check = api
+        .modpackVersions(packSource, packProject)
+        .then((versions) => {
+          const newest = versions.find((version) => version.release) ?? versions[0];
+          if (!stale && newest && newest.id !== current) {
+            packTarget = newest;
+          }
+        })
+        .catch(() => {});
+      checks.push(check);
+    }
     if (loader) {
       const check = api
         .loaderVersions(loader.loader, version)
@@ -105,6 +127,11 @@
     working = true;
     error = null;
     try {
+      if (packTarget && !skipped.pack) {
+        const result = await api.updateModpack(instance.id, packTarget.id);
+        replaceInstance(result.instance);
+        prepare(instance.id);
+      }
       if (instance.loader && loaderTarget && !skipped.loader) {
         // Changing the build stops the game download, which then goes on with the new one.
         const downloading = isPreparing(instance.id);
@@ -130,6 +157,17 @@
   <div class="notice" role="status">
     <div class="text">
       <strong>{found ? t("updates.title") : t("updates.none")}</strong>
+      {#if instance.pack && packTarget}
+        <label class="toggle">
+          <input
+            type="checkbox"
+            bind:checked={() => !skipped.pack, (checked) => (skipped.pack = !checked)}
+          >
+          <span>
+            {t("updates.pack", { from: instance.pack.versionName, to: packTarget.name })}
+          </span>
+        </label>
+      {/if}
       {#if instance.loader && loaderTarget}
         <label class="toggle">
           <input

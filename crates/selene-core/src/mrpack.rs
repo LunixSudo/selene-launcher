@@ -8,6 +8,7 @@ use std::path::{Component, Path, PathBuf};
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use tokio::fs;
 use zip::write::SimpleFileOptions;
 use zip::{ZipArchive, ZipWriter};
 
@@ -121,14 +122,15 @@ pub fn read_index(pack: &Path) -> Result<PackIndex> {
     Ok(index)
 }
 
-/// Downloads the pack's files and unpacks its overrides into `game_dir`.
+/// Downloads the pack's files and unpacks its overrides into `game_dir`. Returns the add-ons
+/// it put there, see [`addon_path`].
 pub async fn install(
     client: &Client,
     pack: &Path,
     index: &PackIndex,
     game_dir: &Path,
     on_progress: impl Fn(Progress) + Sync,
-) -> Result<()> {
+) -> Result<Vec<String>> {
     let downloads = index
         .files
         .iter()
@@ -154,15 +156,80 @@ pub async fn install(
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    let mut addons: Vec<String> = downloads
+        .iter()
+        .filter_map(|download| addon_path(download.path.strip_prefix(game_dir).ok()?))
+        .collect();
     download::download_all(client, downloads, DOWNLOAD_CONCURRENCY, on_progress).await?;
 
     let pack = pack.to_owned();
-    let game_dir = game_dir.to_owned();
-    tokio::task::spawn_blocking(move || {
-        extract_overrides(&pack, &game_dir, &[OVERRIDES, CLIENT_OVERRIDES])
+    let target = game_dir.to_owned();
+    let unpacked = tokio::task::spawn_blocking(move || {
+        extract_overrides(&pack, &target, &[OVERRIDES, CLIENT_OVERRIDES])
     })
     .await
-    .map_err(|err| Error::io(OVERRIDES, std::io::Error::other(err)))?
+    .map_err(|err| Error::io(OVERRIDES, std::io::Error::other(err)))??;
+    addons.extend(unpacked.iter().filter_map(|path| addon_path(path)));
+    addons.sort();
+    addons.dedup();
+    Ok(addons)
+}
+
+/// A file in one of the add-on folders, as `mods/name.jar`. Configs and the like are not
+/// add-ons: a pack update overwrites them but never deletes them.
+pub fn addon_path(relative: &Path) -> Option<String> {
+    let mut parts = relative.components();
+    let folder = parts.next()?.as_os_str().to_str()?;
+    let name = parts.next()?.as_os_str().to_str()?;
+    let addon_folder = [
+        ContentKind::Mod,
+        ContentKind::ResourcePack,
+        ContentKind::ShaderPack,
+    ]
+    .iter()
+    .any(|kind| kind.folder() == folder);
+    (addon_folder && parts.next().is_none()).then(|| format!("{folder}/{name}"))
+}
+
+/// Deletes the add-ons an earlier version of a pack brought that the new version no longer
+/// has, switched off or not. Files the player added are not on `old`, so they stay.
+pub async fn remove_dropped(game_dir: &Path, old: &[String], new: &[String]) -> Result<()> {
+    for path in old.iter().filter(|path| !new.contains(path)) {
+        let Ok(relative) = safe_relative_path(path) else {
+            continue;
+        };
+        let file = game_dir.join(relative);
+        for candidate in [file.clone(), disabled(&file)] {
+            match fs::remove_file(&candidate).await {
+                Ok(()) => {}
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+                Err(err) => return Err(Error::io(&candidate, err)),
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Keeps add-ons the player switched off switched off after the pack puts them back.
+pub async fn keep_switched_off(game_dir: &Path, addons: &[String]) -> Result<()> {
+    for path in addons {
+        let Ok(relative) = safe_relative_path(path) else {
+            continue;
+        };
+        let file = game_dir.join(relative);
+        if fs::try_exists(disabled(&file)).await.unwrap_or(false) {
+            fs::remove_file(&file)
+                .await
+                .map_err(|err| Error::io(&file, err))?;
+        }
+    }
+    Ok(())
+}
+
+fn disabled(file: &Path) -> PathBuf {
+    let mut name = file.as_os_str().to_owned();
+    name.push(mods::DISABLED_SUFFIX);
+    PathBuf::from(name)
 }
 
 /// Writes a pack of the instance. Mods Modrinth knows are linked; everything else, including
@@ -304,9 +371,15 @@ fn collect_files(dir: &Path, root: &Path, out: &mut Vec<PathBuf>) -> Result<()> 
 }
 
 /// Unpacks every file under the `folders` of the pack into the game folder. A later folder wins
-/// over an earlier one, whatever order the archive stores them in.
-pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path, folders: &[&str]) -> Result<()> {
+/// over an earlier one, whatever order the archive stores them in. Returns the paths written,
+/// relative to the game folder.
+pub(crate) fn extract_overrides(
+    pack: &Path,
+    game_dir: &Path,
+    folders: &[&str],
+) -> Result<Vec<PathBuf>> {
     let mut archive = open(pack)?;
+    let mut written = Vec::new();
     for folder in folders {
         let prefix = format!("{folder}/");
         for index in 0..archive.len() {
@@ -323,15 +396,17 @@ pub(crate) fn extract_overrides(pack: &Path, game_dir: &Path, folders: &[&str]) 
             if entry.is_dir() || relative.is_empty() {
                 continue;
             }
-            let target = game_dir.join(safe_relative_path(relative)?);
+            let relative = safe_relative_path(relative)?;
+            let target = game_dir.join(&relative);
             if let Some(parent) = target.parent() {
                 std::fs::create_dir_all(parent).map_err(|err| Error::io(parent, err))?;
             }
             let mut out = File::create(&target).map_err(|err| Error::io(&target, err))?;
             std::io::copy(&mut entry, &mut out).map_err(|err| Error::io(&target, err))?;
+            written.push(relative);
         }
     }
-    Ok(())
+    Ok(written)
 }
 
 pub(crate) fn open(pack: &Path) -> Result<ZipArchive<File>> {
