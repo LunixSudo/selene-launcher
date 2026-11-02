@@ -60,25 +60,29 @@
   const unlisten = listen("content-changed", () => void load());
   let optifineStatus = $state<string | null>(null);
 
-  /** Shows a result on the button itself for a few seconds, where the eye already is. */
-  function flash(set: (text: string | null) => void, text: string) {
-    set(text);
-    setTimeout(() => set(null), RESULT_SHOWN_MS);
+  let optifineTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Shows the result on the button itself for a few seconds, where the eye already is. */
+  function showOptifineResult(text: string) {
+    clearTimeout(optifineTimer);
+    optifineStatus = text;
+    optifineTimer = setTimeout(() => (optifineStatus = null), RESULT_SHOWN_MS);
   }
 
   const unlistenOptifine = listen<string>("optifine-installed", (event) => {
     if (event.payload === instanceId) {
-      flash((text) => (optifineStatus = text), t("content.optifineAdded"));
+      showOptifineResult(t("content.optifineAdded"));
       void load();
     }
   });
   const unlistenOptifineFailed = listen<string>("optifine-failed", (event) => {
     if (event.payload === instanceId) {
-      flash((text) => (optifineStatus = text), t("content.optifineFailed"));
+      showOptifineResult(t("content.optifineFailed"));
     }
   });
 
   onDestroy(() => {
+    clearTimeout(optifineTimer);
     void unlisten.then((stop) => stop());
     void unlistenOptifine.then((stop) => stop());
     void unlistenOptifineFailed.then((stop) => stop());

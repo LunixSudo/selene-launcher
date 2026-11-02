@@ -25,7 +25,6 @@ export const es: Messages = {
     empty: "Aún no hay instancias",
     emptyHint: "Crea tu primera instancia o suelta aquí un archivo .mrpack o .zip.",
     play: "Jugar",
-    running: "En ejecución",
     stop: "Detener",
     stopping: "Guardando y saliendo…",
     delete: "Eliminar",
@@ -39,7 +38,6 @@ export const es: Messages = {
     hours: "{hours} h {minutes} min",
     minutes: "{minutes} min",
     search: "Buscar instancias",
-    sortBy: "Ordenar",
     sorts: {
       lastPlayed: "Recientes",
       name: "Nombre",

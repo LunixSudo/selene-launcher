@@ -42,7 +42,6 @@ interface Settings {
   font: Font;
   afterLaunch: AfterLaunch;
   restoreAfterGame: boolean;
-  /** Adds the performance mods to every new instance with a mod loader. */
   sort: SortOrder;
   collapsedGroups: string[];
   notifications: boolean;

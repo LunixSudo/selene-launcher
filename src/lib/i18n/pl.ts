@@ -25,7 +25,6 @@ export const pl: Messages = {
     empty: "Brak instancji",
     emptyHint: "Utwórz pierwszą instancję albo upuść tu plik .mrpack lub .zip.",
     play: "Graj",
-    running: "Uruchomiona",
     stop: "Zatrzymaj",
     stopping: "Zapisywanie i wychodzenie…",
     delete: "Usuń",
@@ -39,7 +38,6 @@ export const pl: Messages = {
     hours: "{hours} godz. {minutes} min",
     minutes: "{minutes} min",
     search: "Szukaj instancji",
-    sortBy: "Sortuj",
     sorts: {
       lastPlayed: "Ostatnie",
       name: "Nazwa",

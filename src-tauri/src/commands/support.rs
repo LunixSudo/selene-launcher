@@ -10,9 +10,11 @@ use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
 const NEW_ISSUE: &str = "https://github.com/LunixSudo/selene-launcher/issues/new";
-/// GitHub refuses longer addresses, so only the end of the log goes into the text. The whole
-/// log is saved next to it for the player to attach.
+/// GitHub refuses addresses much longer than this, so only as much of the end of the log as
+/// fits goes into the text. The whole log is saved next to it for the player to attach.
+const MAX_URL_LEN: usize = 7500;
 const MAX_LOG_CHARS: usize = 4000;
+const MAX_DESCRIPTION_CHARS: usize = 2000;
 const REPORT_FILE: &str = "selene-report.log";
 const MAX_UI_ERROR_CHARS: usize = 2000;
 
@@ -44,7 +46,14 @@ pub async fn report_problem(
     let mut params = vec![
         ("template", "bug_report.yml".to_owned()),
         ("labels", "bug".to_owned()),
-        ("what", description.trim().to_owned()),
+        (
+            "what",
+            description
+                .trim()
+                .chars()
+                .take(MAX_DESCRIPTION_CHARS)
+                .collect(),
+        ),
         ("version", app.package_info().version.to_string()),
         (
             "system",
@@ -64,17 +73,29 @@ pub async fn report_problem(
                 .unwrap_or_default(),
         );
         tokio::fs::write(&report, &log).await?;
-        params.push((
-            "log",
-            format!(
-                "Full log: drop `{REPORT_FILE}` from the folder the launcher opened here.\n\n\
-                 ```\n{}\n```",
-                tail(&log, MAX_LOG_CHARS)
-            ),
-        ));
+        let note =
+            format!("Full log: drop `{REPORT_FILE}` from the folder the launcher opened here.");
+        // Encoding makes Cyrillic and punctuation several times longer, so the end of the log
+        // shrinks until the whole address fits.
+        let mut chars = MAX_LOG_CHARS;
+        loop {
+            let text = if chars == 0 {
+                note.clone()
+            } else {
+                format!("{note}\n\n```\n{}\n```", tail(&log, chars))
+            };
+            let url = issue_url(&[params.as_slice(), &[("log", text.clone())]].concat())?;
+            if url.as_str().len() <= MAX_URL_LEN || chars == 0 {
+                params.push(("log", text));
+                break;
+            }
+            chars /= 2;
+            if chars < 200 {
+                chars = 0;
+            }
+        }
     }
-    let url = Url::parse_with_params(NEW_ISSUE, &params)
-        .map_err(|err| CommandError::Io(std::io::Error::other(err)))?;
+    let url = issue_url(&params)?;
     let opener = app.opener();
     if with_log {
         opener.reveal_item_in_dir(&report).map_err(opener_error)?;
@@ -82,6 +103,11 @@ pub async fn report_problem(
     opener
         .open_url(url.as_str(), None::<&str>)
         .map_err(opener_error)
+}
+
+fn issue_url(params: &[(&str, String)]) -> CommandResult<Url> {
+    Url::parse_with_params(NEW_ISSUE, params)
+        .map_err(|err| CommandError::Io(std::io::Error::other(err)))
 }
 
 fn opener_error(err: tauri_plugin_opener::Error) -> CommandError {
@@ -94,11 +120,42 @@ pub(crate) fn system() -> String {
 }
 
 /// The home folder carries the player's account name, which a public report does not need.
+/// Java and mods write it with either slash and in any letter case.
 fn hide_home(log: &str) -> String {
     match std::env::home_dir().as_deref().and_then(Path::to_str) {
-        Some(home) if !home.is_empty() => log.replace(home, "~"),
+        Some(home) if !home.is_empty() => hide(log, home),
         _ => log.to_owned(),
     }
+}
+
+fn hide(log: &str, home: &str) -> String {
+    let forms = [home.replace('/', "\\"), home.replace('\\', "/")];
+    let mut log = log.to_owned();
+    for form in forms {
+        log = replace_ignoring_case(&log, &form, "~");
+    }
+    log
+}
+
+fn replace_ignoring_case(text: &str, from: &str, to: &str) -> String {
+    let lower = text.to_lowercase();
+    let needle = from.to_lowercase();
+    // Lowercasing may change byte lengths outside ASCII; then only exact matches are safe.
+    if needle.is_empty() || lower.len() != text.len() {
+        return text.replace(from, to);
+    }
+    let mut out = String::with_capacity(text.len());
+    let mut last = 0;
+    for (start, _) in lower.match_indices(&needle) {
+        if start < last {
+            continue;
+        }
+        out.push_str(&text[last..start]);
+        out.push_str(to);
+        last = start + needle.len();
+    }
+    out.push_str(&text[last..]);
+    out
 }
 
 /// The last `max` characters, starting at a whole line.
@@ -113,6 +170,15 @@ fn tail(log: &str, max: usize) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hides_the_home_folder_in_any_form() {
+        let log = "C:\\Users\\Ivan\\x | file:/C:/Users/Ivan/y | c:\\users\\ivan\\z | Ivan";
+        assert_eq!(
+            hide(log, "C:\\Users\\Ivan"),
+            "~\\x | file:/~/y | ~\\z | Ivan"
+        );
+    }
 
     #[test]
     fn keeps_the_end_of_the_log() {

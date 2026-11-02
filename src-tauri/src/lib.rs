@@ -151,20 +151,26 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         None => app.path().data_dir()?.join("SeleneLauncher"),
     };
     app.handle().plugin(diagnostics_log(&data_dir))?;
-    log::info!(
-        "Selene Launcher {} on {}, WebView2 {}, {}, {} MB of memory, {}{}",
-        app.package_info().version,
-        commands::support::system(),
-        tauri::webview_version().unwrap_or_default(),
-        hardware::summary(),
-        state::total_memory_mb(),
-        hardware::disk(&data_dir),
-        if portable_data_dir().is_some() {
-            ", portable"
-        } else {
-            ""
-        }
-    );
+    // Reading the hardware can take a moment on some PCs, and the window need not wait for it.
+    let version = app.package_info().version.to_string();
+    let portable = portable_data_dir().is_some();
+    let log_dir = data_dir.clone();
+    std::thread::spawn(move || {
+        log::info!(
+            "Selene Launcher {version} on {}, {} {}, {}, {} MB of memory, {}{}",
+            commands::support::system(),
+            if cfg!(windows) {
+                "WebView2"
+            } else {
+                "WebKitGTK"
+            },
+            tauri::webview_version().unwrap_or_default(),
+            hardware::summary(),
+            state::total_memory_mb(),
+            hardware::disk(&log_dir),
+            if portable { ", portable" } else { "" }
+        );
+    });
     let report_panic = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         log::error!("{info}");

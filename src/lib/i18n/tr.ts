@@ -25,7 +25,6 @@ export const tr: Messages = {
     empty: "Henüz profil yok",
     emptyHint: "İlk profilini oluştur ya da buraya bir .mrpack veya .zip dosyası bırak.",
     play: "Oyna",
-    running: "Çalışıyor",
     stop: "Durdur",
     stopping: "Kaydediliyor ve çıkılıyor…",
     delete: "Sil",
@@ -39,7 +38,6 @@ export const tr: Messages = {
     hours: "{hours} sa {minutes} dk",
     minutes: "{minutes} dk",
     search: "Profillerde ara",
-    sortBy: "Sırala",
     sorts: {
       lastPlayed: "Son oynanan",
       name: "Ad",

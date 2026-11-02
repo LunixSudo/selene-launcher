@@ -25,7 +25,6 @@ export const zhCN: Messages = {
     empty: "还没有实例",
     emptyHint: "创建你的第一个实例，或把 .mrpack、.zip 文件拖到这里。",
     play: "开始游戏",
-    running: "运行中",
     stop: "停止",
     stopping: "正在保存并退出…",
     delete: "删除",
@@ -39,7 +38,6 @@ export const zhCN: Messages = {
     hours: "{hours} 小时 {minutes} 分钟",
     minutes: "{minutes} 分钟",
     search: "搜索实例",
-    sortBy: "排序",
     sorts: {
       lastPlayed: "最近游玩",
       name: "名称",

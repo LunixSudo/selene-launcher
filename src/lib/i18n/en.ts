@@ -25,7 +25,6 @@ export const en: Messages = {
     empty: "No instances yet",
     emptyHint: "Create your first instance or drop a .mrpack or .zip file here.",
     play: "Play",
-    running: "Running",
     stop: "Stop",
     stopping: "Saving and quitting…",
     delete: "Delete",
@@ -39,7 +38,6 @@ export const en: Messages = {
     hours: "{hours} h {minutes} min",
     minutes: "{minutes} min",
     search: "Search instances",
-    sortBy: "Sort",
     sorts: {
       lastPlayed: "Recent",
       name: "Name",

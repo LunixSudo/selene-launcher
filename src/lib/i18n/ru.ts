@@ -23,7 +23,6 @@ export const ru = {
     empty: "Сборок пока нет",
     emptyHint: "Создайте первую сборку или перетащите сюда файл .mrpack или .zip.",
     play: "Играть",
-    running: "Запущена",
     stop: "Остановить",
     stopping: "Сохранение и выход…",
     delete: "Удалить",
@@ -37,7 +36,6 @@ export const ru = {
     hours: "{hours} ч {minutes} мин",
     minutes: "{minutes} мин",
     search: "Поиск сборок",
-    sortBy: "Сортировка",
     sorts: {
       lastPlayed: "Недавние",
       name: "По названию",

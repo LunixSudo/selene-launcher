@@ -21,6 +21,13 @@ const PLACEHOLDERS: &[&str] = &[
     "none",
 ];
 
+/// Physical cores, or logical ones when the system does not tell.
+pub fn cores() -> usize {
+    System::physical_core_count()
+        .or_else(|| std::thread::available_parallelism().ok().map(usize::from))
+        .unwrap_or(1)
+}
+
 /// Processor, cores, graphics cards, memory sticks and motherboard on one line. Serial numbers
 /// stay out, since the log may end up in a public report.
 pub fn summary() -> String {
@@ -153,7 +160,11 @@ fn memory_stick(formatted: &[u8], maker: Option<&str>, part: Option<&str>) -> Op
     let speed = word(0x20)
         .filter(|&speed| speed != 0 && speed != 0xFFFF)
         .or_else(|| word(0x15).filter(|&speed| speed != 0 && speed != 0xFFFF));
-    let mut stick = format!("{} GB {kind}", size_mb / 1024);
+    let mut stick = if size_mb >= 1024 && size_mb % 1024 == 0 {
+        format!("{} GB {kind}", size_mb / 1024)
+    } else {
+        format!("{size_mb} MB {kind}")
+    };
     if let Some(speed) = speed {
         let _ = write!(stick, " {speed} MT/s");
     }

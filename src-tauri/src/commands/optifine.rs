@@ -2,6 +2,7 @@
 //! and the jar the player downloads there goes straight into the instance's mods folder.
 
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use selene_core::download::{self, Download};
 use tauri::webview::DownloadEvent;
@@ -13,6 +14,11 @@ use crate::state::Launcher;
 const SITE: &str = "optifine.net";
 const DOWNLOADS: &str = "https://optifine.net/downloads";
 const MIRROR: &str = "https://optifine.net/adloadx";
+/// The list changes a few times a year; this spares a second download when the window opens
+/// right after the button checked the list.
+const PAGE_KEPT: Duration = Duration::from_secs(10 * 60);
+
+static PAGE: tokio::sync::Mutex<Option<(Instant, String)>> = tokio::sync::Mutex::const_new(None);
 
 /// Game versions with an `OptiFine` build, as listed on its downloads page.
 #[tauri::command]
@@ -21,7 +27,13 @@ pub async fn optifine_versions(launcher: State<'_, Launcher>) -> CommandResult<V
 }
 
 async fn downloads_page(launcher: &Launcher) -> CommandResult<String> {
-    Ok(launcher
+    let mut kept = PAGE.lock().await;
+    if let Some((fetched, page)) = kept.as_ref()
+        && fetched.elapsed() < PAGE_KEPT
+    {
+        return Ok(page.clone());
+    }
+    let page = launcher
         .client
         .get(DOWNLOADS)
         .send()
@@ -30,7 +42,9 @@ async fn downloads_page(launcher: &Launcher) -> CommandResult<String> {
         .map_err(selene_core::Error::from)?
         .text()
         .await
-        .map_err(selene_core::Error::from)?)
+        .map_err(selene_core::Error::from)?;
+    *kept = Some((Instant::now(), page.clone()));
+    Ok(page)
 }
 
 /// The newest build for a game version, preferring releases over previews.
@@ -85,6 +99,11 @@ pub async fn open_optifine(
         Err(_) => None,
     }
     .unwrap_or_else(|| DOWNLOADS.parse().expect("the downloads address is valid"));
+    // A second click while the page loaded finds the window the first one opened.
+    if let Some(window) = app.get_webview_window(&label) {
+        let _ = window.set_focus();
+        return Ok(());
+    }
     WebviewWindowBuilder::new(&app, label, WebviewUrl::External(url))
         .title("OptiFine")
         .inner_size(1040.0, 760.0)
@@ -129,6 +148,8 @@ pub async fn open_optifine(
 async fn fetch_jar(app: &AppHandle, url: &str, path: &Path) -> selene_core::Result<()> {
     let launcher = app.state::<Launcher>();
     let partial = path.with_extension("jar.part");
+    // Without a checksum to go by, a leftover part would be taken as already downloaded.
+    let _ = tokio::fs::remove_file(&partial).await;
     download::download_all(
         &launcher.client,
         vec![Download {
@@ -148,7 +169,10 @@ async fn fetch_jar(app: &AppHandle, url: &str, path: &Path) -> selene_core::Resu
         && magic == *b"PK";
     if !is_jar {
         let _ = tokio::fs::remove_file(&partial).await;
-        return Err(selene_core::Error::InvalidPack("not a jar".into()));
+        return Err(selene_core::Error::NotTheFile {
+            url: url.to_owned(),
+            reason: "a page",
+        });
     }
     selene_core::fs::rename(&partial, path).await
 }

@@ -8,9 +8,11 @@ use crate::rules::{self, Environment, Features};
 use crate::version::{Argument, ArgumentValue, VersionInfo};
 use crate::{Error, Result};
 
-/// Same garbage collector tuning the official launcher passes.
+/// Lets the G1 tuning below, and experimental flags of the player's own, take effect.
+const UNLOCK_EXPERIMENTAL: &str = "-XX:+UnlockExperimentalVMOptions";
+
+/// Same garbage collector tuning the official launcher passes, after the unlock above.
 const DEFAULT_JVM_ARGS: &[&str] = &[
-    "-XX:+UnlockExperimentalVMOptions",
     "-XX:+UseG1GC",
     "-XX:G1NewSizePercent=20",
     "-XX:G1ReservePercent=20",
@@ -85,7 +87,10 @@ fn build_command_for(
     let variables = variables(version, options, env);
     let substitute = |arg: &str| substitute(arg, &variables);
 
-    let mut args = vec![format!("-Xmx{}M", options.max_memory_mb)];
+    let mut args = vec![
+        format!("-Xmx{}M", options.max_memory_mb),
+        UNLOCK_EXPERIMENTAL.to_owned(),
+    ];
     // Java refuses to start with two collectors, so a player's own choice replaces G1.
     if !picks_other_collector(&options.extra_jvm_args) {
         args.extend(DEFAULT_JVM_ARGS.iter().map(ToString::to_string));
@@ -395,9 +400,19 @@ fn language_for(version: &VersionInfo, language: &str) -> String {
     }
 }
 
+const OTHER_COLLECTORS: &[&str] = &[
+    "-XX:+UseZGC",
+    "-XX:+UseShenandoahGC",
+    "-XX:+UseParallelGC",
+    "-XX:+UseParallelOldGC",
+    "-XX:+UseSerialGC",
+    "-XX:+UseConcMarkSweepGC",
+    "-XX:+UseEpsilonGC",
+];
+
 fn picks_other_collector(args: &[String]) -> bool {
     args.iter()
-        .any(|arg| arg.starts_with("-XX:+Use") && arg.ends_with("GC") && arg != "-XX:+UseG1GC")
+        .any(|arg| OTHER_COLLECTORS.contains(&arg.as_str()))
 }
 
 /// Added on top of the official arguments, which keep their 50 ms pause target. Every flag
@@ -442,7 +457,8 @@ mod tests {
             "-XX:+DisableExplicitGC"
         ])));
         assert!(!picks_other_collector(&args(&[
-            "-XX:+UseStringDeduplication"
+            "-XX:+UseStringDeduplication",
+            "-XX:+UseMaximumCompactionOnSystemGC"
         ])));
     }
 

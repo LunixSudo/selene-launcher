@@ -225,6 +225,9 @@ pub async fn install_version(
     }
     .ok_or(CommandError::NoCompatibleVersion)?;
     mods::replace(&launcher.client, &game_dir, kind, &old, &remote).await?;
+    if world.is_some() {
+        return Ok(());
+    }
     super::modpacks::follow_renames(&launcher, &instance_id, kind, &[(old, remote)]).await
 }
 

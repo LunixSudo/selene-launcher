@@ -26,7 +26,7 @@
     title: string;
     /** Instances of this pack to update; empty to install a new one. */
     instances?: Instance[];
-    /** The game version the catalog is filtered by, picked first when the pack has one. */
+    /** The game version the catalog is filtered by, picked first for a new install. */
     gameVersion?: string;
     oninstall?: (done: Promise<Instance | null>) => void;
   } = $props();
@@ -63,8 +63,10 @@
       .modpackVersions(source, projectId)
       .then((found) => {
         versions = found;
-        const fitting = gameVersion
-          ? found.filter((version) => version.gameVersions.includes(gameVersion))
+        // The catalog filter only picks the version of a new install; an update offers the newest.
+        const wanted = updating ? "" : gameVersion;
+        const fitting = wanted
+          ? found.filter((version) => version.gameVersions.includes(wanted))
           : found;
         const pool = fitting.length > 0 ? fitting : found;
         versionId = (pool.find((version) => version.release) ?? pool[0])?.id ?? "";

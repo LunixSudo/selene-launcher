@@ -329,7 +329,10 @@ pub async fn update_modpack(
     if launcher.is_preparing_in_background(&instance_id) {
         launcher.cancel_preparing(&instance_id).await?;
     }
-    let before = (instance.version.clone(), instance.loader.clone());
+    let before = (
+        instance.version.clone(),
+        instance.loader.as_ref().map(|loader| loader.loader),
+    );
     let task = ContentTask::start(&app, &instance_id, Stage::Updating);
     let result = while_importing(&launcher, &instance_id, async {
         instance.pack = Some(PackOrigin {
@@ -362,10 +365,27 @@ pub async fn update_modpack(
     })
     .await;
     drop(task);
-    let result = result?;
+    let result = match result {
+        Ok(result) => result,
+        Err(err) => {
+            // Only an update cut short by closing the launcher is picked up again on the next
+            // start; one that failed or was stopped has already been reported.
+            if let Some(mut saved) = launcher.instances.get(&instance_id).await
+                && let Some(pack) = saved.pack.as_mut()
+                && pack.installing.take().is_some()
+            {
+                launcher.instances.save(&saved).await?;
+            }
+            return Err(err);
+        }
+    };
     // The player's own mods follow the pack to its new game version or loader.
     let updated = &result.instance;
-    if (&updated.version, &updated.loader) != (&before.0, &before.1) {
+    let after = (
+        &updated.version,
+        updated.loader.as_ref().map(|loader| loader.loader),
+    );
+    if after != (&before.0, before.1) {
         let pack_files = updated
             .pack
             .as_ref()
@@ -379,13 +399,15 @@ pub async fn update_modpack(
             updated.loader.as_ref(),
             &pack_files,
         )
-        .await?;
+        .await
+        .unwrap_or_else(|err| log::warn!("could not move the player's mods along: {err}"));
     }
     Ok(result)
 }
 
 /// Keeps the pack's list of its add-ons right when the player updates one of them, so the next
-/// pack update replaces that file instead of leaving it next to the pack's own copy.
+/// pack update replaces that file instead of leaving it next to the pack's own copy. Only for
+/// files in the instance's own folders, which is where a pack puts its add-ons.
 pub(crate) async fn follow_renames(
     launcher: &Launcher,
     instance_id: &str,

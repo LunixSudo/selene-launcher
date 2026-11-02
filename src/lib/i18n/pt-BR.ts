@@ -25,7 +25,6 @@ export const ptBR: Messages = {
     empty: "Nenhuma instância ainda",
     emptyHint: "Crie sua primeira instância ou solte aqui um arquivo .mrpack ou .zip.",
     play: "Jogar",
-    running: "Em execução",
     stop: "Parar",
     stopping: "Salvando e saindo…",
     delete: "Excluir",
@@ -39,7 +38,6 @@ export const ptBR: Messages = {
     hours: "{hours} h {minutes} min",
     minutes: "{minutes} min",
     search: "Buscar instâncias",
-    sortBy: "Ordenar",
     sorts: {
       lastPlayed: "Recentes",
       name: "Nome",

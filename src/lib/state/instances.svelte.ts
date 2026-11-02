@@ -95,7 +95,9 @@ export async function prepareAll() {
   }
   for (const { id, pack } of [...library.instances]) {
     if (pack?.installing && !library.tasks[id]) {
-      await finishPack(id, pack.installing);
+      // Runs alongside, so one long pack does not hold up the other instances.
+      void finishPack(id, pack.installing).then(() => prepare(id));
+      continue;
     }
     if (!preparing.has(id) && !library.launches[id] && !library.tasks[id]) {
       prepare(id);
@@ -113,7 +115,7 @@ async function finishPack(id: string, versionId: string) {
       library.importManual = result.manual;
     }
   } catch {
-    // Tried again at the next start; the instance itself still works with what arrived.
+    // The instance still works with what arrived, and the update can be started again.
   }
 }
 

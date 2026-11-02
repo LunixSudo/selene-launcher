@@ -290,13 +290,22 @@ where
     last.expect("at least one source is asked")
 }
 
-fn failure(err: &reqwest::Error) -> &'static str {
-    if err.is_timeout() {
+/// What went wrong, down to the cause the system gave, such as a refused certificate.
+fn failure(err: &reqwest::Error) -> String {
+    let kind = if err.is_timeout() {
         "timed out"
     } else if err.is_connect() {
         "could not connect"
     } else {
         "the request failed"
+    };
+    let mut cause = std::error::Error::source(err);
+    while let Some(deeper) = cause.and_then(std::error::Error::source) {
+        cause = Some(deeper);
+    }
+    match cause {
+        Some(cause) => format!("{kind} ({cause})"),
+        None => kind.to_owned(),
     }
 }
 

@@ -581,8 +581,7 @@ async fn run_game(
         fullscreen: false,
         server,
         extra_jvm_args: if instance.auto_java_args {
-            let cores = std::thread::available_parallelism().map_or(1, usize::from);
-            launch::tuned_jvm_args(max_memory_mb, cores)
+            launch::tuned_jvm_args(max_memory_mb, crate::hardware::cores())
         } else {
             instance
                 .java_args

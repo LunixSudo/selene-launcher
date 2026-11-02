@@ -25,7 +25,6 @@ export const uk: Messages = {
     empty: "Збірок поки немає",
     emptyHint: "Створіть першу збірку або перетягніть сюди файл .mrpack чи .zip.",
     play: "Грати",
-    running: "Запущено",
     stop: "Зупинити",
     stopping: "Збереження й вихід…",
     delete: "Видалити",
@@ -39,7 +38,6 @@ export const uk: Messages = {
     hours: "{hours} год {minutes} хв",
     minutes: "{minutes} хв",
     search: "Пошук збірок",
-    sortBy: "Сортування",
     sorts: {
       lastPlayed: "Нещодавні",
       name: "За назвою",

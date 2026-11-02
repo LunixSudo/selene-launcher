@@ -1,6 +1,13 @@
 <script lang="ts">
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import { api, type CatalogHit, type CatalogSort, type Instance, type Source } from "#lib/api.ts";
+  import {
+    api,
+    type CatalogHit,
+    type CatalogSort,
+    type Instance,
+    type PackVersion,
+    type Source,
+  } from "#lib/api.ts";
   import BackLink from "#lib/components/BackLink.svelte";
   import ModpackDialog from "#lib/components/ModpackDialog.svelte";
   import Segmented from "#lib/components/Segmented.svelte";
@@ -106,8 +113,8 @@
     );
   }
 
-  /** The newest release of each installed pack, to tell whether an update is there at all. */
-  const newest = $state<Record<string, string | null>>({});
+  /** Versions of each installed pack, to tell whether an update is there at all. */
+  const packVersions = $state<Record<string, PackVersion[]>>({});
   const asked = new Set<string>();
 
   $effect(() => {
@@ -120,15 +127,19 @@
       api
         .modpackVersions(hit.source, hit.id)
         .then((versions) => {
-          newest[id] = (versions.find((version) => version.release) ?? versions[0])?.id ?? null;
+          packVersions[id] = versions;
         })
         .catch(() => {});
     }
   });
 
+  /** The only copy is on the newest release, the one an update would pick. */
   function upToDate(hit: CatalogHit, instances: Instance[]): boolean {
-    const latest = newest[key(hit)];
-    return instances.length === 1 && latest != null && latest === instances[0].pack?.versionId;
+    const versions = packVersions[key(hit)];
+    const newest = versions?.find((version) => version.release) ?? versions?.[0];
+    return (
+      instances.length === 1 && newest !== undefined && newest.id === instances[0].pack?.versionId
+    );
   }
 
   function choose(hit: CatalogHit, instances: Instance[]) {
