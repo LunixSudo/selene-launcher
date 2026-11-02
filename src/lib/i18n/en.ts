@@ -421,6 +421,20 @@ export const en: Messages = {
     fullscreen: "Fullscreen",
     javaArgs: "Java arguments",
     javaArgsHint: "For advanced users, e.g. -XX:+UseZGC. Memory is set above.",
+    flags: {
+      g1: "Smoother garbage collection",
+      dedupe: "Less memory for text",
+      explicitGc: "Ignore forced GC",
+      preTouch: "Reserve memory at start",
+      utf8: "UTF-8 text",
+    },
+    flagHints: {
+      g1: "G1 with short pauses, fewer freezes",
+      dedupe: "Merges identical strings, needs G1",
+      explicitGc: "Stops mods from calling full collections",
+      preTouch: "Slower start, steadier play",
+      utf8: "Fixes broken Cyrillic in old versions",
+    },
   },
   update: {
     available: "Update to {version}",

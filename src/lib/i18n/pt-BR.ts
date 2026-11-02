@@ -428,6 +428,20 @@ export const ptBR: Messages = {
     fullscreen: "Tela cheia",
     javaArgs: "Argumentos do Java",
     javaArgsHint: "Para usuários avançados, por ex. -XX:+UseZGC. A memória é definida acima.",
+    flags: {
+      g1: "Coleta de lixo mais suave",
+      dedupe: "Menos memória para texto",
+      explicitGc: "Ignorar GC forçada",
+      preTouch: "Reservar memória no início",
+      utf8: "Texto em UTF-8",
+    },
+    flagHints: {
+      g1: "G1 com pausas curtas, menos travadas",
+      dedupe: "Une textos iguais, requer G1",
+      explicitGc: "Mods não podem forçar coleta completa",
+      preTouch: "Início mais lento, jogo mais estável",
+      utf8: "Corrige cirílico quebrado em versões antigas",
+    },
   },
   update: {
     available: "Atualizar para {version}",

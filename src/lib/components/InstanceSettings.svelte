@@ -4,6 +4,7 @@
   import { coverOf } from "$lib/appearance";
   import { describeError } from "$lib/errors";
   import { locale, t } from "$lib/i18n/index.svelte";
+  import { hasFlag, JAVA_FLAGS, type JavaFlag, toggleFlag } from "$lib/java-args";
   import { LOADER_NAMES } from "$lib/loaders";
   import { replaceInstance } from "$lib/state/instances.svelte";
   import { INSTANCE_BACKDROPS, type InstanceBackdrop, settings } from "$lib/state/settings.svelte";
@@ -74,6 +75,13 @@
     } catch (err) {
       error = describeError(err);
     }
+  }
+
+  const FLAGS = Object.keys(JAVA_FLAGS) as JavaFlag[];
+
+  function setFlag(flag: JavaFlag, on: boolean) {
+    javaArgs = toggleFlag(javaArgs, flag, on);
+    void saveLaunch({});
   }
 
   async function chooseJava() {
@@ -182,6 +190,21 @@
     >
   </label>
   <p class="hint">{t("launchOptions.javaArgsHint")}</p>
+  <div class="flags">
+    {#each FLAGS as flag (flag)}
+      <label class="flag">
+        <input
+          type="checkbox"
+          checked={hasFlag(javaArgs, flag)}
+          onchange={(event) => setFlag(flag, event.currentTarget.checked)}
+        >
+        <span>
+          {t(`launchOptions.flags.${flag}`)}
+          <span class="hint">{t(`launchOptions.flagHints.${flag}`)}</span>
+        </span>
+      </label>
+    {/each}
+  </div>
 
   {#if error}
     <p class="error" role="alert">{error}</p>
@@ -311,6 +334,27 @@
 
   .row {
     gap: 8px;
+  }
+
+  .flags {
+    display: grid;
+    gap: 8px;
+  }
+
+  .flag {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    cursor: pointer;
+  }
+
+  .flag input {
+    margin-top: 3px;
+    accent-color: var(--accent);
+  }
+
+  .flag > span {
+    display: grid;
   }
 
   .java {

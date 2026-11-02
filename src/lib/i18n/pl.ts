@@ -425,6 +425,20 @@ export const pl: Messages = {
     fullscreen: "Pełny ekran",
     javaArgs: "Argumenty Javy",
     javaArgsHint: "Dla zaawansowanych, np. -XX:+UseZGC. Pamięć ustawia się wyżej.",
+    flags: {
+      g1: "Płynniejsze odśmiecanie",
+      dedupe: "Mniej pamięci na tekst",
+      explicitGc: "Bez wymuszonego GC",
+      preTouch: "Zajmij pamięć od razu",
+      utf8: "Tekst w UTF-8",
+    },
+    flagHints: {
+      g1: "G1 z krótkimi przerwami, mniej przycięć",
+      dedupe: "Łączy identyczne napisy, wymaga G1",
+      explicitGc: "Mody nie wywołają pełnego odśmiecania",
+      preTouch: "Wolniejszy start, równiejsza gra",
+      utf8: "Naprawia cyrylicę w starych wersjach",
+    },
   },
   update: {
     available: "Zaktualizuj do {version}",

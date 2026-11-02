@@ -426,6 +426,20 @@ export const tr: Messages = {
     fullscreen: "Tam ekran",
     javaArgs: "Java argümanları",
     javaArgsHint: "İleri düzey kullanıcılar için, örn. -XX:+UseZGC. Bellek yukarıda ayarlanır.",
+    flags: {
+      g1: "Daha akıcı çöp toplama",
+      dedupe: "Metin için daha az bellek",
+      explicitGc: "Zorunlu GC'yi yok say",
+      preTouch: "Belleği başta ayır",
+      utf8: "UTF-8 metin",
+    },
+    flagHints: {
+      g1: "Kısa duraklamalı G1, daha az takılma",
+      dedupe: "Aynı dizeleri birleştirir, G1 gerekir",
+      explicitGc: "Modlar tam toplama başlatamaz",
+      preTouch: "Daha yavaş açılış, daha dengeli oyun",
+      utf8: "Eski sürümlerde bozuk Kiril harflerini düzeltir",
+    },
   },
   update: {
     available: "{version} sürümüne güncelle",

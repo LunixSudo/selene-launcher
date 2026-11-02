@@ -436,6 +436,20 @@ export const de: Messages = {
     fullscreen: "Vollbild",
     javaArgs: "Java-Argumente",
     javaArgsHint: "Für Fortgeschrittene, z. B. -XX:+UseZGC. Der Speicher wird oben eingestellt.",
+    flags: {
+      g1: "Flüssigere Speicherbereinigung",
+      dedupe: "Weniger Speicher für Text",
+      explicitGc: "Erzwungene GC ignorieren",
+      preTouch: "Speicher beim Start belegen",
+      utf8: "UTF-8-Text",
+    },
+    flagHints: {
+      g1: "G1 mit kurzen Pausen, weniger Ruckler",
+      dedupe: "Fasst gleiche Zeichenketten zusammen, braucht G1",
+      explicitGc: "Mods können keine volle Bereinigung auslösen",
+      preTouch: "Langsamerer Start, gleichmäßigeres Spiel",
+      utf8: "Behebt kaputte kyrillische Zeichen in alten Versionen",
+    },
   },
   update: {
     available: "Auf {version} aktualisieren",

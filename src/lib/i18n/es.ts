@@ -432,6 +432,20 @@ export const es: Messages = {
     fullscreen: "Pantalla completa",
     javaArgs: "Argumentos de Java",
     javaArgsHint: "Para usuarios avanzados, p. ej. -XX:+UseZGC. La memoria se ajusta arriba.",
+    flags: {
+      g1: "Recolección de basura más fluida",
+      dedupe: "Menos memoria para texto",
+      explicitGc: "Ignorar GC forzada",
+      preTouch: "Reservar memoria al inicio",
+      utf8: "Texto UTF-8",
+    },
+    flagHints: {
+      g1: "G1 con pausas cortas, menos tirones",
+      dedupe: "Une cadenas iguales, requiere G1",
+      explicitGc: "Los mods no pueden forzar una recolección completa",
+      preTouch: "Inicio más lento, juego más estable",
+      utf8: "Arregla el cirílico roto en versiones antiguas",
+    },
   },
   update: {
     available: "Actualizar a {version}",

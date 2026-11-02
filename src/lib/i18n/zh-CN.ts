@@ -409,6 +409,20 @@ export const zhCN: Messages = {
     fullscreen: "全屏",
     javaArgs: "Java 参数",
     javaArgsHint: "供高级用户使用，例如 -XX:+UseZGC。内存在上方设置。",
+    flags: {
+      g1: "更流畅的垃圾回收",
+      dedupe: "文本占用更少内存",
+      explicitGc: "忽略强制 GC",
+      preTouch: "启动时预占内存",
+      utf8: "UTF-8 文本",
+    },
+    flagHints: {
+      g1: "G1 短暂停，减少卡顿",
+      dedupe: "合并相同字符串，需要 G1",
+      explicitGc: "模组无法触发完整回收",
+      preTouch: "启动更慢，运行更平稳",
+      utf8: "修复旧版本中的西里尔文乱码",
+    },
   },
   update: {
     available: "更新到 {version}",

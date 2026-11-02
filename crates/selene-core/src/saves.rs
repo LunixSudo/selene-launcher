@@ -190,7 +190,59 @@ pub fn rename_world(game_dir: &Path, folder: &str, name: &str) -> Result<()> {
     gz.write_all(&fastnbt::to_bytes(&level)?)
         .map_err(|err| Error::io(&path, err))?;
     let bytes = gz.finish().map_err(|err| Error::io(&path, err))?;
-    crate::fs::write_atomic_blocking(&path, &bytes)
+    crate::fs::write_atomic_blocking(&path, &bytes)?;
+
+    // The folder follows the name, picked the way the game picks one for a new world. A
+    // folder in use keeps its old name; the world is renamed in the game either way.
+    let new_folder = folder_for(&saves_dir(game_dir), name, folder);
+    if new_folder != folder {
+        let _ = std::fs::rename(
+            saves_dir(game_dir).join(folder),
+            saves_dir(game_dir).join(&new_folder),
+        );
+    }
+    Ok(())
+}
+
+/// A folder name for a world called `name`: characters Windows forbids become `_`, names
+/// Windows reserves get a `_` after them, and a taken name gets ` (2)`, ` (3)` and so on.
+/// `current` counts as free, so renaming to a similar name keeps the folder.
+fn folder_for(saves: &Path, name: &str, current: &str) -> String {
+    const RESERVED: [&str; 22] = [
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+        "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ];
+    let mut base: String = name
+        .chars()
+        .map(|ch| {
+            if ch.is_control() || r#"<>:"/\|?*"#.contains(ch) {
+                '_'
+            } else {
+                ch
+            }
+        })
+        .collect();
+    base = base.trim_end_matches(['.', ' ']).trim_start().to_owned();
+    if base.is_empty() {
+        base = "World".to_owned();
+    }
+    let stem = base.split('.').next().unwrap_or_default();
+    if RESERVED
+        .iter()
+        .any(|reserved| reserved.eq_ignore_ascii_case(stem))
+    {
+        base.push('_');
+    }
+    let free = |candidate: &str| {
+        candidate.eq_ignore_ascii_case(current) || !saves.join(candidate).exists()
+    };
+    if free(&base) {
+        return base;
+    }
+    (2..)
+        .map(|n| format!("{base} ({n})"))
+        .find(|candidate| free(candidate))
+        .expect("some number is free")
 }
 
 /// Resolves a world folder, refusing names that would point outside `saves`.
@@ -389,8 +441,20 @@ mod tests {
 
         let worlds = worlds(dir.path()).unwrap();
         assert_eq!(worlds[0].name, "Castle");
-        assert_eq!(worlds[0].folder, "home");
+        assert_eq!(worlds[0].folder, "Castle");
         assert_eq!(worlds[0].game_mode, Some(GameMode::Survival));
+    }
+
+    #[test]
+    fn picks_folder_names_windows_accepts() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::create_dir_all(dir.path().join("Castle")).unwrap();
+        assert_eq!(folder_for(dir.path(), "Castle", "home"), "Castle (2)");
+        assert_eq!(folder_for(dir.path(), "castle", "Castle"), "castle");
+        assert_eq!(folder_for(dir.path(), "a/b: c?", "home"), "a_b_ c_");
+        assert_eq!(folder_for(dir.path(), "con", "home"), "con_");
+        assert_eq!(folder_for(dir.path(), "Base. ", "home"), "Base");
+        assert_eq!(folder_for(dir.path(), "...", "home"), "World");
     }
 
     #[test]

@@ -275,3 +275,7 @@ All notable changes to this project are documented here. The format follows
 - A Forge or NeoForge install whose libraries are empty files is installed again.
 - Back on the settings and skins pages walks back through every page opened before, instead
   of bouncing between the last two.
+- Renaming a world also renames its folder, the way the game names folders, unless the
+  folder is in use.
+- Ticks for common Java flags in the instance settings: they add the flags to the arguments
+  line and take them out again.
