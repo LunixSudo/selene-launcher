@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use futures_util::StreamExt;
 use reqwest::Client;
@@ -170,6 +171,48 @@ pub async fn fetch_index(client: &Client, runtimes_dir: &Path) -> Result<Runtime
         .cloned()
 }
 
+static AUTO_UPDATE: AtomicBool = AtomicBool::new(true);
+
+/// Whether a runtime the launcher installed moves to Mojang's newer build of it. Off, the
+/// installed build stays until the player turns this back on.
+pub fn set_auto_update(enabled: bool) {
+    AUTO_UPDATE.store(enabled, Ordering::Relaxed);
+}
+
+/// Moves every Mojang runtime in `runtimes_dir` to its current build. Returns the components
+/// that were updated. Other vendors' builds and Java the player picked are left alone.
+pub async fn update_installed(client: &Client, runtimes_dir: &Path) -> Result<Vec<String>> {
+    if !AUTO_UPDATE.load(Ordering::Relaxed) {
+        return Ok(Vec::new());
+    }
+    let platform = platform().ok_or(Error::UnsupportedPlatform)?;
+    let index = fetch_index(client, runtimes_dir).await?;
+    let mut entries = match fs::read_dir(runtimes_dir).await {
+        Ok(entries) => entries,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(err) => return Err(Error::io(runtimes_dir, err)),
+    };
+    let mut updated = Vec::new();
+    while let Some(entry) = entries
+        .next_entry()
+        .await
+        .map_err(|err| Error::io(runtimes_dir, err))?
+    {
+        let component = entry.file_name().to_string_lossy().into_owned();
+        let Some(release) = find_release(&index, platform, &component) else {
+            continue;
+        };
+        let Some(marker) = read_marker(&entry.path()).await else {
+            continue;
+        };
+        if marker.manifest_sha1 != release.manifest.sha1 {
+            install(client, &index, &component, runtimes_dir, |_| {}).await?;
+            updated.push(component);
+        }
+    }
+    Ok(updated)
+}
+
 pub fn find_release<'a>(
     index: &'a RuntimeIndex,
     platform: &str,
@@ -209,10 +252,14 @@ where
         manifest_sha1: release.manifest.sha1.clone(),
     };
 
-    if read_marker(&runtime.home).await.as_ref() == Some(&marker)
-        && fs::try_exists(runtime.executable()).await.unwrap_or(false)
-    {
-        return Ok(runtime);
+    let installed = read_marker(&runtime.home).await;
+    let current = installed.as_ref() == Some(&marker)
+        || (installed.is_some() && !AUTO_UPDATE.load(Ordering::Relaxed));
+    if current && fs::try_exists(runtime.executable()).await.unwrap_or(false) {
+        return Ok(JavaRuntime {
+            version: installed.map_or(runtime.version, |installed| installed.version),
+            ..runtime
+        });
     }
 
     let manifest = fetch_manifest(client, &release.manifest).await?;

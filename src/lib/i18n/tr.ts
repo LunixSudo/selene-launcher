@@ -265,6 +265,9 @@ export const tr: Messages = {
     restoreAfterGameHint: "Minecraft'ı kapattığında pencere geri gelir.",
     autoUpdateMods: "Başlatmadan önce modları güncelle",
     autoUpdateModsHint: "Her oyundan önce başlatıcı Modrinth'ten en yeni mod sürümlerini kurar.",
+    autoUpdateJava: "Java'yı otomatik güncelle",
+    autoUpdateJavaHint:
+      "Başlatıcının indirdiği Java, Mojang'ın yeni sürümlerine geçer. Kendi seçtiğiniz Java'ya dokunulmaz.",
     downloads: "İndirmeler",
     maxDownloads: "Aynı anda dosya",
     maxDownloadsHint: "Zayıf bağlantıda daha azı daha kararlıdır.",

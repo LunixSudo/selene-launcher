@@ -4,11 +4,13 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
 /// Launcher settings that the backend acts on. Look-and-feel settings stay in the UI.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Config {
     /// Update mods from Modrinth right before the game starts.
     pub auto_update_mods: bool,
+    /// Move the Java the launcher installed to Mojang's newer builds.
+    pub auto_update_java: bool,
     /// Files downloaded at once; `None` lets each task pick.
     pub max_downloads: Option<usize>,
     /// Download speed cap in KiB/s.
@@ -18,6 +20,19 @@ pub struct Config {
     pub game_language: Option<String>,
     /// How the game's window opens.
     pub game_window: GameWindow,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            auto_update_mods: false,
+            auto_update_java: true,
+            max_downloads: None,
+            speed_limit_kib: None,
+            game_language: None,
+            game_window: GameWindow::default(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -71,6 +86,7 @@ impl ConfigFile {
 }
 
 fn apply(config: &Config) {
+    selene_core::java::set_auto_update(config.auto_update_java);
     selene_core::download::set_limits(
         config.max_downloads,
         config.speed_limit_kib.map(|kib| kib * 1024),

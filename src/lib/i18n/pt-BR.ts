@@ -267,6 +267,9 @@ export const ptBR: Messages = {
     autoUpdateMods: "Atualizar mods antes de jogar",
     autoUpdateModsHint:
       "Antes de cada partida o launcher instala as versões novas dos mods do Modrinth.",
+    autoUpdateJava: "Atualizar o Java automaticamente",
+    autoUpdateJavaHint:
+      "O Java baixado pelo launcher passa para as versões novas da Mojang. O Java escolhido por você nunca é alterado.",
     downloads: "Downloads",
     maxDownloads: "Arquivos ao mesmo tempo",
     maxDownloadsHint: "Menos é mais estável numa conexão fraca.",

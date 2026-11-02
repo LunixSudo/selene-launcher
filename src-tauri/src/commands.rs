@@ -23,6 +23,7 @@ use selene_core::crash::{self, CrashReport};
 use selene_core::download::{self, Progress};
 use selene_core::game::{self, Installed, Stage};
 use selene_core::instance::Instance;
+use selene_core::java;
 use selene_core::launch::{self, LaunchAccount, LaunchOptions};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
@@ -433,14 +434,21 @@ pub async fn prepare_instance(
     result
 }
 
-/// Downloads in the background the Java that the newest release and the most played older
-/// versions run on, so a new instance of them starts without waiting for it.
+/// Brings the Java the launcher installed up to date, then fetches the Java that the newest
+/// release and the most played older versions run on, so their first start does not wait.
 #[tauri::command]
 pub async fn prefetch_java(launcher: State<'_, Launcher>) -> CommandResult<()> {
     static RUNNING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
     let Ok(_running) = RUNNING.try_lock() else {
         return Ok(());
     };
+    let runtimes = launcher.dirs.runtimes();
+    match download::in_background(java::update_installed(&launcher.client, &runtimes)).await {
+        Ok(updated) if !updated.is_empty() => log::info!("updated Java {}", updated.join(", ")),
+        Ok(_) => {}
+        // A runtime a running game holds open cannot be replaced; the next start tries again.
+        Err(err) => log::warn!("could not update Java: {err}"),
+    }
     let manifest = launcher.manifest().await?;
     let latest = manifest.latest.release.as_str();
     for id in std::iter::once(latest).chain(POPULAR_VERSIONS) {

@@ -272,6 +272,9 @@ export const de: Messages = {
     autoUpdateMods: "Mods vor dem Start aktualisieren",
     autoUpdateModsHint:
       "Vor jedem Spiel installiert der Launcher die neuesten Mod-Versionen von Modrinth.",
+    autoUpdateJava: "Java automatisch aktualisieren",
+    autoUpdateJavaHint:
+      "Vom Launcher geladenes Java wechselt auf neuere Builds von Mojang. Selbst gewähltes Java bleibt unangetastet.",
     downloads: "Downloads",
     maxDownloads: "Dateien gleichzeitig",
     maxDownloadsHint: "Weniger ist bei schwacher Verbindung stabiler.",

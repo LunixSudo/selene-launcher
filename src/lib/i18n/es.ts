@@ -268,6 +268,9 @@ export const es: Messages = {
     autoUpdateMods: "Actualizar mods antes de jugar",
     autoUpdateModsHint:
       "Antes de cada partida el launcher instala las versiones nuevas de Modrinth.",
+    autoUpdateJava: "Actualizar Java automáticamente",
+    autoUpdateJavaHint:
+      "El Java que descargó el launcher pasa a las nuevas versiones de Mojang. El Java que elegiste tú no se toca.",
     downloads: "Descargas",
     maxDownloads: "Archivos a la vez",
     maxDownloadsHint: "Menos es más estable con una conexión débil.",

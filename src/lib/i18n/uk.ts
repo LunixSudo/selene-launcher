@@ -263,6 +263,9 @@ export const uk: Messages = {
     restoreAfterGameHint: "Вікно з’явиться знову, коли ви закриєте Minecraft.",
     autoUpdateMods: "Оновлювати моди перед запуском",
     autoUpdateModsHint: "Перед кожною грою лаунчер встановлює свіжі версії модів із Modrinth.",
+    autoUpdateJava: "Оновлювати Java автоматично",
+    autoUpdateJavaHint:
+      "Java, яку завантажив лаунчер, переходить на нові збірки Mojang. Java, обрану вручну, лаунчер не чіпає.",
     downloads: "Завантаження",
     maxDownloads: "Файлів одночасно",
     maxDownloadsHint: "Менше — стабільніше на слабкому з’єднанні.",

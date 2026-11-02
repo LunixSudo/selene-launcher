@@ -262,6 +262,9 @@ export const ru = {
     restoreAfterGameHint: "Окно развернётся, когда вы закроете Minecraft.",
     autoUpdateMods: "Обновлять моды перед запуском",
     autoUpdateModsHint: "Перед каждой игрой лаунчер ставит свежие версии модов с Modrinth.",
+    autoUpdateJava: "Обновлять Java автоматически",
+    autoUpdateJavaHint:
+      "Java, которую скачал лаунчер, переходит на новые сборки Mojang. Java, выбранную вручную, лаунчер не трогает.",
     downloads: "Загрузки",
     maxDownloads: "Файлов одновременно",
     maxDownloadsHint: "Меньше — стабильнее на слабом интернете.",

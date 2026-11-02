@@ -265,6 +265,9 @@ export const pl: Messages = {
     restoreAfterGameHint: "Okno wróci, gdy zamkniesz Minecrafta.",
     autoUpdateMods: "Aktualizuj mody przed uruchomieniem",
     autoUpdateModsHint: "Przed każdą grą launcher instaluje świeże wersje modów z Modrinth.",
+    autoUpdateJava: "Aktualizuj Javę automatycznie",
+    autoUpdateJavaHint:
+      "Java pobrana przez launcher przechodzi na nowsze wydania Mojang. Javy wybranej ręcznie launcher nie rusza.",
     downloads: "Pobieranie",
     maxDownloads: "Plików naraz",
     maxDownloadsHint: "Mniej to stabilniej przy słabym łączu.",

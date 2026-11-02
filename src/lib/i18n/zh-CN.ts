@@ -255,6 +255,9 @@ export const zhCN: Messages = {
     restoreAfterGameHint: "关闭 Minecraft 后窗口会重新出现。",
     autoUpdateMods: "启动前更新模组",
     autoUpdateModsHint: "每次游戏前，启动器都会从 Modrinth 安装最新的模组版本。",
+    autoUpdateJava: "自动更新 Java",
+    autoUpdateJavaHint:
+      "启动器下载的 Java 会更新到 Mojang 的新版本。你手动选择的 Java 不会被改动。",
     downloads: "下载",
     maxDownloads: "同时下载的文件数",
     maxDownloadsHint: "网络较差时，数量少一些会更稳定。",

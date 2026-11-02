@@ -397,6 +397,18 @@
               onchange={(event) => saveConfig({ autoUpdateMods: event.currentTarget.checked })}
             >
           </label>
+          <label class="row switch-row">
+            <div>
+              <h3>{t("settings.autoUpdateJava")}</h3>
+              <p>{t("settings.autoUpdateJavaHint")}</p>
+            </div>
+            <input
+              class="switch"
+              type="checkbox"
+              checked={config.autoUpdateJava}
+              onchange={(event) => saveConfig({ autoUpdateJava: event.currentTarget.checked })}
+            >
+          </label>
         {/if}
         {#if config}
           {@const current = config}

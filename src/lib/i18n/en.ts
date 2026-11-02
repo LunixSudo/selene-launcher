@@ -262,6 +262,9 @@ export const en: Messages = {
     restoreAfterGameHint: "The window comes back when you close Minecraft.",
     autoUpdateMods: "Update mods before launch",
     autoUpdateModsHint: "Before every game the launcher installs fresh mod versions from Modrinth.",
+    autoUpdateJava: "Update Java automatically",
+    autoUpdateJavaHint:
+      "Java the launcher downloaded moves to Mojang's newer builds. Java you picked yourself is never touched.",
     downloads: "Downloads",
     maxDownloads: "Files at once",
     maxDownloadsHint: "Fewer is steadier on a weak connection.",

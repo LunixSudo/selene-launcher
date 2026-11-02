@@ -93,6 +93,7 @@ export interface DiscordPresence {
 
 export interface LauncherConfig {
   autoUpdateMods: boolean;
+  autoUpdateJava: boolean;
   maxDownloads: number | null;
   speedLimitKib: number | null;
   gameLanguage: string | null;
