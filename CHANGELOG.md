@@ -273,3 +273,5 @@ All notable changes to this project are documented here. The format follows
 - A `.sha1` file that turns out to be a web page no longer makes a loader download fail
   every time.
 - A Forge or NeoForge install whose libraries are empty files is installed again.
+- Back on the settings and skins pages walks back through every page opened before, instead
+  of bouncing between the last two.

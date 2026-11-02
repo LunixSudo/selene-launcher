@@ -7,6 +7,7 @@
   import "$lib/styles/global.css";
   import "$lib/styles/motion.css";
   import type { Snippet } from "svelte";
+  import { afterNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import { api } from "$lib/api";
   import { coverOf } from "$lib/appearance";
@@ -15,6 +16,7 @@
   import PrivacyDialog from "$lib/components/PrivacyDialog.svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
   import WelcomeDialog from "$lib/components/WelcomeDialog.svelte";
+  import { trackNavigation } from "$lib/history";
   import { locale } from "$lib/i18n/index.svelte";
   import { playClick } from "$lib/sound";
   import { discordPresence, library, listenToGames } from "$lib/state/instances.svelte";
@@ -102,6 +104,8 @@
       event.preventDefault();
     }
   }
+
+  afterNavigate(trackNavigation);
 
   $effect(() => {
     const unlisten = listenToGames();
