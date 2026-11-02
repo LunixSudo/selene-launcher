@@ -236,9 +236,19 @@ export interface MemoryInfo {
   recommended: number;
 }
 
+export type NameStatus = "available" | "taken" | "notAllowed";
+
+export interface NameChange {
+  allowed: boolean;
+  nextChange: string | null;
+}
+
 export type ErrorKind =
   | "notSignedIn"
   | "signInCancelled"
+  | "needsPlayerName"
+  | "nameTaken"
+  | "nameNotAllowed"
   | "noXboxAccount"
   | "regionBlocked"
   | "childAccount"
@@ -339,6 +349,10 @@ export const api = {
   accounts: () => invoke<AccountList>("accounts"),
   signIn: () => invoke<Account>("sign_in"),
   cancelSignIn: () => invoke<void>("cancel_sign_in"),
+  playerNameStatus: (name: string) => invoke<NameStatus>("player_name_status", { name }),
+  createPlayer: (name: string) => invoke<Account>("create_player", { name }),
+  nameChange: () => invoke<NameChange>("name_change"),
+  changeName: (name: string) => invoke<Account>("change_name", { name }),
   signOut: (id: string) => invoke<void>("sign_out", { id }),
   setActiveAccount: (id: string) => invoke<void>("set_active_account", { id }),
   versions: () => invoke<VersionSummary[]>("versions"),

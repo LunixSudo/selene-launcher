@@ -528,7 +528,28 @@ export const de: Messages = {
     imported: "Modpack importiert",
     importedBody: "„{name}“ ist spielbereit.",
   },
+  playerName: {
+    createTitle: "Spielernamen wählen",
+    createHint:
+      "Dieses Konto besitzt Minecraft, hat aber noch keinen Spieler. Wähle den Namen, den andere im Spiel sehen.",
+    changeTitle: "Spielernamen ändern",
+    changeHint:
+      "Der Name ändert sich überall in Minecraft. Danach geht es erst in 30 Tagen wieder.",
+    label: "Name",
+    rules: "3 bis 16 lateinische Buchstaben, Ziffern oder _.",
+    cooldown: "Der Name kann am {date} wieder geändert werden.",
+    create: "Erstellen",
+    change: "Ändern",
+    status: {
+      available: "Der Name ist frei",
+      taken: "Der Name ist vergeben",
+      notAllowed: "Dieser Name ist nicht erlaubt",
+    },
+  },
   errors: {
+    needsPlayerName: "Wähle einen Spielernamen, um die Anmeldung abzuschließen.",
+    nameTaken: "Dieser Spielername ist vergeben.",
+    nameNotAllowed: "Dieser Spielername ist nicht erlaubt.",
     notSignedIn: "Melde dich mit einem Microsoft-Konto an, um zu spielen.",
     signInCancelled: "Die Anmeldung wurde abgebrochen.",
     noXboxAccount:

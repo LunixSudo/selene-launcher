@@ -513,7 +513,28 @@ export const en: Messages = {
     imported: "Pack imported",
     importedBody: "“{name}” is ready to play.",
   },
+  playerName: {
+    createTitle: "Choose a player name",
+    createHint:
+      "This account owns Minecraft but has no player yet. Pick the name others will see in the game.",
+    changeTitle: "Change player name",
+    changeHint:
+      "Your name changes everywhere in Minecraft. After that it can be changed again in 30 days.",
+    label: "Name",
+    rules: "3 to 16 Latin letters, digits or _.",
+    cooldown: "The name can be changed again on {date}.",
+    create: "Create",
+    change: "Change",
+    status: {
+      available: "The name is free",
+      taken: "The name is taken",
+      notAllowed: "This name is not allowed",
+    },
+  },
   errors: {
+    needsPlayerName: "Pick a player name to finish signing in.",
+    nameTaken: "This player name is taken.",
+    nameNotAllowed: "This player name is not allowed.",
     notSignedIn: "Sign in with a Microsoft account to play.",
     signInCancelled: "Sign-in was cancelled.",
     noXboxAccount: "This account has no Xbox profile yet. Create one at xbox.com and try again.",

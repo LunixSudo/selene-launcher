@@ -508,7 +508,27 @@ export const ru = {
     imported: "Сборка импортирована",
     importedBody: "«{name}» готова к игре.",
   },
+  playerName: {
+    createTitle: "Выбери ник",
+    createHint:
+      "Minecraft на этом аккаунте куплен, но игрока ещё нет. Придумай ник, который увидят другие в игре.",
+    changeTitle: "Сменить ник",
+    changeHint: "Ник сменится везде в Minecraft. Следующая смена будет доступна через 30 дней.",
+    label: "Ник",
+    rules: "От 3 до 16 латинских букв, цифр или _.",
+    cooldown: "Ник можно будет сменить снова {date}.",
+    create: "Создать",
+    change: "Сменить",
+    status: {
+      available: "Ник свободен",
+      taken: "Ник занят",
+      notAllowed: "Такой ник нельзя",
+    },
+  },
   errors: {
+    needsPlayerName: "Чтобы закончить вход, выбери ник.",
+    nameTaken: "Этот ник занят.",
+    nameNotAllowed: "Такой ник нельзя.",
     notSignedIn: "Войдите в аккаунт Microsoft, чтобы играть.",
     signInCancelled: "Вход отменён.",
     noXboxAccount: "У аккаунта ещё нет профиля Xbox. Создайте его на xbox.com и попробуйте снова.",

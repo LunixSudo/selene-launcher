@@ -1,5 +1,6 @@
 <script lang="ts">
   import PlayerHead from "$lib/components/PlayerHead.svelte";
+  import PlayerNameDialog from "$lib/components/PlayerNameDialog.svelte";
   import { t } from "$lib/i18n/index.svelte";
   import {
     activeAccount,
@@ -85,6 +86,20 @@
           </svg>
           {t("skins.title")}
         </a>
+        <button
+          type="button"
+          role="menuitem"
+          class="item action"
+          onclick={() => {
+            open = false;
+            session.naming = "change";
+          }}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M10.5 2.5l3 3-8 8H2.5v-3z" />
+          </svg>
+          {t("playerName.changeTitle")}
+        </button>
       {/if}
 
       {#if session.signingIn}
@@ -101,6 +116,8 @@
       {/if}
     </div>
   {/if}
+
+  <PlayerNameDialog />
 
   {#if session.error && !open}
     <div class="error" role="alert">

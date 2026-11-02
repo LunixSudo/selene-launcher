@@ -5,8 +5,11 @@ use std::time::{Duration, SystemTime};
 
 use keyring::Entry;
 use reqwest::Client;
-use selene_core::auth::{self, LoginRequest, MicrosoftTokens, MinecraftSession, Profile};
+use selene_core::auth::{
+    self, AuthError, LoginRequest, MicrosoftTokens, MinecraftSession, MinecraftToken, Profile,
+};
 use selene_core::launch::LaunchAccount;
+use selene_core::names::{self, NameChange, NameStatus};
 use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
 
@@ -42,6 +45,9 @@ pub struct Accounts {
     list: Mutex<AccountList>,
     sessions: tokio::sync::Mutex<HashMap<String, MinecraftSession>>,
     cancel_sign_in: Mutex<Option<oneshot::Sender<()>>>,
+    /// A sign-in that stopped because the account owns the game but has no player yet. It
+    /// finishes once a name is picked; the tokens stay in memory only.
+    unnamed: tokio::sync::Mutex<Option<(MicrosoftTokens, MinecraftToken)>>,
 }
 
 impl Accounts {
@@ -55,6 +61,7 @@ impl Accounts {
             list: Mutex::new(list),
             sessions: tokio::sync::Mutex::new(HashMap::new()),
             cancel_sign_in: Mutex::new(None),
+            unnamed: tokio::sync::Mutex::new(None),
         }
     }
 
@@ -81,14 +88,75 @@ impl Accounts {
             }
             _ = cancelled => return Err(CommandError::SignInCancelled),
         };
-        let session = auth::minecraft_login(client, &tokens.access_token).await?;
+        let token = auth::minecraft_token(client, &tokens.access_token).await?;
+        let profile = match auth::fetch_profile(client, &token.access_token).await {
+            Err(selene_core::Error::Auth(AuthError::GameNotOwned))
+                if names::owns_game(client, &token.access_token).await? =>
+            {
+                *self.unnamed.lock().await = Some((tokens, token));
+                return Err(CommandError::NeedsPlayerName);
+            }
+            result => result?,
+        };
+        self.finish_sign_in(&tokens, token, profile).await
+    }
+
+    pub async fn player_name_status(
+        &self,
+        client: &Client,
+        name: &str,
+    ) -> CommandResult<NameStatus> {
+        let token = match self.unnamed.lock().await.as_ref() {
+            Some((_, token)) => token.access_token.clone(),
+            None => self.session(client).await?.access_token,
+        };
+        Ok(names::name_status(client, &token, name).await?)
+    }
+
+    /// Gives the player of a sign-in that needed one its name and finishes signing in.
+    pub async fn create_player(&self, client: &Client, name: &str) -> CommandResult<Account> {
+        let mut unnamed = self.unnamed.lock().await;
+        let (_, token) = unnamed.as_ref().ok_or(CommandError::NotSignedIn)?;
+        let profile = names::create_profile(client, &token.access_token, name).await?;
+        let (tokens, token) = unnamed.take().ok_or(CommandError::NotSignedIn)?;
+        drop(unnamed);
+        self.finish_sign_in(&tokens, token, profile).await
+    }
+
+    pub async fn name_change(&self, client: &Client) -> CommandResult<NameChange> {
+        let token = self.session(client).await?.access_token;
+        Ok(names::name_change(client, &token).await?)
+    }
+
+    pub async fn change_name(&self, client: &Client, name: &str) -> CommandResult<Account> {
+        let token = self.session(client).await?.access_token;
+        let profile = names::change_name(client, &token, name).await?;
+        self.set_profile(&profile).await?;
+        Ok(Account {
+            id: profile.id.clone(),
+            name: profile.name.clone(),
+            skin: active_skin(&profile),
+        })
+    }
+
+    async fn finish_sign_in(
+        &self,
+        tokens: &MicrosoftTokens,
+        token: MinecraftToken,
+        profile: Profile,
+    ) -> CommandResult<Account> {
+        let session = MinecraftSession {
+            access_token: token.access_token,
+            expires_at: token.expires_at,
+            profile,
+        };
         let account = Account {
             id: session.profile.id.clone(),
             name: session.profile.name.clone(),
             skin: active_skin(&session.profile),
         };
 
-        store_refresh_token(&account.id, &tokens)?;
+        store_refresh_token(&account.id, tokens)?;
         self.sessions
             .lock()
             .await

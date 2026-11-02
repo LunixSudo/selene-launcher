@@ -11,6 +11,9 @@ pub enum CommandError {
     #[error("sign-in was cancelled")]
     SignInCancelled,
 
+    #[error("the account needs a player name before it can play")]
+    NeedsPlayerName,
+
     #[error("credential store: {0}")]
     Keyring(#[from] keyring::Error),
 
@@ -58,6 +61,7 @@ impl CommandError {
         match self {
             Self::NotSignedIn => "notSignedIn",
             Self::SignInCancelled => "signInCancelled",
+            Self::NeedsPlayerName => "needsPlayerName",
             Self::Keyring(_) => "keyring",
             Self::UnknownVersion(_) => "unknownVersion",
             Self::UnknownInstance(_) => "unknownInstance",
@@ -85,6 +89,8 @@ impl CommandError {
                 AuthError::GameNotOwned => "gameNotOwned",
                 AuthError::SessionExpired => "sessionExpired",
                 AuthError::RateLimited => "rateLimited",
+                AuthError::NameTaken => "nameTaken",
+                AuthError::NameNotAllowed => "nameNotAllowed",
                 // Mojang answers 403 until it has approved the app's Azure client ID.
                 AuthError::Service {
                     service: "Minecraft Services",

@@ -516,7 +516,27 @@ export const pl: Messages = {
     imported: "Modpack zaimportowany",
     importedBody: "„{name}” jest gotowa do gry.",
   },
+  playerName: {
+    createTitle: "Wybierz nick",
+    createHint:
+      "To konto ma Minecraft, ale nie ma jeszcze gracza. Wybierz nick, który zobaczą inni.",
+    changeTitle: "Zmień nick",
+    changeHint: "Nick zmieni się wszędzie w Minecraft. Kolejna zmiana będzie możliwa za 30 dni.",
+    label: "Nick",
+    rules: "Od 3 do 16 liter łacińskich, cyfr lub _.",
+    cooldown: "Nick będzie można zmienić ponownie {date}.",
+    create: "Utwórz",
+    change: "Zmień",
+    status: {
+      available: "Nick jest wolny",
+      taken: "Nick jest zajęty",
+      notAllowed: "Taki nick jest niedozwolony",
+    },
+  },
   errors: {
+    needsPlayerName: "Wybierz nick, aby dokończyć logowanie.",
+    nameTaken: "Ten nick jest zajęty.",
+    nameNotAllowed: "Taki nick jest niedozwolony.",
     notSignedIn: "Zaloguj się kontem Microsoft, aby grać.",
     signInCancelled: "Logowanie anulowano.",
     noXboxAccount:

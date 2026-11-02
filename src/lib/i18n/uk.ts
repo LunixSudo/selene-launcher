@@ -511,7 +511,27 @@ export const uk: Messages = {
     imported: "Модпак імпортовано",
     importedBody: "«{name}» готова до гри.",
   },
+  playerName: {
+    createTitle: "Обери нік",
+    createHint:
+      "Minecraft на цьому акаунті куплено, але гравця ще немає. Придумай нік, який побачать інші в грі.",
+    changeTitle: "Змінити нік",
+    changeHint: "Нік зміниться всюди в Minecraft. Наступна зміна буде доступна через 30 днів.",
+    label: "Нік",
+    rules: "Від 3 до 16 латинських літер, цифр або _.",
+    cooldown: "Нік можна буде змінити знову {date}.",
+    create: "Створити",
+    change: "Змінити",
+    status: {
+      available: "Нік вільний",
+      taken: "Нік зайнятий",
+      notAllowed: "Такий нік не можна",
+    },
+  },
   errors: {
+    needsPlayerName: "Щоб завершити вхід, обери нік.",
+    nameTaken: "Цей нік зайнятий.",
+    nameNotAllowed: "Такий нік не можна.",
     notSignedIn: "Увійдіть в акаунт Microsoft, щоб грати.",
     signInCancelled: "Вхід скасовано.",
     noXboxAccount:

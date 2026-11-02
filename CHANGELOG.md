@@ -280,3 +280,6 @@ All notable changes to this project are documented here. The format follows
 - Ticks for common Java flags in the instance settings: they add the flags to the arguments
   line and take them out again.
 - A setting for the language a new instance starts the game in: the system's or a chosen one.
+- A new account that owns the game but has no player yet is asked for a name right after
+  signing in, and the account menu can change the player name, with a check that the name is
+  free and the date of the next allowed change.

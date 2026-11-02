@@ -27,6 +27,7 @@ use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
 use selene_core::memory;
 use selene_core::mods::{self, ContentKind};
+use selene_core::names::{NameChange, NameStatus};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
@@ -120,6 +121,36 @@ pub async fn sign_in(app: AppHandle, launcher: State<'_, Launcher>) -> CommandRe
                 .map_err(|err| CommandError::Io(std::io::Error::other(err)))
         })
         .await
+}
+
+#[tauri::command]
+pub async fn player_name_status(
+    launcher: State<'_, Launcher>,
+    name: String,
+) -> CommandResult<NameStatus> {
+    launcher
+        .accounts
+        .player_name_status(&launcher.client, &name)
+        .await
+}
+
+/// Finishes a sign-in that stopped with `needsPlayerName`.
+#[tauri::command]
+pub async fn create_player(launcher: State<'_, Launcher>, name: String) -> CommandResult<Account> {
+    launcher
+        .accounts
+        .create_player(&launcher.client, &name)
+        .await
+}
+
+#[tauri::command]
+pub async fn name_change(launcher: State<'_, Launcher>) -> CommandResult<NameChange> {
+    launcher.accounts.name_change(&launcher.client).await
+}
+
+#[tauri::command]
+pub async fn change_name(launcher: State<'_, Launcher>, name: String) -> CommandResult<Account> {
+    launcher.accounts.change_name(&launcher.client, &name).await
 }
 
 #[tauri::command]

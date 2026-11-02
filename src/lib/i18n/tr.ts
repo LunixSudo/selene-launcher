@@ -523,7 +523,27 @@ export const tr: Messages = {
     imported: "Mod paketi içe aktarıldı",
     importedBody: "“{name}” oynamaya hazır.",
   },
+  playerName: {
+    createTitle: "Oyuncu adı seç",
+    createHint:
+      "Bu hesapta Minecraft var ama henüz oyuncu yok. Diğerlerinin oyunda göreceği adı seç.",
+    changeTitle: "Oyuncu adını değiştir",
+    changeHint: "Ad Minecraft'ın her yerinde değişir. Sonra 30 gün içinde tekrar değiştirilemez.",
+    label: "Ad",
+    rules: "3-16 Latin harfi, rakam veya _.",
+    cooldown: "Ad {date} tarihinde tekrar değiştirilebilir.",
+    create: "Oluştur",
+    change: "Değiştir",
+    status: {
+      available: "Ad boşta",
+      taken: "Ad alınmış",
+      notAllowed: "Bu ada izin verilmiyor",
+    },
+  },
   errors: {
+    needsPlayerName: "Girişi bitirmek için bir oyuncu adı seç.",
+    nameTaken: "Bu oyuncu adı alınmış.",
+    nameNotAllowed: "Bu oyuncu adına izin verilmiyor.",
     notSignedIn: "Oynamak için bir Microsoft hesabıyla giriş yap.",
     signInCancelled: "Giriş iptal edildi.",
     noXboxAccount: "Bu hesabın henüz Xbox profili yok. xbox.com'da bir tane oluşturup tekrar dene.",

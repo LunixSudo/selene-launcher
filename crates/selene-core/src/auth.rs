@@ -54,6 +54,10 @@ pub enum AuthError {
     GameNotOwned,
     #[error("the saved sign-in has expired or was revoked")]
     SessionExpired,
+    #[error("this player name is taken")]
+    NameTaken,
+    #[error("this player name is not allowed")]
+    NameNotAllowed,
     #[error("Minecraft Services asked to slow down")]
     RateLimited,
     #[error("{service} returned {status}")]
@@ -325,11 +329,31 @@ pub async fn refresh(client: &Client, refresh_token: &str) -> Result<MicrosoftTo
     })
 }
 
+/// A Minecraft Services token for an account that may not have a player yet.
+pub struct MinecraftToken {
+    pub access_token: String,
+    pub expires_at: SystemTime,
+}
+
 /// Trades a Microsoft access token for a Minecraft session and checks that the game is owned.
 pub async fn minecraft_login(
     client: &Client,
     microsoft_access_token: &str,
 ) -> Result<MinecraftSession> {
+    let token = minecraft_token(client, microsoft_access_token).await?;
+    let profile = fetch_profile(client, &token.access_token).await?;
+    Ok(MinecraftSession {
+        access_token: token.access_token,
+        expires_at: token.expires_at,
+        profile,
+    })
+}
+
+/// Trades a Microsoft access token for a Minecraft Services token, through Xbox Live.
+pub async fn minecraft_token(
+    client: &Client,
+    microsoft_access_token: &str,
+) -> Result<MinecraftToken> {
     let xbox: XboxResponse = post_json(
         client,
         "Xbox Live",
@@ -362,11 +386,9 @@ pub async fn minecraft_login(
     )
     .await?;
 
-    let profile = fetch_profile(client, &login.access_token).await?;
-    Ok(MinecraftSession {
+    Ok(MinecraftToken {
         access_token: login.access_token,
         expires_at: expires_at(login.expires_in),
-        profile,
     })
 }
 
