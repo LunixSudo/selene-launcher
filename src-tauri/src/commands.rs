@@ -50,6 +50,8 @@ const CLOSE_TIMEOUT: Duration = Duration::from_secs(20);
 const CLOSE_POLL_INTERVAL: Duration = Duration::from_millis(300);
 const HUNG_AFTER_QUIET: Duration = Duration::from_secs(5);
 const CLOSE_LOG_LINES: usize = 30;
+/// A game still in its menus has nothing to save, but gets a moment to quit on its own.
+const MENU_CLOSE_TIMEOUT: Duration = Duration::from_secs(3);
 const UNFIT_LOOKUP_TIMEOUT: Duration = Duration::from_secs(5);
 const LOG_DRAIN_TIMEOUT: Duration = Duration::from_secs(3);
 
@@ -330,6 +332,7 @@ pub fn open_data_folder(app: AppHandle, launcher: State<'_, Launcher>) -> Comman
 #[tauri::command]
 pub async fn delete_instance(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
     launcher.cancel_preparing(&id).await?;
+    shortcut::remove_shortcut(&launcher, &id).await?;
     Ok(launcher.instances.delete(&id).await?)
 }
 
@@ -403,9 +406,10 @@ pub async fn prepare_instance(
 /// versions run on, so a new instance of them starts without waiting for it.
 #[tauri::command]
 pub async fn prefetch_java(launcher: State<'_, Launcher>) -> CommandResult<()> {
-    if launcher.accounts.list().active.is_none() {
+    static RUNNING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let Ok(_running) = RUNNING.try_lock() else {
         return Ok(());
-    }
+    };
     let manifest = launcher.manifest().await?;
     let latest = manifest.latest.release.as_str();
     for id in std::iter::once(latest).chain(POPULAR_VERSIONS) {
@@ -670,7 +674,8 @@ async fn instance_has_mods(launcher: &Launcher, id: &str) -> bool {
 
 /// Waits for the game to quit after it was asked to. A game that has begun stopping and then
 /// prints nothing for a while is hung, which some mods' threads cause; saving a world logs as
-/// it goes. One that ignores the request is killed after a longer wait.
+/// it goes. One that ignores the request is killed after a longer wait, or a short one if it
+/// never left the menus.
 async fn close_or_kill(
     app: &AppHandle,
     instance_id: &str,
@@ -691,7 +696,12 @@ async fn close_or_kill(
         }
         let stopping = launcher.log_tail_contains(instance_id, "Stopping!", CLOSE_LOG_LINES);
         let hung = stopping && quiet_since.elapsed() >= HUNG_AFTER_QUIET;
-        if hung || started.elapsed() >= CLOSE_TIMEOUT {
+        let timeout = if launcher.in_world(instance_id) {
+            CLOSE_TIMEOUT
+        } else {
+            MENU_CLOSE_TIMEOUT
+        };
+        if hung || started.elapsed() >= timeout {
             let _ = child.kill().await;
             return child.wait().await;
         }

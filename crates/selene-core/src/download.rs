@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use futures_util::{StreamExt, TryStreamExt, stream};
@@ -41,6 +41,14 @@ pub struct Progress {
 
 /// Background downloads take few connections, so a slow line still has room for the rest.
 const BACKGROUND_CONCURRENCY: usize = 4;
+/// Fewer still while a game is running, so they never cost the player ping or frames.
+const IN_GAME_CONCURRENCY: usize = 2;
+static IN_GAME: AtomicBool = AtomicBool::new(false);
+
+/// Tells background downloads whether a game is running.
+pub fn set_in_game(in_game: bool) {
+    IN_GAME.store(in_game, Ordering::Relaxed);
+}
 
 /// Downloads the user is waiting for right now. Background ones hold back while any run.
 static FOREGROUND: AtomicUsize = AtomicUsize::new(0);
@@ -200,7 +208,9 @@ where
 }
 
 fn parallel(concurrency: usize, background: bool) -> usize {
-    let concurrency = if background {
+    let concurrency = if background && IN_GAME.load(Ordering::Relaxed) {
+        concurrency.min(IN_GAME_CONCURRENCY)
+    } else if background {
         concurrency.min(BACKGROUND_CONCURRENCY)
     } else {
         concurrency

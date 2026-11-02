@@ -481,6 +481,8 @@
     min-width: 0;
     padding: 14px 4px 6px;
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior: contain;
     border-top: 1px solid var(--border);
     scrollbar-width: thin;
   }

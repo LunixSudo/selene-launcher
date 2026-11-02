@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { openModal } from "$lib/dialog";
 
   let {
     open = $bindable(),
@@ -23,7 +24,7 @@
 
   $effect(() => {
     if (open) {
-      dialog.showModal();
+      openModal(dialog);
     } else {
       dialog.close();
     }
@@ -59,10 +60,6 @@
     background: var(--surface-solid);
     color: var(--text);
     box-shadow: 0 24px 64px rgb(0 0 0 / 0.24);
-  }
-
-  dialog[open] {
-    animation: pop 220ms var(--ease);
   }
 
   dialog::backdrop {
@@ -111,12 +108,5 @@
 
   .actions :global(button:disabled) {
     opacity: 0.6;
-  }
-
-  @keyframes pop {
-    from {
-      opacity: 0;
-      transform: scale(0.96);
-    }
   }
 </style>

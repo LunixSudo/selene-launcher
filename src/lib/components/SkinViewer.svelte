@@ -91,6 +91,9 @@
     return () => {
       disposed = true;
       created?.dispose();
+      // The browser keeps only a few WebGL contexts and drops the oldest, often the app's
+      // background, so this one is let go now instead of whenever it is collected.
+      created?.renderer.forceContextLoss();
     };
   });
 

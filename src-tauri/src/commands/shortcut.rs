@@ -51,6 +51,24 @@ pub async fn update_shortcut(
     write_instance_shortcut(&app, &launcher, &id, &icon).await
 }
 
+/// Deletes the instance's desktop shortcut, if the launcher made one and it is still there.
+pub async fn remove_shortcut(launcher: &Launcher, id: &str) -> CommandResult<()> {
+    let Ok(bytes) = tokio::fs::read(instance_dir(launcher, id)?.join(RECORD_FILE)).await else {
+        return Ok(());
+    };
+    let Ok(record) = serde_json::from_slice::<ShortcutRecord>(&bytes) else {
+        return Ok(());
+    };
+    if record
+        .path
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("lnk"))
+    {
+        let _ = tokio::fs::remove_file(&record.path).await;
+    }
+    Ok(())
+}
+
 async fn write_instance_shortcut(
     app: &AppHandle,
     launcher: &Launcher,

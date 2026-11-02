@@ -85,8 +85,6 @@ All notable changes to this project are documented here. The format follows
 - When Mojang's Java cannot be downloaded, the launcher installs Eclipse Temurin of the same
   version from Adoptium (or its TUNA mirror), then Azul Zulu, each checked against its
   vendor's SHA-256, and only then tries Mojang's Java on BMCLAPI.
-- A temporary "Download source" setting that takes everything from BMCLAPI and MCIM, to check
-  that the copies work. It goes away before the release.
 - Importing a modpack, installing from the catalog and updating add-ons show their progress
   on the instance card and the instance page, file by file. These downloads go ahead of a game
   download running in the background, which waits for them.
@@ -254,3 +252,14 @@ All notable changes to this project are documented here. The format follows
 - Dropdown lists stay opaque where their scrolled edges fade.
 - After Stop the button says the game is saving and quitting.
 - A NeoForge site that hangs instead of failing no longer keeps the build list loading.
+- Deleting an instance also deletes its desktop shortcut.
+- The font choices fit in one row.
+- The cape row no longer scrolls up and down.
+- Switching style presets no longer leaves the settings drawn small in the window's corner.
+- Leaving the skins page frees its 3D preview at once, so going back and forth no longer
+  stutters or drops the live background.
+- Dialogs no longer show up whole for a moment before their opening animation on slow PCs.
+- Stop closes a game that is still in its menus within a few seconds.
+- Java for the newest and most played versions downloads even before signing in, and
+  downloads cut short last time go on quietly after the launcher starts. While a game is
+  running, background downloads use fewer connections.

@@ -86,7 +86,7 @@ export function prepare(id: string) {
   preparing.set(id, task);
 }
 
-/** Downloads the games of all instances one after another, for when an account just signed in. */
+/** Downloads the games of all instances one after another, at startup and after signing in. */
 export async function prepareAll() {
   if (!library.loaded) {
     await loadInstances();
@@ -298,8 +298,10 @@ export async function listenToGames(): Promise<() => void> {
   if (requested) {
     void play(requested);
   }
-  // Offline or not signed in, there simply is nothing to fetch yet.
+  // Offline there simply is nothing to fetch yet.
   void api.prefetchJava().catch(() => {});
+  // Downloads cut short last time go on quietly; complete instances only get their sizes checked.
+  void prepareAll();
   return () => {
     for (const unlisten of unlisteners) {
       unlisten();

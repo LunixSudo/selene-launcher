@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 use reqwest::Client;
 use selene_core::crash::CrashReport;
 use selene_core::curseforge::CurseForge;
+use selene_core::download;
 use selene_core::game::GameDirs;
 use selene_core::instance::Instances;
 use selene_core::manifest::VersionManifest;
@@ -43,6 +44,8 @@ struct Log {
     lines: VecDeque<String>,
     /// Lines pushed this session, dropped and cleared ones included.
     end: u64,
+    /// The running game has opened a world or joined a server, so it has something to save.
+    in_world: bool,
 }
 
 /// The kept lines of a game's log and the number of the line after the last one.
@@ -66,6 +69,8 @@ const CANCEL_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Lines kept per instance; older ones are dropped.
 const LOG_LINES: usize = 5000;
+/// What the game prints when it opens a world or connects to a server, in every version.
+const WORLD_MARKERS: [&str; 2] = ["Starting integrated minecraft server", "Connecting to "];
 
 impl Launcher {
     pub fn new(data_dir: &Path, startup_launch: Option<String>) -> selene_core::Result<Self> {
@@ -136,10 +141,12 @@ impl Launcher {
 
     /// Remembers how to stop the game once its process exists.
     pub fn set_stopper(&self, id: &str, stop: oneshot::Sender<()>) {
-        if let Some(run) = self.running_map().get_mut(id) {
+        let mut running = self.running_map();
+        if let Some(run) = running.get_mut(id) {
             run.stop = Some(stop);
             run.playing = true;
         }
+        download::set_in_game(running.values().any(|run| run.playing));
     }
 
     /// Asks a running game to stop; returns `false` if it was not running.
@@ -179,7 +186,9 @@ impl Launcher {
     }
 
     pub fn stop_running(&self, id: &str) {
-        self.running_map().remove(id);
+        let mut running = self.running_map();
+        running.remove(id);
+        download::set_in_game(running.values().any(|run| run.playing));
     }
 
     pub fn is_running(&self, id: &str) -> bool {
@@ -217,11 +226,12 @@ impl Launcher {
             .take()
     }
 
-    /// Forgets the previous run's output.
-    /// Empties the log but keeps counting, so line numbers never repeat in a session.
+    /// Forgets the previous run's output but keeps counting, so line numbers never repeat in
+    /// a session.
     pub fn clear_log(&self, id: &str) {
         if let Some(log) = self.log_map().get_mut(id) {
             log.lines.clear();
+            log.in_world = false;
         }
     }
 
@@ -232,6 +242,7 @@ impl Launcher {
         if log.lines.len() == LOG_LINES {
             log.lines.pop_front();
         }
+        log.in_world |= WORLD_MARKERS.iter().any(|marker| line.contains(marker));
         log.lines.push_back(line);
         log.end += 1;
         log.end - 1
@@ -246,6 +257,10 @@ impl Launcher {
                 .take(count)
                 .any(|line| line.contains(text))
         })
+    }
+
+    pub fn in_world(&self, id: &str) -> bool {
+        self.log_map().get(id).is_some_and(|log| log.in_world)
     }
 
     /// How many lines the game has printed so far.

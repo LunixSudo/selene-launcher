@@ -168,6 +168,8 @@ export function matchesLook(look: Partial<Look>): boolean {
   return Object.entries(look).every(([key, value]) => settings[key as keyof Look] === value);
 }
 
+const applied: { theme?: Settings["theme"]; style?: Style } = {};
+
 // Call from an effect so it reruns whenever a setting changes.
 export function applySettings() {
   const root = document.documentElement;
@@ -184,10 +186,18 @@ export function applySettings() {
     // Not remembering the choice is fine.
   }
 
+  // Windows redraws the whole window for each of these calls, and a burst of them leaves the
+  // page drawn small in a corner, so they go out only when the value changed.
   const appWindow = getCurrentWindow();
-  void appWindow.setTheme(settings.theme === "system" ? null : settings.theme).catch(() => {});
-  const effect = { glass: Effect.Acrylic, mica: Effect.Mica, solid: null }[settings.style];
-  void (effect ? appWindow.setEffects({ effects: [effect] }) : appWindow.clearEffects()).catch(
-    () => {},
-  );
+  if (applied.theme !== settings.theme) {
+    applied.theme = settings.theme;
+    void appWindow.setTheme(settings.theme === "system" ? null : settings.theme).catch(() => {});
+  }
+  if (applied.style !== settings.style) {
+    applied.style = settings.style;
+    const effect = { glass: Effect.Acrylic, mica: Effect.Mica, solid: null }[settings.style];
+    void (effect ? appWindow.setEffects({ effects: [effect] }) : appWindow.clearEffects()).catch(
+      () => {},
+    );
+  }
 }

@@ -234,10 +234,6 @@ pub async fn install_any<F>(
 where
     F: Fn(Progress) + Sync,
 {
-    if http::source() == http::Source::Fallbacks {
-        let index = fetch_index(client, runtimes_dir).await?;
-        return install(client, &index, component, runtimes_dir, on_progress).await;
-    }
     let official = http::official_only(async {
         let index = fetch_index(client, runtimes_dir).await?;
         install(client, &index, component, runtimes_dir, &on_progress).await

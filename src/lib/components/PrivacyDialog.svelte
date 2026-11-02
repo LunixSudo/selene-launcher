@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { api } from "$lib/api";
+  import { openModal } from "$lib/dialog";
   import { externalLinks } from "$lib/external-links";
   import { locale, t } from "$lib/i18n/index.svelte";
   import { renderMarkup } from "$lib/markup";
@@ -33,7 +34,7 @@
 
   $effect(() => {
     if (open) {
-      dialog.showModal();
+      openModal(dialog);
     } else {
       dialog.close();
     }

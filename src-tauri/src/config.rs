@@ -13,7 +13,6 @@ pub struct Config {
     pub max_downloads: Option<usize>,
     /// Download speed cap in KiB/s.
     pub speed_limit_kib: Option<u64>,
-    pub download_source: selene_core::http::Source,
 }
 
 pub struct ConfigFile {
@@ -57,5 +56,4 @@ fn apply(config: &Config) {
         config.max_downloads,
         config.speed_limit_kib.map(|kib| kib * 1024),
     );
-    selene_core::http::set_source(config.download_source);
 }

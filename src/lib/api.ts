@@ -83,10 +83,7 @@ export interface LauncherConfig {
   autoUpdateMods: boolean;
   maxDownloads: number | null;
   speedLimitKib: number | null;
-  downloadSource: DownloadSource;
 }
-
-export type DownloadSource = "auto" | "fallbacks";
 
 export interface Account {
   id: string;

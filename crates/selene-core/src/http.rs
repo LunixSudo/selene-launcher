@@ -1,10 +1,8 @@
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::{Duration, Instant};
 
 use reqwest::{Client, RequestBuilder, Response, StatusCode, Url};
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 
 use crate::Result;
 
@@ -107,29 +105,6 @@ const FALLBACKS: &[(&str, &str)] = &[
 const HOST_RETRY_AFTER: Duration = Duration::from_secs(5 * 60);
 static DOWN_HOSTS: Mutex<Vec<(String, Instant)>> = Mutex::new(Vec::new());
 
-/// Where downloads come from. Anything but `Auto` is for checking that the copies work.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum Source {
-    #[default]
-    Auto,
-    /// BMCLAPI and MCIM wherever they have a copy, Java included.
-    Fallbacks,
-}
-
-static SOURCE: AtomicU8 = AtomicU8::new(0);
-
-pub fn set_source(source: Source) {
-    SOURCE.store(source as u8, Ordering::Relaxed);
-}
-
-pub fn source() -> Source {
-    match SOURCE.load(Ordering::Relaxed) {
-        1 => Source::Fallbacks,
-        _ => Source::Auto,
-    }
-}
-
 /// Limits the requests made inside a scope to one kind of source.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Only {
@@ -152,9 +127,7 @@ pub async fn fallbacks_only<F: Future>(future: F) -> F::Output {
 }
 
 fn only() -> Option<Only> {
-    ONLY.try_with(|only| *only)
-        .ok()
-        .or((source() == Source::Fallbacks).then_some(Only::Fallbacks))
+    ONLY.try_with(|only| *only).ok()
 }
 
 pub fn client() -> Result<Client> {

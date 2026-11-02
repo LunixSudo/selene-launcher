@@ -6,6 +6,7 @@
     type LoaderRelease,
     type VersionSummary,
   } from "$lib/api";
+  import { openModal } from "$lib/dialog";
   import { t } from "$lib/i18n/index.svelte";
   import {
     hasHiddenBetas,
@@ -74,7 +75,7 @@
 
   $effect(() => {
     if (open) {
-      dialog.showModal();
+      openModal(dialog);
       void loadVersions();
     } else {
       dialog.close();
@@ -209,10 +210,6 @@
     background: var(--surface-solid);
     color: var(--text);
     box-shadow: 0 24px 64px rgb(0 0 0 / 0.24);
-  }
-
-  dialog[open] {
-    animation: pop 220ms var(--ease);
   }
 
   dialog::backdrop {
@@ -351,12 +348,5 @@
 
   .secondary {
     background: var(--field);
-  }
-
-  @keyframes pop {
-    from {
-      opacity: 0;
-      transform: scale(0.96);
-    }
   }
 </style>

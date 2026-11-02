@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { openModal } from "$lib/dialog";
   import { t } from "$lib/i18n/index.svelte";
   import { BEAUTIFUL, FAST, settings } from "$lib/state/settings.svelte";
 
@@ -10,7 +11,7 @@
 
   $effect(() => {
     if (open) {
-      dialog.showModal();
+      openModal(dialog);
     } else {
       dialog.close();
     }
@@ -59,10 +60,6 @@
     background: var(--surface-solid);
     color: var(--text);
     box-shadow: 0 24px 64px rgb(0 0 0 / 0.3);
-  }
-
-  dialog[open] {
-    animation: pop 320ms var(--ease);
   }
 
   dialog::backdrop {
@@ -142,12 +139,5 @@
     width: 26px;
     height: 26px;
     fill: currentColor;
-  }
-
-  @keyframes pop {
-    from {
-      opacity: 0;
-      transform: scale(0.94);
-    }
   }
 </style>
