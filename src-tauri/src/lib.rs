@@ -4,9 +4,11 @@ mod commands;
 mod config;
 mod discord;
 mod error;
+mod game_window;
 mod state;
 
 use std::path::PathBuf;
+use std::sync::{Mutex, PoisonError};
 
 use tauri::{AppHandle, Emitter, Manager, RunEvent, WebviewWindowBuilder};
 
@@ -198,6 +200,10 @@ fn keep_alive_while_playing(app: &AppHandle, event: RunEvent) {
 
 /// Brings the main window to the front, opening it again if it was closed.
 pub(crate) fn show_main_window(app: &AppHandle) {
+    // A game ending and a second start can both ask for the window at the same moment; without
+    // the lock both would see it missing and each would open one.
+    static OPENING: Mutex<()> = Mutex::new(());
+    let _opening = OPENING.lock().unwrap_or_else(PoisonError::into_inner);
     if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         let _ = window.unminimize();
         let _ = window.set_focus();
