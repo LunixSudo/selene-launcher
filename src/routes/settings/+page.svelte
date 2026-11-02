@@ -641,9 +641,10 @@
     margin-top: 8px;
   }
 
-  .size {
+  .row.size {
     justify-content: flex-start;
     align-items: end;
+    gap: 10px;
   }
 
   .size .form-field {

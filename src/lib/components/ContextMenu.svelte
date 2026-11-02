@@ -17,6 +17,7 @@
   const MARGIN = 8;
 
   let menu = $state<HTMLDivElement>();
+  let anchor = $state<HTMLSpanElement>();
   let placed = $state({ x: 0, y: 0 });
 
   $effect(() => {
@@ -53,6 +54,13 @@
     };
   });
 
+  // A fixed menu is placed against any ancestor with a transform or backdrop filter, which
+  // moved it off the pointer and stretched the page, so it opens at the top of the page or
+  // of the dialog it was opened from.
+  function lift(node: HTMLElement) {
+    (anchor?.closest("dialog") ?? document.body).append(node);
+  }
+
   function run(item: MenuItem) {
     position = null;
     item.action();
@@ -70,6 +78,7 @@
   }
 </script>
 
+<span class="anchor" bind:this={anchor}></span>
 {#if position}
   <div
     class="menu"
@@ -79,6 +88,7 @@
     style:left="{placed.x}px"
     style:top="{placed.y}px"
     onkeydown={moveFocus}
+    {@attach lift}
   >
     {#each items as item (item.label)}
       <button
@@ -96,6 +106,10 @@
 {/if}
 
 <style>
+  .anchor {
+    display: none;
+  }
+
   .menu {
     position: fixed;
     z-index: 50;

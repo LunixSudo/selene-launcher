@@ -2,7 +2,7 @@
 
 export const ICONS: Record<string, string> = {
   cube: "M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9",
-  sword: "M19.5 4.5L9 15M19.5 4.5h-3.5M19.5 4.5V8M7 13l4 4M8.5 15.5L4.5 19.5",
+  sword: "M20 4l-1 4-8.5 8.5-3-3L16 5zM6 12l6 6M7.5 16.5L5 19M4 20h.01",
   pickaxe: "M5 19L14 10M6.5 6.5c4-2.5 8.5-2 11.5 1M17.5 6.5l-2 2M18 7.5c1.5 2 2 4.5 1.5 6.5",
   gem: "M7 4h10l4 5-9 11L3 9l4-5zM3 9h18M10 4l2 16M14 4l-2 16",
   tree: "M12 3l6 8h-3l4 5H5l4-5H6l6-8zM12 16v5",
