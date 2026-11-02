@@ -344,6 +344,9 @@ export const es: Messages = {
     details: "Detalles",
     changeVersion: "Cambiar versión",
     requires: "Necesita {title}",
+    requiresInstall: "Necesita {title} · Instalar",
+    installMissing: "Instalar lo que falta ({count})",
+    installingMissing: "Instalando…",
     conflictsWith: "Choca con {title}",
     duplicate: "Mismo mod que {title}",
     notForVersion: "No es para {version}",
@@ -486,6 +489,12 @@ export const es: Messages = {
     change: "Cambiar…",
   },
   launchOptions: {
+    collectorTitle: "¿Cambiar el recolector de basura?",
+    collectorZgc:
+      "ZGC apenas hace pausas, pero el juego no arranca con Java 8–16, y en un PC débil o con poca memoria pueden bajar los FPS.",
+    collectorG1:
+      "Se activa G1 y se desactiva ZGC. G1 sirve para casi todos y funciona con cualquier Java.",
+    collectorConfirm: "Cambiar",
     javaTitle: "Java y memoria",
     java: "Java",
     javaAuto: "Se elige automáticamente según la versión del juego",
@@ -512,6 +521,7 @@ export const es: Messages = {
       preTouch: "Reservar memoria al inicio",
       utf8: "Texto UTF-8",
       zgc: "Recolector ZGC",
+      g1Mixed: "Limpiar la memoria en pasos pequeños",
       parallelRef: "Limpieza paralela de referencias",
       perfData: "Sin archivo de estadísticas JVM",
       codeCache: "Más caché de código",
@@ -526,6 +536,7 @@ export const es: Messages = {
       preTouch: "Inicio más lento, juego más estable",
       utf8: "Arregla el cirílico roto en versiones antiguas",
       zgc: "Casi sin pausas, requiere Java 17+ y mucha memoria",
+      g1Mixed: "Más fluido en PC potentes, carga extra en los débiles",
       parallelRef: "Recolección más rápida en CPU multinúcleo",
       perfData: "Evita escrituras extra en disco, útil en HDD",
       codeCache: "Menos tirones en modpacks grandes",

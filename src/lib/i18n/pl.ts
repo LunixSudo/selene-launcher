@@ -337,6 +337,9 @@ export const pl: Messages = {
     details: "Szczegóły",
     changeVersion: "Zmień wersję",
     requires: "Wymaga {title}",
+    requiresInstall: "Wymaga {title} · Zainstaluj",
+    installMissing: "Zainstaluj brakujące ({count})",
+    installingMissing: "Instalowanie…",
     conflictsWith: "Konflikt z {title}",
     duplicate: "Ten sam mod co {title}",
     notForVersion: "Nie dla {version}",
@@ -477,6 +480,12 @@ export const pl: Messages = {
     change: "Zmień…",
   },
   launchOptions: {
+    collectorTitle: "Zmienić odśmiecacz pamięci?",
+    collectorZgc:
+      "ZGC prawie nie robi pauz, ale gra nie uruchomi się na Javie 8–16, a na słabym PC lub przy małej ilości pamięci FPS może spaść.",
+    collectorG1:
+      "Włączy się G1, a ZGC się wyłączy. G1 pasuje prawie każdemu i działa z każdą Javą.",
+    collectorConfirm: "Zmień",
     javaTitle: "Java i pamięć",
     java: "Java",
     javaAuto: "Dobierana automatycznie do wersji gry",
@@ -503,6 +512,7 @@ export const pl: Messages = {
       preTouch: "Zajmij pamięć od razu",
       utf8: "Tekst w UTF-8",
       zgc: "Kolektor ZGC",
+      g1Mixed: "Czyszczenie pamięci małymi krokami",
       parallelRef: "Równoległe czyszczenie referencji",
       perfData: "Bez pliku statystyk JVM",
       codeCache: "Większa pamięć kodu",
@@ -517,6 +527,7 @@ export const pl: Messages = {
       preTouch: "Wolniejszy start, równiejsza gra",
       utf8: "Naprawia cyrylicę w starych wersjach",
       zgc: "Prawie bez pauz, wymaga Javy 17+ i dużo pamięci",
+      g1Mixed: "Płynniej na mocnych PC, dodatkowe obciążenie na słabych",
       parallelRef: "Szybsze odśmiecanie na procesorach wielordzeniowych",
       perfData: "Mniej zapisów na dysk, pomaga na HDD",
       codeCache: "Mniej przycięć w dużych paczkach",

@@ -106,6 +106,31 @@
     );
   }
 
+  /** The newest release of each installed pack, to tell whether an update is there at all. */
+  const newest = $state<Record<string, string | null>>({});
+  const asked = new Set<string>();
+
+  $effect(() => {
+    for (const hit of hits) {
+      const id = key(hit);
+      if (asked.has(id) || installedOf(hit).length !== 1) {
+        continue;
+      }
+      asked.add(id);
+      api
+        .modpackVersions(hit.source, hit.id)
+        .then((versions) => {
+          newest[id] = (versions.find((version) => version.release) ?? versions[0])?.id ?? null;
+        })
+        .catch(() => {});
+    }
+  });
+
+  function upToDate(hit: CatalogHit, instances: Instance[]): boolean {
+    const latest = newest[key(hit)];
+    return instances.length === 1 && latest != null && latest === instances[0].pack?.versionId;
+  }
+
   function choose(hit: CatalogHit, instances: Instance[]) {
     chosen = { hit, instances };
     dialogOpen = true;
@@ -206,9 +231,11 @@
                   ? t("modpacks.installed")
                   : t("modpacks.installedCount", { count: instances.length })}
               </button>
-              <button type="button" class="install ghost" onclick={() => choose(hit, instances)}>
-                {t("modpacks.update")}
-              </button>
+              {#if !upToDate(hit, instances)}
+                <button type="button" class="install ghost" onclick={() => choose(hit, instances)}>
+                  {t("modpacks.update")}
+                </button>
+              {/if}
               <button type="button" class="install ghost" onclick={() => choose(hit, [])}>
                 {t("modpacks.add")}
               </button>
@@ -242,6 +269,7 @@
     projectId={hit.id}
     title={hit.title}
     instances={chosen.instances}
+    {gameVersion}
     oninstall={(done) => trackInstall(hit, done)}
   />
 {/if}

@@ -334,6 +334,9 @@ export const uk: Messages = {
     details: "Докладніше",
     changeVersion: "Змінити версію",
     requires: "Потрібен {title}",
+    requiresInstall: "Потрібен {title} · Встановити",
+    installMissing: "Встановити відсутні ({count})",
+    installingMissing: "Встановлюємо…",
     conflictsWith: "Конфліктує з {title}",
     duplicate: "Той самий мод, що {title}",
     notForVersion: "Не для {version}",
@@ -473,6 +476,12 @@ export const uk: Messages = {
     change: "Змінити…",
   },
   launchOptions: {
+    collectorTitle: "Змінити збирач сміття?",
+    collectorZgc:
+      "ZGC майже не робить пауз, але з Java 8–16 гра не запуститься, а на слабкому ПК чи з малою пам’яттю FPS може впасти.",
+    collectorG1:
+      "Увімкнеться G1, а ZGC вимкнеться. G1 підходить майже всім і працює з будь-якою Java.",
+    collectorConfirm: "Змінити",
     javaTitle: "Java і пам’ять",
     java: "Java",
     javaAuto: "Підбирається автоматично під версію гри",
@@ -499,6 +508,7 @@ export const uk: Messages = {
       preTouch: "Зайняти пам’ять одразу",
       utf8: "Текст у UTF-8",
       zgc: "Збирач ZGC",
+      g1Mixed: "Очищення пам’яті малими кроками",
       parallelRef: "Паралельне очищення посилань",
       perfData: "Без файлу статистики JVM",
       codeCache: "Більше кешу коду",
@@ -513,6 +523,7 @@ export const uk: Messages = {
       preTouch: "Запуск довший, гра рівніша",
       utf8: "Виправляє кирилицю в старих версіях",
       zgc: "Майже без пауз, потрібна Java 17+ і багато пам'яті",
+      g1Mixed: "Плавніше на потужних ПК, зайве навантаження на слабких",
       parallelRef: "Пришвидшує збирання сміття на багатоядерних процесорах",
       perfData: "Прибирає зайвий запис на диск, корисно на HDD",
       codeCache: "Менше підгальмовувань у великих збірках",

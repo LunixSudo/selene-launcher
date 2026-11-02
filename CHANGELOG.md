@@ -132,7 +132,9 @@ All notable changes to this project are documented here. The format follows
   bug report, the launcher version and system, and the end of the launcher log. The whole log
   is saved with the Windows user name hidden, its folder opens, and the file only needs to be
   dropped into the report. A button opens the log folder too.
-- The launcher log records much more: the system at startup, game starts and exits, every
+- The launcher log records much more: the system at startup with the processor, cores,
+  graphics cards and their drivers, memory sticks, motherboard and free disk space (no serial
+  numbers), game starts with their Java arguments and exits, every
   error shown, interface errors, crashes of the launcher itself, failed download sources, and
   the game's last lines when it crashes.
 - An "Install OptiFine" button for Forge instances opens the official OptiFine site in a
@@ -143,6 +145,10 @@ All notable changes to this project are documented here. The format follows
   settings. Windows keeps this choice for the launcher's Java only.
 - Java the launcher installed is brought up to Mojang's newest build at startup, with a
   switch in the settings. Java picked by hand is never changed.
+- A mod that needs another one offers to install it, and the mods tab installs every missing
+  one in one go.
+- Switching the garbage collector between G1 and ZGC asks first and says what it risks.
+
 
 ### Changed
 
@@ -195,6 +201,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Picking ZGC or another collector by hand no longer stops the game from starting next to
+  the built-in G1 arguments.
+- The third-party licenses page shows the list instead of saying it is missing, and Back
+  from it no longer loops with the settings.
+- The three-dots menu opens at the pointer without moving the page or adding a scrollbar.
+- The custom game window width and height fields sit together.
+- The modpack catalog hides Update when the only copy is on the newest version, and Add or
+  Install picks the newest version for the game version the catalog is filtered by.
 - Two launcher windows can no longer open at once.
 - Forge progress no longer jumps from 100% back to 0% between steps.
 - A resumed download starts at the percent it stopped at.

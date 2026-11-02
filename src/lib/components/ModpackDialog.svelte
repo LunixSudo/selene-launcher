@@ -17,6 +17,7 @@
     projectId,
     title,
     instances = [],
+    gameVersion = "",
     oninstall,
   }: {
     open: boolean;
@@ -25,6 +26,8 @@
     title: string;
     /** Instances of this pack to update; empty to install a new one. */
     instances?: Instance[];
+    /** The game version the catalog is filtered by, picked first when the pack has one. */
+    gameVersion?: string;
     oninstall?: (done: Promise<Instance | null>) => void;
   } = $props();
 
@@ -60,7 +63,11 @@
       .modpackVersions(source, projectId)
       .then((found) => {
         versions = found;
-        versionId = (found.find((version) => version.release) ?? found[0])?.id ?? "";
+        const fitting = gameVersion
+          ? found.filter((version) => version.gameVersions.includes(gameVersion))
+          : found;
+        const pool = fitting.length > 0 ? fitting : found;
+        versionId = (pool.find((version) => version.release) ?? pool[0])?.id ?? "";
       })
       .catch((err) => {
         error = describeError(err);
