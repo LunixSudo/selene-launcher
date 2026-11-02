@@ -16,6 +16,22 @@ pub struct Config {
     /// The game's language code, like `ru_ru`, for an instance's first start; `None`
     /// follows the system.
     pub game_language: Option<String>,
+    /// How the game's window opens.
+    pub game_window: GameWindow,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", tag = "mode")]
+pub enum GameWindow {
+    /// Opens in a window while loading, then fills the screen.
+    #[default]
+    Fullscreen,
+    /// The game's own window size.
+    Standard,
+    Custom {
+        width: u32,
+        height: u32,
+    },
 }
 
 pub struct ConfigFile {

@@ -15,13 +15,14 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, Utc};
 use selene_core::crash::{self, CrashReport};
 use selene_core::download::{self, Progress};
 use selene_core::game::{self, Installed, Stage};
-use selene_core::instance::{Instance, WindowSize};
+use selene_core::instance::Instance;
 use selene_core::launch::{self, LaunchAccount, LaunchOptions};
 use selene_core::loader::{self, Loader, LoaderRelease, LoaderVersion};
 use selene_core::manifest::VersionKind;
@@ -35,9 +36,10 @@ use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 use tokio::sync::oneshot;
 
 use crate::account::{Account, AccountList};
-use crate::config::Config;
+use crate::config::{Config, GameWindow};
 use crate::discord::Presence;
 use crate::error::{CommandError, CommandResult};
+use crate::game_window;
 use crate::state::{Launcher, LogSnapshot};
 
 /// Placeholder tokens like the offline "0" would blank out every matching character.
@@ -286,8 +288,7 @@ pub async fn duplicate_instance(
 pub async fn set_launch_options(
     launcher: State<'_, Launcher>,
     instance_id: String,
-    window: Option<WindowSize>,
-    fullscreen: bool,
+    auto_java_args: bool,
     java_args: String,
     java_path: Option<PathBuf>,
 ) -> CommandResult<Instance> {
@@ -296,8 +297,7 @@ pub async fn set_launch_options(
         .get(&instance_id)
         .await
         .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
-    instance.window = window;
-    instance.fullscreen = fullscreen;
+    instance.auto_java_args = auto_java_args;
     java_args.trim().clone_into(&mut instance.java_args);
     instance.java_path = java_path.filter(|path| !path.as_os_str().is_empty());
     launcher.instances.save(&instance).await?;
@@ -499,12 +499,6 @@ async fn prepare_game(
     install_game(app, launcher, instance).await
 }
 
-fn screen_size(app: &AppHandle) -> Option<(u32, u32)> {
-    let monitor = app.primary_monitor().ok().flatten()?;
-    let size = monitor.size();
-    Some((size.width, size.height))
-}
-
 async fn run_game(
     app: &AppHandle,
     launcher: &Launcher,
@@ -515,6 +509,7 @@ async fn run_game(
 ) -> CommandResult<()> {
     let dirs = &launcher.dirs;
     let token = account.access_token.clone();
+    let game_window = launcher.config.get().game_window;
     let java = match &instance.java_path {
         Some(path) if path.is_file() => path.clone(),
         Some(path) => return Err(CommandError::JavaNotFound(path.clone())),
@@ -535,20 +530,24 @@ async fn run_game(
             Some(amount) => amount,
             None => recommended_memory(launcher, &instance.id).await?,
         },
-        // `--fullscreen` makes Windows show a small window before the switch. The game opens
-        // as large as the screen instead and goes fullscreen from its own settings.
-        resolution: if instance.fullscreen {
-            screen_size(app)
-        } else {
-            instance.window.map(|size| (size.width, size.height))
+        resolution: match game_window {
+            GameWindow::Custom { width, height } => Some((width, height)),
+            GameWindow::Fullscreen | GameWindow::Standard => None,
         },
         fullscreen: false,
         server,
-        extra_jvm_args: instance
-            .java_args
-            .split_whitespace()
-            .map(str::to_owned)
-            .collect(),
+        extra_jvm_args: if instance.auto_java_args {
+            launch::TUNED_JVM_ARGS
+                .iter()
+                .map(|&arg| arg.to_owned())
+                .collect()
+        } else {
+            instance
+                .java_args
+                .split_whitespace()
+                .map(str::to_owned)
+                .collect()
+        },
     };
     launch::extract_natives(&installed.version, &options)?;
     let language = launcher
@@ -559,8 +558,15 @@ async fn run_game(
     if let Some(language) = language {
         launch::set_first_language(&options.game_dir, &installed.version, &language)?;
     }
-    if instance.fullscreen {
-        launch::set_option(&options.game_dir, "fullscreen", "true")?;
+    if game_window == GameWindow::Fullscreen {
+        // On Windows the game loads in a window and is switched over once ready; started
+        // fullscreen, it shows as not responding for the whole loading screen.
+        let fullscreen_from_start = !cfg!(windows);
+        launch::set_option(
+            &options.game_dir,
+            "fullscreen",
+            &fullscreen_from_start.to_string(),
+        )?;
     }
 
     let child = tokio::process::Command::from(
@@ -585,6 +591,16 @@ async fn run_game(
 
     let (stop, stopped) = oneshot::channel();
     launcher.set_stopper(&instance.id, stop);
+    if cfg!(windows)
+        && game_window == GameWindow::Fullscreen
+        && let Some(pid) = child.id()
+    {
+        tauri::async_runtime::spawn(fullscreen_when_loaded(
+            app.clone(),
+            instance.id.clone(),
+            pid,
+        ));
+    }
     tauri::async_runtime::spawn(watch_game(app.clone(), instance.id, token, child, stopped));
     Ok(())
 }
@@ -602,12 +618,23 @@ async fn install_game(
         .ok_or_else(|| CommandError::UnknownVersion(instance.version.clone()))?;
 
     let last_percent = AtomicU32::new(u32::MAX);
+    let last_stage = Mutex::new(None);
     game::install(
         &launcher.client,
         &launcher.dirs,
         entry,
         instance.loader.as_ref(),
         |stage, progress| {
+            // A stage whose files are all on disk already would flash 100% before the next one
+            // starts again from zero.
+            let new_stage = last_stage
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .replace(stage)
+                != Some(stage);
+            if new_stage && progress.bytes_done >= progress.bytes_total {
+                return;
+            }
             // One event per percent is plenty for a progress bar; thousands of small files would
             // otherwise flood the UI.
             let percent = percent(progress);
@@ -642,6 +669,42 @@ async fn install_game(
 }
 
 /// Streams the game's output until it exits or the player stops it, then reports how it went.
+/// Waits for the game to finish loading, then presses F11 for it. Gives up if it never says
+/// so, leaving it in a window rather than switching in the middle of something.
+async fn fullscreen_when_loaded(app: AppHandle, instance_id: String, pid: u32) {
+    const POLL: Duration = Duration::from_millis(500);
+    const QUIET: Duration = Duration::from_secs(2);
+    const SETTLE_LIMIT: Duration = Duration::from_secs(15);
+    const LOAD_LIMIT: Duration = Duration::from_secs(10 * 60);
+
+    let launcher = app.state::<Launcher>();
+    let started = Instant::now();
+    let mut loaded_at = None;
+    let mut last_end = 0;
+    let mut quiet_since = Instant::now();
+    loop {
+        tokio::time::sleep(POLL).await;
+        if !launcher.is_running(&instance_id) || started.elapsed() > LOAD_LIMIT {
+            return;
+        }
+        let end = launcher.log_end(&instance_id);
+        if end != last_end {
+            last_end = end;
+            quiet_since = Instant::now();
+        }
+        if loaded_at.is_none() && launcher.has_loaded(&instance_id) {
+            loaded_at = Some(Instant::now());
+        }
+        // The menu still builds its textures after the marker; the log goes quiet once done.
+        if let Some(at) = loaded_at
+            && (quiet_since.elapsed() >= QUIET || at.elapsed() >= SETTLE_LIMIT)
+        {
+            game_window::press_fullscreen_key(pid);
+            return;
+        }
+    }
+}
+
 async fn watch_game(
     app: AppHandle,
     instance_id: String,

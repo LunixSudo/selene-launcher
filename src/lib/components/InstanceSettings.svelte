@@ -50,31 +50,22 @@
     return t("instance.gigabytes", { count });
   }
 
-  const DEFAULT_WINDOW = { width: 1280, height: 720 };
-
   let changingVersion = $state(false);
 
   let javaArgs = $derived(instance.javaArgs);
 
   async function saveLaunch(
-    changes: Partial<Pick<Instance, "window" | "fullscreen" | "javaArgs" | "javaPath">>,
+    changes: Partial<Pick<Instance, "autoJavaArgs" | "javaArgs" | "javaPath">>,
   ) {
     const next = {
-      window: instance.window,
-      fullscreen: instance.fullscreen,
+      autoJavaArgs: instance.autoJavaArgs,
       javaArgs,
       javaPath: instance.javaPath,
       ...changes,
     };
     try {
       replaceInstance(
-        await api.setLaunchOptions(
-          instance.id,
-          next.window,
-          next.fullscreen,
-          next.javaArgs,
-          next.javaPath,
-        ),
+        await api.setLaunchOptions(instance.id, next.autoJavaArgs, next.javaArgs, next.javaPath),
       );
     } catch (err) {
       error = describeError(err);
@@ -82,6 +73,21 @@
   }
 
   const FLAGS = Object.keys(JAVA_FLAGS) as JavaFlag[];
+
+  let flagQuery = $state("");
+  let shownFlags = $derived.by(() => {
+    const query = flagQuery.trim().toLowerCase();
+    if (!query) {
+      return FLAGS;
+    }
+    return FLAGS.filter((flag) =>
+      [
+        t(`launchOptions.flags.${flag}`),
+        t(`launchOptions.flagHints.${flag}`),
+        ...JAVA_FLAGS[flag],
+      ].some((text) => text.toLowerCase().includes(query)),
+    );
+  });
 
   function setFlag(flag: JavaFlag, on: boolean) {
     javaArgs = toggleFlag(javaArgs, flag, on);
@@ -95,13 +101,6 @@
     });
     if (path) {
       await saveLaunch({ javaPath: path });
-    }
-  }
-
-  function resize(side: "width" | "height", value: number) {
-    const window = instance.window ?? DEFAULT_WINDOW;
-    if (Number.isFinite(value) && value >= 200) {
-      void saveLaunch({ window: { ...window, [side]: Math.round(value) } });
     }
   }
 
@@ -184,86 +183,59 @@
     </button>
   </div>
 
-  <label class="form-field">
-    <span>{t("launchOptions.javaArgs")}</span>
+  <label class="row">
+    <span>{t("launchOptions.autoArgs")}</span>
     <input
-      bind:value={javaArgs}
-      spellcheck="false"
-      placeholder="-XX:+UseZGC"
-      onchange={() => saveLaunch({})}
+      class="switch"
+      type="checkbox"
+      checked={instance.autoJavaArgs}
+      onchange={(event) => saveLaunch({ autoJavaArgs: event.currentTarget.checked })}
     >
   </label>
-  <p class="hint">{t("launchOptions.javaArgsHint")}</p>
-  <div class="flags">
-    {#each FLAGS as flag (flag)}
-      <label class="flag">
-        <input
-          type="checkbox"
-          checked={hasFlag(javaArgs, flag)}
-          onchange={(event) => setFlag(flag, event.currentTarget.checked)}
-        >
-        <span>
-          {t(`launchOptions.flags.${flag}`)}
-          <span class="hint">{t(`launchOptions.flagHints.${flag}`)}</span>
-        </span>
-      </label>
-    {/each}
-  </div>
+
+  {#if instance.autoJavaArgs}
+    <p class="hint">{t("launchOptions.autoArgsHint")}</p>
+  {:else}
+    <label class="form-field">
+      <span>{t("launchOptions.javaArgs")}</span>
+      <input
+        bind:value={javaArgs}
+        spellcheck="false"
+        placeholder="-XX:+UseZGC"
+        onchange={() => saveLaunch({})}
+      >
+    </label>
+    <p class="hint">{t("launchOptions.javaArgsHint")}</p>
+    <input
+      class="search"
+      type="search"
+      bind:value={flagQuery}
+      spellcheck="false"
+      placeholder={t("launchOptions.flagSearch")}
+      aria-label={t("launchOptions.flagSearch")}
+    >
+    <div class="flags">
+      {#each shownFlags as flag (flag)}
+        <label class="flag">
+          <input
+            type="checkbox"
+            checked={hasFlag(javaArgs, flag)}
+            onchange={(event) => setFlag(flag, event.currentTarget.checked)}
+          >
+          <span>
+            {t(`launchOptions.flags.${flag}`)}
+            <span class="hint">{t(`launchOptions.flagHints.${flag}`)}</span>
+            <code>{JAVA_FLAGS[flag].join(" ")}</code>
+          </span>
+        </label>
+      {:else}
+        <p class="hint">{t("launchOptions.flagsEmpty")}</p>
+      {/each}
+    </div>
+  {/if}
 
   {#if error}
     <p class="error" role="alert">{error}</p>
-  {/if}
-</section>
-
-<section class="group">
-  <h2>{t("launchOptions.title")}</h2>
-
-  <label class="row">
-    <span>{t("launchOptions.fullscreen")}</span>
-    <input
-      class="switch"
-      type="checkbox"
-      checked={instance.fullscreen}
-      onchange={(event) => saveLaunch({ fullscreen: event.currentTarget.checked })}
-    >
-  </label>
-
-  <label class="row">
-    <span>{t("launchOptions.customSize")}</span>
-    <input
-      class="switch"
-      type="checkbox"
-      checked={instance.window !== null}
-      disabled={instance.fullscreen}
-      onchange={(event) =>
-        saveLaunch({ window: event.currentTarget.checked ? DEFAULT_WINDOW : null })}
-    >
-  </label>
-
-  {#if instance.window && !instance.fullscreen}
-    <div class="size">
-      <label class="form-field">
-        <span>{t("launchOptions.width")}</span>
-        <input
-          type="number"
-          min="200"
-          step="1"
-          value={instance.window.width}
-          onchange={(event) => resize("width", event.currentTarget.valueAsNumber)}
-        >
-      </label>
-      <span class="times">×</span>
-      <label class="form-field">
-        <span>{t("launchOptions.height")}</span>
-        <input
-          type="number"
-          min="200"
-          step="1"
-          value={instance.window.height}
-          onchange={(event) => resize("height", event.currentTarget.valueAsNumber)}
-        >
-      </label>
-    </div>
   {/if}
 </section>
 
@@ -342,7 +314,21 @@
 
   .flags {
     display: grid;
-    gap: 8px;
+    gap: 10px;
+    max-height: 280px;
+    padding: 4px 10px 4px 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .search {
+    width: 100%;
+  }
+
+  .flag code {
+    color: var(--text-muted);
+    font-size: 11px;
+    word-break: break-all;
   }
 
   .flag {
@@ -371,17 +357,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .size {
-    display: flex;
-    align-items: flex-end;
-    gap: 10px;
-  }
-
-  .times {
-    padding-bottom: 8px;
-    color: var(--text-muted);
   }
 
   .error {

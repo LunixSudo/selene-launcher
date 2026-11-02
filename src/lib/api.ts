@@ -32,16 +32,10 @@ export interface Instance {
   icon: string | null;
   cover: string | null;
   playSeconds: number;
-  window: WindowSize | null;
-  fullscreen: boolean;
+  autoJavaArgs: boolean;
   javaArgs: string;
   javaPath: string | null;
   group: string | null;
-}
-
-export interface WindowSize {
-  width: number;
-  height: number;
 }
 
 export type GameMode = "survival" | "creative" | "adventure" | "spectator" | "hardcore";
@@ -84,7 +78,13 @@ export interface LauncherConfig {
   maxDownloads: number | null;
   speedLimitKib: number | null;
   gameLanguage: string | null;
+  gameWindow: GameWindow;
 }
+
+export type GameWindow =
+  | { mode: "fullscreen" }
+  | { mode: "standard" }
+  | { mode: "custom"; width: number; height: number };
 
 export interface Account {
   id: string;
@@ -373,12 +373,10 @@ export const api = {
   openDataFolder: () => invoke<void>("open_data_folder"),
   setLaunchOptions: (
     instanceId: string,
-    window: WindowSize | null,
-    fullscreen: boolean,
+    autoJavaArgs: boolean,
     javaArgs: string,
     javaPath: string | null,
-  ) =>
-    invoke<Instance>("set_launch_options", { instanceId, window, fullscreen, javaArgs, javaPath }),
+  ) => invoke<Instance>("set_launch_options", { instanceId, autoJavaArgs, javaArgs, javaPath }),
   config: () => invoke<LauncherConfig>("config"),
   privacyStatus: () =>
     invoke<{ version: string; accepted: boolean; updated: boolean }>("privacy_status"),

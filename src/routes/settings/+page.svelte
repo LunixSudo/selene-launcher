@@ -1,7 +1,14 @@
+<script lang="ts" module>
+  const SECTIONS = ["appearance", "game", "downloads", "general"] as const;
+  type Section = (typeof SECTIONS)[number];
+  /** The tab stays put when the player steps away and comes back. */
+  let lastSection: Section = "appearance";
+</script>
+
 <script lang="ts">
   import { getVersion } from "@tauri-apps/api/app";
   import { openUrl } from "@tauri-apps/plugin-opener";
-  import { api, type LauncherConfig } from "#lib/api.ts";
+  import { api, type GameWindow, type LauncherConfig } from "#lib/api.ts";
   import BackdropPicker from "#lib/components/BackdropPicker.svelte";
   import BackLink from "#lib/components/BackLink.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
@@ -34,6 +41,27 @@
   let saveError = $state<string | null>(null);
   let canUninstall = $state(false);
   let confirmingUninstall = $state(false);
+  let section = $state<Section>(lastSection);
+
+  $effect(() => {
+    lastSection = section;
+  });
+
+  const sections = $derived(
+    SECTIONS.map((value) => ({ value, label: t(`settings.sections.${value}`) })),
+  );
+
+  const DEFAULT_SIZE = { width: 1280, height: 720 };
+
+  function setGameWindow(window: GameWindow) {
+    saveConfig({ gameWindow: window });
+  }
+
+  function resize(window: GameWindow, side: "width" | "height", value: number) {
+    if (window.mode === "custom" && Number.isFinite(value) && value >= 200) {
+      setGameWindow({ ...window, [side]: Math.round(value) });
+    }
+  }
 
   const parallelOptions = $derived(
     PARALLEL.map((value) => ({
@@ -137,6 +165,14 @@
   <header>
     <BackLink />
     <h1 class="page-title">{t("settings.title")}</h1>
+    <div class="sections">
+      <Segmented
+        bind:value={section}
+        options={sections}
+        name="settings-section"
+        label={t("settings.title")}
+      />
+    </div>
   </header>
 
   {#if saveError}
@@ -144,331 +180,403 @@
   {/if}
 
   <div class="content" {@attach scrollFade}>
-    <section class="panel">
-      <h2 class="panel-title">{t("settings.appearance")}</h2>
+    {#if section === "appearance"}
+      <section class="panel">
+        <h2 class="panel-title">{t("settings.appearance")}</h2>
 
-      <div class="row column">
-        <div>
-          <h3>{t("settings.presets")}</h3>
-          <p>{t("settings.presetsHint")}</p>
+        <div class="row column">
+          <div>
+            <h3>{t("settings.presets")}</h3>
+            <p>{t("settings.presetsHint")}</p>
+          </div>
+          <StylePresets />
         </div>
-        <StylePresets />
-      </div>
 
-      <div class="row">
-        <div>
-          <h3>{t("settings.theme")}</h3>
+        <div class="row">
+          <div>
+            <h3>{t("settings.theme")}</h3>
+          </div>
+          <Segmented
+            bind:value={settings.theme}
+            options={themes}
+            name="theme"
+            label={t("settings.theme")}
+          />
         </div>
-        <Segmented
-          bind:value={settings.theme}
-          options={themes}
-          name="theme"
-          label={t("settings.theme")}
-        />
-      </div>
 
-      <div class="row column">
-        <div>
-          <h3>{t("settings.style")}</h3>
-          <p>{t("settings.styleHint")}</p>
+        <div class="row column">
+          <div>
+            <h3>{t("settings.style")}</h3>
+            <p>{t("settings.styleHint")}</p>
+          </div>
+          <div class="styles" role="radiogroup" aria-label={t("settings.style")}>
+            {#each STYLES as style (style)}
+              <label class="style {style}">
+                <input type="radio" name="style" value={style} bind:group={settings.style}>
+                <span class="preview" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                </span>
+                <span class="name">{t(`settings.styles.${style}`)}</span>
+              </label>
+            {/each}
+          </div>
         </div>
-        <div class="styles" role="radiogroup" aria-label={t("settings.style")}>
-          {#each STYLES as style (style)}
-            <label class="style {style}">
-              <input type="radio" name="style" value={style} bind:group={settings.style}>
-              <span class="preview" aria-hidden="true">
-                <span></span>
-                <span></span>
-              </span>
-              <span class="name">{t(`settings.styles.${style}`)}</span>
-            </label>
-          {/each}
-        </div>
-      </div>
 
-      <div class="row">
-        <div>
-          <h3>{t("settings.accent")}</h3>
-        </div>
-        <div class="accents" role="radiogroup" aria-label={t("settings.accent")}>
-          {#each Object.entries(ACCENTS) as [name, color] (name)}
-            <label
-              class="accent"
-              style:--swatch={color}
-              {@attach tooltip(t(`settings.accents.${name as Accent}`))}
-            >
-              <input
-                type="radio"
-                name="accent"
-                value={name}
-                bind:group={settings.accent}
-                aria-label={t(`settings.accents.${name as Accent}`)}
+        <div class="row">
+          <div>
+            <h3>{t("settings.accent")}</h3>
+          </div>
+          <div class="accents" role="radiogroup" aria-label={t("settings.accent")}>
+            {#each Object.entries(ACCENTS) as [name, color] (name)}
+              <label
+                class="accent"
+                style:--swatch={color}
+                {@attach tooltip(t(`settings.accents.${name as Accent}`))}
               >
-            </label>
-          {/each}
+                <input
+                  type="radio"
+                  name="accent"
+                  value={name}
+                  bind:group={settings.accent}
+                  aria-label={t(`settings.accents.${name as Accent}`)}
+                >
+              </label>
+            {/each}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="panel">
-      <h2 class="panel-title">{t("settings.effects")}</h2>
-      <div class="row column">
-        <div>
-          <h3>{t("settings.backdrop")}</h3>
-          <p>{t("settings.backdropHint")}</p>
+      <section class="panel">
+        <h2 class="panel-title">{t("settings.effects")}</h2>
+        <div class="row column">
+          <div>
+            <h3>{t("settings.backdrop")}</h3>
+            <p>{t("settings.backdropHint")}</p>
+          </div>
+          <BackdropPicker
+            bind:value={settings.backdrop}
+            options={BACKDROPS}
+            name="backdrop"
+            label={t("settings.backdrop")}
+          />
         </div>
-        <BackdropPicker
-          bind:value={settings.backdrop}
-          options={BACKDROPS}
-          name="backdrop"
-          label={t("settings.backdrop")}
-        />
-      </div>
-      <label class="row switch-row">
-        <div>
-          <h3>{t("settings.motion")}</h3>
-          <p>{t("settings.motionHint")}</p>
-        </div>
-        <input class="switch" type="checkbox" bind:checked={settings.motion}>
-      </label>
-      <label class="row switch-row">
-        <div>
-          <h3>{t("settings.clickSound")}</h3>
-          <p>{t("settings.clickSoundHint")}</p>
-        </div>
-        <input class="switch" type="checkbox" bind:checked={settings.clickSound}>
-      </label>
-      <label class="row switch-row">
-        <div>
-          <h3>{t("settings.scrollFade")}</h3>
-          <p>{t("settings.scrollFadeHint")}</p>
-        </div>
-        <input class="switch" type="checkbox" bind:checked={settings.scrollFade}>
-      </label>
-    </section>
-
-    <section class="panel">
-      <h2 class="panel-title">{t("settings.fonts")}</h2>
-      <div class="row column">
-        <div class="fonts" role="radiogroup" aria-label={t("settings.fonts")}>
-          {#each FONTS as font (font)}
-            <label class="font" data-font={font}>
-              <input type="radio" name="font" value={font} bind:group={settings.font}>
-              <span class="sample" aria-hidden="true">Аа</span>
-              <span class="font-name">{t(`settings.fontNames.${font}`)}</span>
-            </label>
-          {/each}
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="panel-title">{t("settings.game")}</h2>
-      <div class="row">
-        <div>
-          <h3>{t("settings.afterLaunch")}</h3>
-          <p>{t("settings.afterLaunchHint")}</p>
-        </div>
-        <Segmented
-          bind:value={settings.afterLaunch}
-          options={afterLaunch}
-          name="after-launch"
-          label={t("settings.afterLaunch")}
-        />
-      </div>
-      {#if settings.afterLaunch === "minimize"}
         <label class="row switch-row">
           <div>
-            <h3>{t("settings.restoreAfterGame")}</h3>
-            <p>{t("settings.restoreAfterGameHint")}</p>
+            <h3>{t("settings.motion")}</h3>
+            <p>{t("settings.motionHint")}</p>
           </div>
-          <input class="switch" type="checkbox" bind:checked={settings.restoreAfterGame}>
+          <input class="switch" type="checkbox" bind:checked={settings.motion}>
         </label>
-      {/if}
-      {#if config}
         <label class="row switch-row">
           <div>
-            <h3>{t("settings.autoUpdateMods")}</h3>
-            <p>{t("settings.autoUpdateModsHint")}</p>
+            <h3>{t("settings.clickSound")}</h3>
+            <p>{t("settings.clickSoundHint")}</p>
           </div>
-          <input
-            class="switch"
-            type="checkbox"
-            checked={config.autoUpdateMods}
-            onchange={(event) => saveConfig({ autoUpdateMods: event.currentTarget.checked })}
-          >
+          <input class="switch" type="checkbox" bind:checked={settings.clickSound}>
         </label>
-      {/if}
+        <label class="row switch-row">
+          <div>
+            <h3>{t("settings.scrollFade")}</h3>
+            <p>{t("settings.scrollFadeHint")}</p>
+          </div>
+          <input class="switch" type="checkbox" bind:checked={settings.scrollFade}>
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">{t("settings.fonts")}</h2>
+        <div class="row column">
+          <div class="fonts" role="radiogroup" aria-label={t("settings.fonts")}>
+            {#each FONTS as font (font)}
+              <label class="font" data-font={font}>
+                <input type="radio" name="font" value={font} bind:group={settings.font}>
+                <span class="sample" aria-hidden="true">Аа</span>
+                <span class="font-name">{t(`settings.fontNames.${font}`)}</span>
+              </label>
+            {/each}
+          </div>
+        </div>
+      </section>
+    {/if}
+
+    {#if section === "game"}
+      <section class="panel">
+        <h2 class="panel-title">{t("settings.game")}</h2>
+        {#if config}
+          {@const window = config.gameWindow}
+          <label class="row switch-row">
+            <div>
+              <h3>{t("launchOptions.fullscreen")}</h3>
+              <p>{t("launchOptions.fullscreenHint")}</p>
+            </div>
+            <input
+              class="switch"
+              type="checkbox"
+              checked={window.mode === "fullscreen"}
+              onchange={(event) =>
+                setGameWindow(
+                  event.currentTarget.checked ? { mode: "fullscreen" } : { mode: "standard" },
+                )}
+            >
+          </label>
+          <label class="row switch-row">
+            <div>
+              <h3>{t("launchOptions.customSize")}</h3>
+              <p>{t("launchOptions.customSizeHint")}</p>
+            </div>
+            <input
+              class="switch"
+              type="checkbox"
+              checked={window.mode === "custom"}
+              onchange={(event) =>
+                setGameWindow(
+                  event.currentTarget.checked
+                    ? { mode: "custom", ...DEFAULT_SIZE }
+                    : { mode: "standard" },
+                )}
+            >
+          </label>
+          {#if window.mode === "custom"}
+            <div class="row size">
+              <label class="form-field">
+                <span>{t("launchOptions.width")}</span>
+                <input
+                  type="number"
+                  min="200"
+                  step="1"
+                  value={window.width}
+                  onchange={(event) => resize(window, "width", event.currentTarget.valueAsNumber)}
+                >
+              </label>
+              <span class="times">×</span>
+              <label class="form-field">
+                <span>{t("launchOptions.height")}</span>
+                <input
+                  type="number"
+                  min="200"
+                  step="1"
+                  value={window.height}
+                  onchange={(event) => resize(window, "height", event.currentTarget.valueAsNumber)}
+                >
+              </label>
+            </div>
+          {/if}
+        {/if}
+        <div class="row">
+          <div>
+            <h3>{t("settings.afterLaunch")}</h3>
+            <p>{t("settings.afterLaunchHint")}</p>
+          </div>
+          <Segmented
+            bind:value={settings.afterLaunch}
+            options={afterLaunch}
+            name="after-launch"
+            label={t("settings.afterLaunch")}
+          />
+        </div>
+        {#if settings.afterLaunch === "minimize"}
+          <label class="row switch-row">
+            <div>
+              <h3>{t("settings.restoreAfterGame")}</h3>
+              <p>{t("settings.restoreAfterGameHint")}</p>
+            </div>
+            <input class="switch" type="checkbox" bind:checked={settings.restoreAfterGame}>
+          </label>
+        {/if}
+        {#if config}
+          <label class="row switch-row">
+            <div>
+              <h3>{t("settings.autoUpdateMods")}</h3>
+              <p>{t("settings.autoUpdateModsHint")}</p>
+            </div>
+            <input
+              class="switch"
+              type="checkbox"
+              checked={config.autoUpdateMods}
+              onchange={(event) => saveConfig({ autoUpdateMods: event.currentTarget.checked })}
+            >
+          </label>
+        {/if}
+        {#if config}
+          {@const current = config}
+          <div class="row">
+            <div>
+              <h3>{t("settings.gameLanguage")}</h3>
+              <p>{t("settings.gameLanguageHint")}</p>
+            </div>
+            <div class="select">
+              <Select
+                bind:value={
+                  () => current.gameLanguage ?? "system",
+                  (value) => saveConfig({ gameLanguage: value === "system" ? null : value })
+                }
+                options={gameLanguageOptions}
+              />
+            </div>
+          </div>
+        {/if}
+        <div class="row">
+          <div>
+            <h3>{t("settings.dataFolder")}</h3>
+            <p>{t("settings.dataFolderHint")}</p>
+          </div>
+          <button type="button" class="button" onclick={() => api.openDataFolder()}>
+            {t("instances.openFolder")}
+          </button>
+        </div>
+      </section>
+    {/if}
+
+    {#if section === "downloads"}
       {#if config}
         {@const current = config}
-        <div class="row">
-          <div>
-            <h3>{t("settings.gameLanguage")}</h3>
-            <p>{t("settings.gameLanguageHint")}</p>
+        <section class="panel">
+          <h2 class="panel-title">{t("settings.downloads")}</h2>
+          <div class="row">
+            <div>
+              <h3>{t("settings.maxDownloads")}</h3>
+              <p>{t("settings.maxDownloadsHint")}</p>
+            </div>
+            <div class="select">
+              <Select
+                bind:value={
+                  () => String(current.maxDownloads ?? "auto"),
+                  (value) => saveConfig({ maxDownloads: value === "auto" ? null : Number(value) })
+                }
+                options={parallelOptions}
+              />
+            </div>
           </div>
-          <div class="select">
-            <Select
-              bind:value={
-                () => current.gameLanguage ?? "system",
-                (value) => saveConfig({ gameLanguage: value === "system" ? null : value })
-              }
-              options={gameLanguageOptions}
-            />
-          </div>
-        </div>
-      {/if}
-      <div class="row">
-        <div>
-          <h3>{t("settings.dataFolder")}</h3>
-          <p>{t("settings.dataFolderHint")}</p>
-        </div>
-        <button type="button" class="button" onclick={() => api.openDataFolder()}>
-          {t("instances.openFolder")}
-        </button>
-      </div>
-    </section>
-
-    {#if config}
-      {@const current = config}
-      <section class="panel">
-        <h2 class="panel-title">{t("settings.downloads")}</h2>
-        <div class="row">
-          <div>
-            <h3>{t("settings.maxDownloads")}</h3>
-            <p>{t("settings.maxDownloadsHint")}</p>
-          </div>
-          <div class="select">
-            <Select
-              bind:value={
-                () => String(current.maxDownloads ?? "auto"),
-                (value) => saveConfig({ maxDownloads: value === "auto" ? null : Number(value) })
-              }
-              options={parallelOptions}
-            />
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <h3>{t("settings.speedLimit")}</h3>
-            <p>{t("settings.speedLimitHint")}</p>
-          </div>
-          <div class="select">
-            <Select
-              bind:value={
-                () =>
-                  current.speedLimitKib === null
-                    ? "unlimited"
-                    : String(current.speedLimitKib / 1024),
-                (value) =>
+          <div class="row">
+            <div>
+              <h3>{t("settings.speedLimit")}</h3>
+              <p>{t("settings.speedLimitHint")}</p>
+            </div>
+            <div class="select">
+              <Select
+                bind:value={
+                  () =>
+                    current.speedLimitKib === null
+                      ? "unlimited"
+                      : String(current.speedLimitKib / 1024),
+                  (value) =>
     saveConfig({
       speedLimitKib: value === "unlimited" ? null : Number(value) * 1024,
     })
-              }
-              options={speedOptions}
-            />
+                }
+                options={speedOptions}
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      {/if}
     {/if}
 
-    <section class="panel">
-      <h2 class="panel-title">{t("settings.general")}</h2>
-      <label class="row switch-row">
-        <div>
-          <h3>{t("settings.notifications")}</h3>
-          <p>{t("settings.notificationsHint")}</p>
-        </div>
-        <input class="switch" type="checkbox" bind:checked={settings.notifications}>
-      </label>
-      <label class="row switch-row">
-        <div>
-          <h3>{t("settings.discordStatus")}</h3>
-          <p>{t("settings.discordStatusHint")}</p>
-        </div>
-        <input class="switch" type="checkbox" bind:checked={settings.discordStatus}>
-      </label>
-      <div class="row">
-        <div>
-          <h3>{t("settings.language")}</h3>
-          {#if !CHECKED_LOCALES.includes(language)}
-            <p>{t("settings.machineTranslation")}</p>
-          {/if}
-        </div>
-        <div class="select">
-          <Select bind:value={language} options={LANGUAGES} />
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="panel-title">{t("update.title")}</h2>
-      <label class="row switch-row">
-        <div>
-          <h3>{t("update.checkOnStart")}</h3>
-          <p>{t("update.checkOnStartHint")}</p>
-        </div>
-        <input class="switch" type="checkbox" bind:checked={settings.checkUpdates}>
-      </label>
-      <div class="row">
-        <div>
-          <h3>Selene Launcher {version}</h3>
-          {#if launcherUpdate.error}
-            <p class="error">{launcherUpdate.error}</p>
-          {:else if launcherUpdate.checked && !launcherUpdate.available}
-            <p>{t("update.upToDate")}</p>
-          {/if}
-        </div>
-        {#if launcherUpdate.available}
-          <button
-            type="button"
-            class="button primary"
-            disabled={launcherUpdate.installing}
-            onclick={installUpdate}
-          >
-            {launcherUpdate.installing
-              ? t("update.installing")
-              : t("update.available", { version: launcherUpdate.available.version })}
-          </button>
-        {:else}
-          <button
-            type="button"
-            class="button"
-            disabled={launcherUpdate.checking}
-            onclick={checkForUpdate}
-          >
-            {launcherUpdate.checking ? t("update.checking") : t("update.checkNow")}
-          </button>
-        {/if}
-      </div>
-    </section>
-
-    {#if canUninstall}
+    {#if section === "general"}
       <section class="panel">
+        <h2 class="panel-title">{t("settings.general")}</h2>
+        <label class="row switch-row">
+          <div>
+            <h3>{t("settings.notifications")}</h3>
+            <p>{t("settings.notificationsHint")}</p>
+          </div>
+          <input class="switch" type="checkbox" bind:checked={settings.notifications}>
+        </label>
+        <label class="row switch-row">
+          <div>
+            <h3>{t("settings.discordStatus")}</h3>
+            <p>{t("settings.discordStatusHint")}</p>
+          </div>
+          <input class="switch" type="checkbox" bind:checked={settings.discordStatus}>
+        </label>
         <div class="row">
           <div>
-            <h3>{t("settings.uninstall")}</h3>
-            <p>{t("settings.uninstallHint")}</p>
+            <h3>{t("settings.language")}</h3>
+            {#if !CHECKED_LOCALES.includes(language)}
+              <p>{t("settings.machineTranslation")}</p>
+            {/if}
           </div>
-          <button type="button" class="button danger" onclick={() => (confirmingUninstall = true)}>
-            {t("settings.uninstallButton")}
-          </button>
+          <div class="select">
+            <Select bind:value={language} options={LANGUAGES} />
+          </div>
         </div>
       </section>
-    {/if}
 
-    <p class="legal">
-      {t("settings.legal")}
-      <button
-        type="button"
-        class="link"
-        onclick={() =>
-          openUrl(`${REPOSITORY_URL}/${locale() === "ru" ? "PRIVACY.ru.md" : "PRIVACY.md"}`)}
-      >
-        {t("settings.privacy")}
-      </button>
-      ·
-      <a class="link" href="/licenses">{t("licenses.title")}</a>
-    </p>
+      <section class="panel">
+        <h2 class="panel-title">{t("update.title")}</h2>
+        <label class="row switch-row">
+          <div>
+            <h3>{t("update.checkOnStart")}</h3>
+            <p>{t("update.checkOnStartHint")}</p>
+          </div>
+          <input class="switch" type="checkbox" bind:checked={settings.checkUpdates}>
+        </label>
+        <div class="row">
+          <div>
+            <h3>Selene Launcher {version}</h3>
+            {#if launcherUpdate.error}
+              <p class="error">{launcherUpdate.error}</p>
+            {:else if launcherUpdate.checked && !launcherUpdate.available}
+              <p>{t("update.upToDate")}</p>
+            {/if}
+          </div>
+          {#if launcherUpdate.available}
+            <button
+              type="button"
+              class="button primary"
+              disabled={launcherUpdate.installing}
+              onclick={installUpdate}
+            >
+              {launcherUpdate.installing
+                ? t("update.installing")
+                : t("update.available", { version: launcherUpdate.available.version })}
+            </button>
+          {:else}
+            <button
+              type="button"
+              class="button"
+              disabled={launcherUpdate.checking}
+              onclick={checkForUpdate}
+            >
+              {launcherUpdate.checking ? t("update.checking") : t("update.checkNow")}
+            </button>
+          {/if}
+        </div>
+      </section>
+
+      {#if canUninstall}
+        <section class="panel">
+          <div class="row">
+            <div>
+              <h3>{t("settings.uninstall")}</h3>
+              <p>{t("settings.uninstallHint")}</p>
+            </div>
+            <button
+              type="button"
+              class="button danger"
+              onclick={() => (confirmingUninstall = true)}
+            >
+              {t("settings.uninstallButton")}
+            </button>
+          </div>
+        </section>
+      {/if}
+
+      <p class="legal">
+        {t("settings.legal")}
+        <button
+          type="button"
+          class="link"
+          onclick={() =>
+            openUrl(`${REPOSITORY_URL}/${locale() === "ru" ? "PRIVACY.ru.md" : "PRIVACY.md"}`)}
+        >
+          {t("settings.privacy")}
+        </button>
+        ·
+        <a class="link" href="/licenses">{t("licenses.title")}</a>
+      </p>
+    {/if}
   </div>
 </section>
 
@@ -485,6 +593,24 @@
     display: grid;
     gap: 4px;
     padding-top: 8px;
+  }
+
+  .sections {
+    margin-top: 8px;
+  }
+
+  .size {
+    justify-content: flex-start;
+    align-items: end;
+  }
+
+  .size .form-field {
+    width: 120px;
+  }
+
+  .times {
+    padding-bottom: 8px;
+    color: var(--text-muted);
   }
 
   .button.danger {

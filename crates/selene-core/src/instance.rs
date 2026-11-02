@@ -33,11 +33,9 @@ pub struct Instance {
     /// Total time spent in the game.
     #[serde(default)]
     pub play_seconds: u64,
-    /// Game window size; `None` keeps the game's default.
-    #[serde(default)]
-    pub window: Option<WindowSize>,
-    #[serde(default)]
-    pub fullscreen: bool,
+    /// Lets the launcher pick tuned JVM arguments instead of `java_args`.
+    #[serde(default = "enabled")]
+    pub auto_java_args: bool,
     /// Extra JVM arguments, separated by spaces.
     #[serde(default)]
     pub java_args: String,
@@ -47,12 +45,6 @@ pub struct Instance {
     /// Group the instance is filed under on the home screen.
     #[serde(default)]
     pub group: Option<String>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct WindowSize {
-    pub width: u32,
-    pub height: u32,
 }
 
 /// Instances live in `root/<id>/`, each with its config and a `minecraft` game folder.
@@ -127,8 +119,7 @@ impl Instances {
             icon: None,
             cover: None,
             play_seconds: 0,
-            window: None,
-            fullscreen: true,
+            auto_java_args: true,
             java_args: String::new(),
             java_path: None,
             group: None,
@@ -262,6 +253,10 @@ fn slug(name: &str) -> String {
     } else {
         slug.to_owned()
     }
+}
+
+const fn enabled() -> bool {
+    true
 }
 
 #[cfg(test)]

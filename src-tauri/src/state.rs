@@ -46,6 +46,8 @@ struct Log {
     end: u64,
     /// The running game has opened a world or joined a server, so it has something to save.
     in_world: bool,
+    /// The game has finished its loading screen.
+    loaded: bool,
 }
 
 /// The kept lines of a game's log and the number of the line after the last one.
@@ -232,6 +234,7 @@ impl Launcher {
         if let Some(log) = self.log_map().get_mut(id) {
             log.lines.clear();
             log.in_world = false;
+            log.loaded = false;
         }
     }
 
@@ -243,6 +246,7 @@ impl Launcher {
             log.lines.pop_front();
         }
         log.in_world |= WORLD_MARKERS.iter().any(|marker| line.contains(marker));
+        log.loaded |= crate::game_window::is_loaded_marker(&line);
         log.lines.push_back(line);
         log.end += 1;
         log.end - 1
@@ -257,6 +261,10 @@ impl Launcher {
                 .take(count)
                 .any(|line| line.contains(text))
         })
+    }
+
+    pub fn has_loaded(&self, id: &str) -> bool {
+        self.log_map().get(id).is_some_and(|log| log.loaded)
     }
 
     pub fn in_world(&self, id: &str) -> bool {
