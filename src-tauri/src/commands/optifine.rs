@@ -9,7 +9,7 @@ use tauri::{AppHandle, Emitter, Manager, State, Url, WebviewUrl, WebviewWindowBu
 use crate::error::{CommandError, CommandResult};
 use crate::state::Launcher;
 
-const SITE: &str = "optifine.net";
+const SITES: [&str; 2] = ["optifine.net", "adfoc.us"];
 const DOWNLOADS: &str = "https://optifine.net/downloads";
 
 #[tauri::command]
@@ -61,22 +61,27 @@ pub async fn open_optifine(
     Ok(())
 }
 
+/// The site's own download button goes through its ad partner first.
 fn is_site(host: &str) -> bool {
-    host == SITE
-        || host
-            .strip_suffix(SITE)
-            .is_some_and(|sub| sub.ends_with('.'))
+    SITES.iter().any(|site| {
+        host == *site
+            || host
+                .strip_suffix(site)
+                .is_some_and(|sub| sub.ends_with('.'))
+    })
 }
 
-/// Older versions are folded away on the page, so they are unfolded first.
+/// Older versions sit in a hidden block on the page, so it is unfolded first.
 fn scroll_to_version(version: &str) -> String {
     let heading = serde_json::to_string(&format!("Minecraft {version}")).unwrap_or_default();
     format!(
         r#"addEventListener("DOMContentLoaded", () => {{
   if (location.pathname !== "/downloads") return;
-  const find = () => [...document.querySelectorAll("h2")].find((h) => h.textContent.trim() === {heading});
-  if (!find()) [...document.querySelectorAll("a")].find((a) => /show all/i.test(a.textContent))?.click();
-  setTimeout(() => find()?.scrollIntoView({{ block: "start" }}), 300);
+  const heading = [...document.querySelectorAll("h2")].find((h) => h.textContent.trim() === {heading});
+  if (!heading) return;
+  const folded = heading.closest('[id^="all"]');
+  if (folded && getComputedStyle(folded).visibility === "hidden") document.querySelector("a.showAll")?.click();
+  setTimeout(() => heading.scrollIntoView({{ block: "start" }}), 600);
 }});"#
     )
 }
@@ -113,6 +118,7 @@ mod tests {
         assert!(is_site("www.optifine.net"));
         assert!(!is_site("notoptifine.net"));
         assert!(!is_site("optifine.net.example.com"));
+        assert!(is_site("adfoc.us"));
     }
 
     #[test]
