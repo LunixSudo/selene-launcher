@@ -225,7 +225,7 @@ export const de: Messages = {
     backdropHint:
       "Ein animierter Hintergrund hinter dem Fenster. Schön, kostet die Grafikkarte aber etwas.",
     motion: "Flüssige Animationen",
-    motionHint: "Seitenübergänge, weiche Dialoge und ein leuchtender Spielen-Button.",
+    motionHint: "Seitenübergänge, weiche Dialoge und ein Glanz über den Spielen-Button.",
     clickSound: "Klickgeräusch",
     clickSoundHint: "Ein leises Klicken beim Drücken eines Buttons.",
     uninstall: "Selene Launcher deinstallieren",

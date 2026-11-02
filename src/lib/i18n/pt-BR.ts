@@ -223,7 +223,7 @@ export const ptBR: Messages = {
     backdrop: "Fundo animado",
     backdropHint: "Um fundo animado atrás da janela. Bonito, mas pesa um pouco na placa de vídeo.",
     motion: "Animações suaves",
-    motionHint: "Transições de página, diálogos suaves e um botão Jogar que brilha.",
+    motionHint: "Transições de página, diálogos suaves e um brilho que passa pelo botão Jogar.",
     clickSound: "Som de clique",
     clickSoundHint: "Um clique baixinho ao apertar um botão.",
     uninstall: "Desinstalar o Selene Launcher",

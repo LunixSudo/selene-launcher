@@ -223,7 +223,7 @@ export const es: Messages = {
     backdropHint:
       "Un fondo animado tras la ventana. Bonito, pero gasta un poco la tarjeta gráfica.",
     motion: "Animaciones suaves",
-    motionHint: "Transiciones entre páginas, diálogos suaves y un botón Jugar que brilla.",
+    motionHint: "Transiciones entre páginas, diálogos suaves y un destello en el botón Jugar.",
     clickSound: "Sonido al pulsar",
     clickSoundHint: "Un clic suave al pulsar un botón.",
     uninstall: "Desinstalar Selene Launcher",

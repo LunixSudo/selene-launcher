@@ -213,7 +213,7 @@ export const zhCN: Messages = {
     backdrop: "动态背景",
     backdropHint: "窗口后方的动画背景。很漂亮，但会占用一点显卡。",
     motion: "流畅动画",
-    motionHint: "页面过渡、柔和的对话框和发光的“开始游戏”按钮。",
+    motionHint: "页面过渡、柔和的对话框和“开始游戏”按钮上的光泽。",
     clickSound: "点击音效",
     clickSoundHint: "按下按钮时发出轻轻的咔哒声。",
     uninstall: "卸载 Selene Launcher",

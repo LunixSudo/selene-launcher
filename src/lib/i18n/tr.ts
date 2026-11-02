@@ -222,7 +222,7 @@ export const tr: Messages = {
     backdropHint:
       "Pencerenin arkasında hareketli bir arka plan. Güzel ama ekran kartını biraz yorar.",
     motion: "Akıcı animasyonlar",
-    motionHint: "Sayfa geçişleri, yumuşak pencereler ve parlayan bir Oyna düğmesi.",
+    motionHint: "Sayfa geçişleri, yumuşak pencereler ve Oyna düğmesinde bir parıltı.",
     clickSound: "Tıklama sesi",
     clickSoundHint: "Bir düğmeye bastığında hafif bir tık sesi.",
     uninstall: "Selene Launcher'ı kaldır",

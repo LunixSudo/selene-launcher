@@ -219,7 +219,7 @@ export const en: Messages = {
     backdropHint:
       "An animated background behind the window. Pretty, but it costs the GPU a little.",
     motion: "Smooth animations",
-    motionHint: "Page transitions, soft dialogs and a glowing Play button.",
+    motionHint: "Page transitions, soft dialogs and a shine across the Play button.",
     clickSound: "Click sound",
     clickSoundHint: "A quiet click when you press a button.",
     uninstall: "Uninstall Selene Launcher",

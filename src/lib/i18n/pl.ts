@@ -222,7 +222,7 @@ export const pl: Messages = {
     backdrop: "Żywe tło",
     backdropHint: "Animowane tło za oknem. Ładne, ale trochę obciąża kartę graficzną.",
     motion: "Płynne animacje",
-    motionHint: "Przejścia między stronami, miękkie okna dialogowe i świecący przycisk Graj.",
+    motionHint: "Przejścia między stronami, miękkie okna dialogowe i błysk na przycisku Graj.",
     clickSound: "Dźwięk kliknięcia",
     clickSoundHint: "Ciche kliknięcie przy naciśnięciu przycisku.",
     uninstall: "Odinstaluj Selene Launcher",

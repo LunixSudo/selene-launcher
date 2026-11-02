@@ -1,8 +1,4 @@
-/*
- * Extra animation, on only with "Smooth animations" in the settings. Everything here moves
- * with transform and opacity, which the GPU composites without redrawing the page, so weak
- * PCs keep a steady frame rate.
- */
+/* Extra animation, on only with "Smooth animations" in the settings. */
 
 :root {
   --spring: cubic-bezier(0.22, 1.4, 0.36, 1);
@@ -38,26 +34,17 @@
   animation-delay: 200ms;
 }
 
-/* Long lists animate only what fits on screen; the rest would all move at once out of sight. */
-:root[data-motion="on"] :is(.grid, .rows) > :nth-child(n + 13) {
-  animation: none;
-}
-
 :root[data-motion="on"] .card {
   transition:
-    translate 380ms var(--spring),
+    top 380ms var(--spring),
     box-shadow 380ms var(--ease);
 }
 
 :root[data-motion="on"] .card:hover {
-  translate: 0 -6px;
+  top: -6px;
   box-shadow:
     0 22px 50px rgb(0 0 0 / 0.26),
     0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-:root[data-motion="on"] .play:hover:not(.running, :disabled) {
-  box-shadow: 0 0 26px 2px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
 /* A shine that runs across the Play button on hover. */
@@ -146,9 +133,5 @@
 
 :root[data-motion="on"] .play {
   position: relative;
-  transition:
-    filter 150ms var(--ease),
-    transform 100ms var(--ease),
-    box-shadow 300ms var(--ease);
   overflow: hidden;
 }
