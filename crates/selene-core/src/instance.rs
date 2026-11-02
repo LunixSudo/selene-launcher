@@ -68,6 +68,10 @@ pub struct PackOrigin {
     /// player added.
     #[serde(default)]
     pub addons: Vec<String>,
+    /// The version being put in, while that is under way. Set, the launcher was closed before
+    /// it finished, and the next start carries on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub installing: Option<String>,
 }
 
 /// Instances live in `root/<id>/`, each with its config and a `minecraft` game folder.

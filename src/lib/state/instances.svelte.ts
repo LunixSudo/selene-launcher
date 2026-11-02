@@ -100,11 +100,27 @@ export async function prepareAll() {
   if (!library.loaded) {
     await loadInstances();
   }
-  for (const { id } of [...library.instances]) {
+  for (const { id, pack } of [...library.instances]) {
+    if (pack?.installing && !library.tasks[id]) {
+      await finishPack(id, pack.installing);
+    }
     if (!preparing.has(id) && !library.launches[id] && !library.tasks[id]) {
       prepare(id);
       await preparing.get(id);
     }
+  }
+}
+
+/** Carries on with a modpack install or update the launcher was closed in the middle of. */
+async function finishPack(id: string, versionId: string) {
+  try {
+    const result = await api.updateModpack(id, versionId);
+    replaceInstance(result.instance);
+    if (result.manual.length > 0) {
+      library.importManual = result.manual;
+    }
+  } catch {
+    // Tried again at the next start; the instance itself still works with what arrived.
   }
 }
 

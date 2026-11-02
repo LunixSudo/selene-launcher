@@ -272,10 +272,16 @@ pub async fn install_modpack(
         version_id: pack.version.id.clone(),
         version_name: pack.version.name.clone(),
         addons: Vec::new(),
+        installing: None,
     };
     let result = while_importing(&launcher, &id, async {
-        let (path, read) = fetch(&launcher, &id, &pack).await?;
         let mut instance = instance;
+        instance.pack = Some(PackOrigin {
+            installing: Some(pack.version.id.clone()),
+            ..origin.clone()
+        });
+        launcher.instances.save(&instance).await?;
+        let (path, read) = fetch(&launcher, &id, &pack).await?;
         read.game_version()?.clone_into(&mut instance.version);
         instance.loader = read.loader()?;
         launcher.instances.save(&instance).await?;
@@ -324,6 +330,11 @@ pub async fn update_modpack(
     }
     let task = ContentTask::start(&app, &instance_id, Stage::Updating);
     let result = while_importing(&launcher, &instance_id, async {
+        instance.pack = Some(PackOrigin {
+            installing: Some(pack.version.id.clone()),
+            ..origin.clone()
+        });
+        launcher.instances.save(&instance).await?;
         let (path, read) = fetch(&launcher, &instance_id, &pack).await?;
         let game_dir = launcher.instances.game_dir(&instance_id);
         let installed = read
@@ -341,6 +352,7 @@ pub async fn update_modpack(
             version_id: pack.version.id.clone(),
             version_name: pack.version.name.clone(),
             addons,
+            installing: None,
             ..origin
         });
         launcher.instances.save(&instance).await?;

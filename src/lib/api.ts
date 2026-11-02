@@ -45,6 +45,8 @@ export interface PackOrigin {
   projectId: string;
   versionId: string;
   versionName: string;
+  /** Set while a version of the pack is being put in; left set if that was cut short. */
+  installing?: string;
 }
 
 export interface PackVersion {
