@@ -350,6 +350,34 @@ pub fn set_first_language(game_dir: &Path, version: &VersionInfo, language: &str
     }
 }
 
+/// Sets one line of the game's `options.txt`, keeping the rest as it is.
+pub fn set_option(game_dir: &Path, key: &str, value: &str) -> Result<()> {
+    let path = game_dir.join("options.txt");
+    let text = match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(err) => return Err(Error::io(&path, err)),
+    };
+    let line = format!("{key}:{value}");
+    let mut found = false;
+    let mut lines: Vec<&str> = text
+        .lines()
+        .map(|existing| match existing.split_once(':') {
+            Some((name, _)) if name == key => {
+                found = true;
+                line.as_str()
+            }
+            _ => existing,
+        })
+        .collect();
+    if !found {
+        lines.push(&line);
+    }
+    let mut out = lines.join("\n");
+    out.push('\n');
+    crate::fs::write_atomic_blocking(&path, out.as_bytes())
+}
+
 /// Versions before snapshot 16w32a (1.11) spell the region in capitals: `ru_RU`.
 fn language_for(version: &VersionInfo, language: &str) -> String {
     match (
@@ -367,6 +395,26 @@ fn language_for(version: &VersionInfo, language: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sets_one_option_and_keeps_the_rest() {
+        let dir = tempfile::tempdir().unwrap();
+        set_option(dir.path(), "fullscreen", "true").unwrap();
+        assert_eq!(
+            std::fs::read_to_string(dir.path().join("options.txt")).unwrap(),
+            "fullscreen:true\n"
+        );
+        std::fs::write(
+            dir.path().join("options.txt"),
+            "version:3953\nfullscreen:false\nlang:ru_ru\n",
+        )
+        .unwrap();
+        set_option(dir.path(), "fullscreen", "true").unwrap();
+        assert_eq!(
+            std::fs::read_to_string(dir.path().join("options.txt")).unwrap(),
+            "version:3953\nfullscreen:true\nlang:ru_ru\n"
+        );
+    }
 
     #[test]
     fn maps_system_locales_to_game_languages() {

@@ -499,6 +499,12 @@ async fn prepare_game(
     install_game(app, launcher, instance).await
 }
 
+fn screen_size(app: &AppHandle) -> Option<(u32, u32)> {
+    let monitor = app.primary_monitor().ok().flatten()?;
+    let size = monitor.size();
+    Some((size.width, size.height))
+}
+
 async fn run_game(
     app: &AppHandle,
     launcher: &Launcher,
@@ -529,8 +535,14 @@ async fn run_game(
             Some(amount) => amount,
             None => recommended_memory(launcher, &instance.id).await?,
         },
-        resolution: instance.window.map(|size| (size.width, size.height)),
-        fullscreen: instance.fullscreen,
+        // `--fullscreen` makes Windows show a small window before the switch. The game opens
+        // as large as the screen instead and goes fullscreen from its own settings.
+        resolution: if instance.fullscreen {
+            screen_size(app)
+        } else {
+            instance.window.map(|size| (size.width, size.height))
+        },
+        fullscreen: false,
         server,
         extra_jvm_args: instance
             .java_args
@@ -546,6 +558,9 @@ async fn run_game(
         .or_else(|| sys_locale::get_locale().and_then(|locale| launch::game_language(&locale)));
     if let Some(language) = language {
         launch::set_first_language(&options.game_dir, &installed.version, &language)?;
+    }
+    if instance.fullscreen {
+        launch::set_option(&options.game_dir, "fullscreen", "true")?;
     }
 
     let child = tokio::process::Command::from(

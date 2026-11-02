@@ -289,3 +289,5 @@ All notable changes to this project are documented here. The format follows
   installers are unpacked instead of run, since they only work with a window.
 - Changing the player name asks once more before it goes through, as the next change is 30
   days away.
+- Fullscreen games open as large as the screen and switch to fullscreen from their own
+  settings, so Windows no longer flashes a small window first.
