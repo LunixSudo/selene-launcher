@@ -324,10 +324,6 @@ export const de: Messages = {
     done: "Fertig",
   },
   content: {
-    optimize: "Performance-Mods hinzufügen",
-    optimizing: "Wird hinzugefügt…",
-    optimized: "Mods hinzugefügt: {count}",
-    optimizedNothing: "Schon installiert oder keine für diese Version",
     optifine: "OptiFine installieren",
     optifineAdded: "OptiFine hinzugefügt",
     optifineFailed: "OptiFine konnte nicht geladen werden, versuch es erneut",

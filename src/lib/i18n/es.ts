@@ -321,10 +321,6 @@ export const es: Messages = {
     done: "Listo",
   },
   content: {
-    optimize: "Añadir mods de rendimiento",
-    optimizing: "Añadiendo…",
-    optimized: "Mods añadidos: {count}",
-    optimizedNothing: "Ya están instalados o no hay para esta versión",
     optifine: "Instalar OptiFine",
     optifineAdded: "OptiFine añadido",
     optifineFailed: "No se pudo descargar OptiFine, inténtalo de nuevo",

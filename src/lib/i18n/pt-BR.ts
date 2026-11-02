@@ -319,10 +319,6 @@ export const ptBR: Messages = {
     done: "Pronto",
   },
   content: {
-    optimize: "Adicionar mods de desempenho",
-    optimizing: "Adicionando…",
-    optimized: "Mods adicionados: {count}",
-    optimizedNothing: "Já instalados ou sem versão para este jogo",
     optifine: "Instalar OptiFine",
     optifineAdded: "OptiFine adicionado",
     optifineFailed: "Não foi possível baixar o OptiFine, tente de novo",

@@ -312,10 +312,6 @@ export const uk: Messages = {
     done: "Готово",
   },
   content: {
-    optimize: "Додати моди на оптимізацію",
-    optimizing: "Додаємо…",
-    optimized: "Додано модів: {count}",
-    optimizedNothing: "Усе вже встановлено або немає версій під цю гру",
     optifine: "Встановити OptiFine",
     optifineAdded: "OptiFine додано",
     optifineFailed: "Не вдалося завантажити OptiFine, спробуйте ще раз",

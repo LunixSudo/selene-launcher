@@ -6,7 +6,6 @@
     type ContentKind,
     type ContentUpdate,
     type InstalledFile,
-    isCommandError,
     type ProjectRef,
   } from "#lib/api.ts";
   import { describeError } from "#lib/errors.ts";
@@ -14,7 +13,6 @@
   import { UI_ICONS } from "#lib/icons.ts";
   import { notify } from "#lib/notify.ts";
   import { hasOptifineBuild } from "#lib/optifine.ts";
-  import { optimizers } from "#lib/optimizers.ts";
   import { library } from "#lib/state/instances.svelte.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ContextMenu, { type MenuItem } from "./ContextMenu.svelte";
@@ -123,39 +121,6 @@
   }
 
   const instance = $derived(library.instances.find((entry) => entry.id === instanceId));
-  let optimizing = $state(false);
-  let optimized = $state<string | null>(null);
-
-  async function addOptimizers() {
-    const loader = instance?.loader?.loader;
-    if (!loader || !instance) {
-      return;
-    }
-    optimizing = true;
-    error = null;
-    optimized = null;
-    const hasOptiFine = (files ?? []).some((file) => /optifine/i.test(file.fileName));
-    try {
-      const result = await api.installContent(
-        instanceId,
-        "mod",
-        null,
-        optimizers(loader, instance.version, hasOptiFine),
-      );
-      flash((text) => (optimized = text), t("content.optimized", { count: result.installed }));
-      await load();
-    } catch (err) {
-      // Nothing new to add: everything is in place already or has no build for this version.
-      if (isCommandError(err) && err.kind === "noCompatibleVersion") {
-        flash((text) => (optimized = text), t("content.optimizedNothing"));
-      } else {
-        error = describeError(err);
-      }
-    } finally {
-      optimizing = false;
-    }
-  }
-
   let optifineBuild = $state(false);
   let clashing = $state(false);
 
@@ -261,14 +226,9 @@
 </script>
 
 <div class="toolbar">
-  {#if kind === "mod" && instance?.loader}
-    {#if optifineBuild}
-      <button type="button" class="pill-button" onclick={installOptifine}>
-        {optifineStatus ?? t("content.optifine")}
-      </button>
-    {/if}
-    <button type="button" class="pill-button" disabled={optimizing} onclick={addOptimizers}>
-      {optimizing ? t("content.optimizing") : (optimized ?? t("content.optimize"))}
+  {#if kind === "mod" && optifineBuild}
+    <button type="button" class="pill-button" onclick={installOptifine}>
+      {optifineStatus ?? t("content.optifine")}
     </button>
   {/if}
   {#if updates && updates.length > 0}

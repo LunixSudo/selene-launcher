@@ -317,10 +317,6 @@ export const tr: Messages = {
     done: "Tamam",
   },
   content: {
-    optimize: "Performans modları ekle",
-    optimizing: "Ekleniyor…",
-    optimized: "Eklenen mod: {count}",
-    optimizedNothing: "Zaten kurulu ya da bu sürüm için yok",
     optifine: "OptiFine'ı yükle",
     optifineAdded: "OptiFine eklendi",
     optifineFailed: "OptiFine indirilemedi, tekrar deneyin",

@@ -127,12 +127,10 @@ All notable changes to this project are documented here. The format follows
   notice offers the newer pack version, unchecked by default.
 - The modpack catalog filters by game version, and catalogs load the next page before the
   end of the list.
-- An "Add performance mods" button in the mods tab: Sodium or Embeddium, Lithium, FerriteCore,
-  EntityCulling and ImmediatelyFast, or EntityCulling and FoamFix up to 1.12.2, each
-  only where
-  it has a build. They are known to work together, Fabric API comes along where needed, and no
-  new renderer is added next to OptiFine. A setting, off by default, adds them to every new
-  instance.
+- A setting, off by default, adds performance mods to every new instance: Sodium or Embeddium,
+  Lithium, FerriteCore, EntityCulling and ImmediatelyFast, or EntityCulling and FoamFix up to
+  1.12.2, each only where it has a build. They are known to work together, Fabric API comes
+  along where needed, and no new renderer is added next to OptiFine.
 - "Report a problem" in the settings: describe what went wrong and GitHub opens with a filled-in
   bug report, the launcher version and system, and the end of the launcher log. The whole log
   is saved with the Windows user name hidden, its folder opens, and the file only needs to be

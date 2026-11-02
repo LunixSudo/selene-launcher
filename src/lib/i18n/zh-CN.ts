@@ -301,10 +301,6 @@ export const zhCN: Messages = {
     done: "完成",
   },
   content: {
-    optimize: "添加优化模组",
-    optimizing: "正在添加…",
-    optimized: "已添加模组：{count}",
-    optimizedNothing: "已全部安装，或此版本没有可用模组",
     optifine: "安装 OptiFine",
     optifineAdded: "已添加 OptiFine",
     optifineFailed: "无法下载 OptiFine，请重试",

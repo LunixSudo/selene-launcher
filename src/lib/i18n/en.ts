@@ -313,10 +313,6 @@ export const en: Messages = {
     done: "Done",
   },
   content: {
-    optimize: "Add performance mods",
-    optimizing: "Adding…",
-    optimized: "Mods added: {count}",
-    optimizedNothing: "Already installed, or none for this version",
     optifine: "Install OptiFine",
     optifineAdded: "OptiFine added",
     optifineFailed: "Could not download OptiFine, try again",

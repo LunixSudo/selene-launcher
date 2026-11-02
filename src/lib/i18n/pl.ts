@@ -315,10 +315,6 @@ export const pl: Messages = {
     done: "Gotowe",
   },
   content: {
-    optimize: "Dodaj mody optymalizacyjne",
-    optimizing: "Dodawanie…",
-    optimized: "Dodano modów: {count}",
-    optimizedNothing: "Wszystko już jest lub brak wersji dla tej gry",
     optifine: "Zainstaluj OptiFine",
     optifineAdded: "Dodano OptiFine",
     optifineFailed: "Nie udało się pobrać OptiFine, spróbuj ponownie",

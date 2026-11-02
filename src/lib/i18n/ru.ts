@@ -313,10 +313,6 @@ export const ru = {
     done: "Готово",
   },
   content: {
-    optimize: "Добавить моды на оптимизацию",
-    optimizing: "Добавляем…",
-    optimized: "Добавлено модов: {count}",
-    optimizedNothing: "Всё уже стоит или нет версий под эту игру",
     optifine: "Установить OptiFine",
     optifineAdded: "OptiFine добавлен",
     optifineFailed: "Не удалось скачать OptiFine, попробуйте ещё раз",
