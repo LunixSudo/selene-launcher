@@ -1,0 +1,28 @@
+name: Bug report
+description: Something does not work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what you got instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Launcher version
+      description: Shown at the bottom of the settings page.
+    validations:
+      required: true
+  - type: input
+    id: instance
+    attributes:
+      label: Game version and loader
+      placeholder: 1.21.1, Fabric 0.16.5
+  - type: textarea
+    id: log
+    attributes:
+      label: Launcher log
+      description: Attach `logs/launcher.log` from the launcher's data folder. It holds no passwords or tokens.
