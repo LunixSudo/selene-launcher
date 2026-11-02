@@ -83,6 +83,7 @@ export interface LauncherConfig {
   autoUpdateMods: boolean;
   maxDownloads: number | null;
   speedLimitKib: number | null;
+  gameLanguage: string | null;
 }
 
 export interface Account {

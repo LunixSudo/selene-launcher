@@ -258,6 +258,10 @@ export const es: Messages = {
     discordStatus: "Estado en Discord",
     discordStatusHint:
       "Muestra a tus amigos «Jugando a Selene Launcher», el nombre de la instancia y el tiempo de juego.",
+    gameLanguage: "Idioma del juego",
+    gameLanguageHint:
+      "Para el primer inicio de una instancia. Después el juego recuerda su elección.",
+    gameLanguageSystem: "Como el sistema",
     dataFolder: "Carpeta del launcher",
     dataFolderHint: "Aquí están las instancias, las versiones del juego y Java.",
   },

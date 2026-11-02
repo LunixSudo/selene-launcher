@@ -255,6 +255,9 @@ export const tr: Messages = {
     discordStatus: "Discord durumu",
     discordStatusHint:
       "Arkadaşlarına “Selene Launcher oynuyor” yazısını, profil adını ve oyun süresini gösterir.",
+    gameLanguage: "Oyun dili",
+    gameLanguageHint: "Bir kurulumun ilk açılışı için. Sonra oyun kendi seçimini hatırlar.",
+    gameLanguageSystem: "Sistemle aynı",
     dataFolder: "Başlatıcı klasörü",
     dataFolderHint: "Profiller, oyun sürümleri ve Java burada durur.",
   },

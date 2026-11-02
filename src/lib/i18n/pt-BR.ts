@@ -257,6 +257,9 @@ export const ptBR: Messages = {
     discordStatus: "Status no Discord",
     discordStatusHint:
       "Mostra aos amigos “Jogando Selene Launcher”, o nome da instância e o tempo de jogo.",
+    gameLanguage: "Idioma do jogo",
+    gameLanguageHint: "Para o primeiro início de uma instância. Depois o jogo lembra a escolha.",
+    gameLanguageSystem: "Igual ao sistema",
     dataFolder: "Pasta do launcher",
     dataFolderHint: "Aqui ficam as instâncias, as versões do jogo e o Java.",
   },

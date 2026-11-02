@@ -13,6 +13,9 @@ pub struct Config {
     pub max_downloads: Option<usize>,
     /// Download speed cap in KiB/s.
     pub speed_limit_kib: Option<u64>,
+    /// The game's language code, like `ru_ru`, for an instance's first start; `None`
+    /// follows the system.
+    pub game_language: Option<String>,
 }
 
 pub struct ConfigFile {

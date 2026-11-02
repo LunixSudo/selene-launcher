@@ -41,6 +41,39 @@
       label: value === "auto" ? t("settings.auto") : value,
     })),
   );
+  /** Languages the game ships, by its own codes. */
+  const GAME_LANGUAGES = [
+    "en_us",
+    "ru_ru",
+    "uk_ua",
+    "be_by",
+    "kk_kz",
+    "de_de",
+    "fr_fr",
+    "es_es",
+    "it_it",
+    "pt_br",
+    "pl_pl",
+    "cs_cz",
+    "tr_tr",
+    "nl_nl",
+    "sv_se",
+    "fi_fi",
+    "zh_cn",
+    "zh_tw",
+    "ja_jp",
+    "ko_kr",
+  ];
+  const gameLanguageOptions = $derived.by(() => {
+    const names = new Intl.DisplayNames([locale()], { type: "language" });
+    const named = GAME_LANGUAGES.map((code) => {
+      const [language, region] = code.split("_");
+      const tag = `${language}-${region.toUpperCase()}`;
+      const name = names.of(language === "zh" || language === "pt" ? tag : language) ?? code;
+      return { value: code, label: name.charAt(0).toLocaleUpperCase(locale()) + name.slice(1) };
+    });
+    return [{ value: "system", label: t("settings.gameLanguageSystem") }, ...named];
+  });
   const speedOptions = $derived(
     SPEEDS_MB.map((value) => ({
       value,
@@ -265,6 +298,24 @@
             onchange={(event) => saveConfig({ autoUpdateMods: event.currentTarget.checked })}
           >
         </label>
+      {/if}
+      {#if config}
+        {@const current = config}
+        <div class="row">
+          <div>
+            <h3>{t("settings.gameLanguage")}</h3>
+            <p>{t("settings.gameLanguageHint")}</p>
+          </div>
+          <div class="select">
+            <Select
+              bind:value={
+                () => current.gameLanguage ?? "system",
+                (value) => saveConfig({ gameLanguage: value === "system" ? null : value })
+              }
+              options={gameLanguageOptions}
+            />
+          </div>
+        </div>
       {/if}
       <div class="row">
         <div>

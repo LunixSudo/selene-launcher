@@ -252,6 +252,9 @@ export const ru = {
     discordStatus: "Статус в Discord",
     discordStatusHint:
       "Показывает друзьям «Играет в Selene Launcher», название сборки и время в игре.",
+    gameLanguage: "Язык игры",
+    gameLanguageHint: "Для первого запуска сборки. Дальше игра помнит свой выбор.",
+    gameLanguageSystem: "Как в системе",
     dataFolder: "Папка лаунчера",
     dataFolderHint: "Здесь лежат сборки, версии игры и Java.",
   },

@@ -508,9 +508,12 @@ async fn run_game(
             .collect(),
     };
     launch::extract_natives(&installed.version, &options)?;
-    if let Some(language) =
-        sys_locale::get_locale().and_then(|locale| launch::game_language(&locale))
-    {
+    let language = launcher
+        .config
+        .get()
+        .game_language
+        .or_else(|| sys_locale::get_locale().and_then(|locale| launch::game_language(&locale)));
+    if let Some(language) = language {
         launch::set_first_language(&options.game_dir, &installed.version, &language)?;
     }
 

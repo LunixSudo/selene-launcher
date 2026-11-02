@@ -279,3 +279,4 @@ All notable changes to this project are documented here. The format follows
   folder is in use.
 - Ticks for common Java flags in the instance settings: they add the flags to the arguments
   line and take them out again.
+- A setting for the language a new instance starts the game in: the system's or a chosen one.

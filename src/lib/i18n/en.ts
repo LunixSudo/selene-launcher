@@ -251,6 +251,10 @@ export const en: Messages = {
     discordStatus: "Discord status",
     discordStatusHint:
       "Shows friends “Playing Selene Launcher”, the instance name and time in game.",
+    gameLanguage: "Game language",
+    gameLanguageHint:
+      "For an instance's first start. The game remembers its own choice after that.",
+    gameLanguageSystem: "Same as the system",
     dataFolder: "Launcher folder",
     dataFolderHint: "Instances, game versions and Java live here.",
   },

@@ -262,6 +262,9 @@ export const de: Messages = {
     discordStatus: "Discord-Status",
     discordStatusHint:
       "Zeigt Freunden „Spielt Selene Launcher“, den Namen der Instanz und die Spielzeit.",
+    gameLanguage: "Spielsprache",
+    gameLanguageHint: "Für den ersten Start einer Instanz. Danach merkt sich das Spiel seine Wahl.",
+    gameLanguageSystem: "Wie im System",
     dataFolder: "Launcher-Ordner",
     dataFolderHint: "Hier liegen Instanzen, Spielversionen und Java.",
   },
