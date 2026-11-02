@@ -423,8 +423,8 @@ pub async fn prepare_instance(
         return Ok(());
     };
     let result = tokio::select! {
-        // Nobody waits on it yet, so add-on downloads go first.
-        result = download::in_background(install_game(&app, &launcher, &instance)) => {
+        // Other instances keep downloading meanwhile; only idle work makes way.
+        result = download::alongside(install_game(&app, &launcher, &instance)) => {
             result.map(drop)
         }
         _ = cancelled => Err(CommandError::Cancelled),

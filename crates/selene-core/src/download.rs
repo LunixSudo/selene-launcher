@@ -53,22 +53,36 @@ pub fn set_in_game(in_game: bool) {
     IN_GAME.store(in_game, Ordering::Relaxed);
 }
 
-/// Downloads the user is waiting for right now. Background ones hold back while any run.
+/// Downloads that idle work makes way for: any instance's game or add-ons.
 static FOREGROUND: AtomicUsize = AtomicUsize::new(0);
 static FOREGROUND_DONE: Notify = Notify::const_new();
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Priority {
+    /// Work nobody asked for, like fetching Java ahead of time. Pauses between files while
+    /// anything else downloads.
+    Idle,
+    /// An instance getting ready in the background. Never waits for another instance, but
+    /// takes few connections while a game runs.
+    Alongside,
+}
+
 tokio::task_local! {
-    static BACKGROUND: ();
+    static PRIORITY: Priority;
 }
 
-/// Runs `future` with its downloads held back whenever the user waits on another download,
-/// like a mod update while a new instance's game is still being fetched.
+/// Runs `future` with its downloads paused between files whenever an instance downloads.
 pub async fn in_background<F: Future>(future: F) -> F::Output {
-    BACKGROUND.scope((), future).await
+    PRIORITY.scope(Priority::Idle, future).await
 }
 
-fn is_background() -> bool {
-    BACKGROUND.try_with(|()| ()).is_ok()
+/// Runs `future` next to other instances' downloads without waiting for them.
+pub async fn alongside<F: Future>(future: F) -> F::Output {
+    PRIORITY.scope(Priority::Alongside, future).await
+}
+
+fn priority() -> Option<Priority> {
+    PRIORITY.try_with(|priority| *priority).ok()
 }
 
 async fn wait_for_foreground() {
@@ -178,7 +192,8 @@ where
         .collect();
     let bytes_total = downloads.iter().map(|download| download.size).sum();
     let files_total = downloads.len();
-    let background = is_background();
+    let priority = priority();
+    let background = priority == Some(Priority::Idle);
     let _foreground = (!background).then(Foreground::start);
 
     // Files already in place are counted first, so a resumed download starts from where the
@@ -223,18 +238,17 @@ where
             });
             Ok::<_, Error>(())
         })
-        .buffer_unordered(parallel(concurrency, background))
+        .buffer_unordered(parallel(concurrency, priority))
         .try_collect()
         .await
 }
 
-fn parallel(concurrency: usize, background: bool) -> usize {
-    let concurrency = if background && IN_GAME.load(Ordering::Relaxed) {
-        concurrency.min(IN_GAME_CONCURRENCY)
-    } else if background {
-        concurrency.min(BACKGROUND_CONCURRENCY)
-    } else {
-        concurrency
+fn parallel(concurrency: usize, priority: Option<Priority>) -> usize {
+    let in_game = IN_GAME.load(Ordering::Relaxed);
+    let concurrency = match priority {
+        Some(_) if in_game => concurrency.min(IN_GAME_CONCURRENCY),
+        Some(Priority::Idle) => concurrency.min(BACKGROUND_CONCURRENCY),
+        _ => concurrency,
     };
     match MAX_PARALLEL.load(Ordering::Relaxed) {
         0 => concurrency.max(1),
