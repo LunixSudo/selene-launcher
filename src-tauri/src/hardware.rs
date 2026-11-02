@@ -4,6 +4,7 @@
 
 use std::fmt::Write as _;
 use std::path::Path;
+use std::sync::OnceLock;
 
 use sysinfo::{CpuRefreshKind, DiskKind, Disks, RefreshKind, System};
 
@@ -31,6 +32,11 @@ pub fn cores() -> usize {
 /// Processor, cores, graphics cards, memory sticks and motherboard on one line. Serial numbers
 /// stay out, since the log may end up in a public report.
 pub fn summary() -> String {
+    static SUMMARY: OnceLock<String> = OnceLock::new();
+    SUMMARY.get_or_init(read_summary).clone()
+}
+
+fn read_summary() -> String {
     let system =
         System::new_with_specifics(RefreshKind::nothing().with_cpu(CpuRefreshKind::nothing()));
     let processor = system

@@ -51,6 +51,8 @@ export const es: Messages = {
     copyName: "{name} (copia)",
   },
   modpacks: {
+    modsLeftBehind:
+      "El modpack se actualizó, pero tus propios mods no se pudieron pasar a la nueva versión. Actualízalos en la pestaña de mods o desactiva los que no encajen.",
     title: "Modpacks",
     search: "Buscar modpacks",
     install: "Instalar",

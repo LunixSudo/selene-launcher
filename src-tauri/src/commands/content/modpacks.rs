@@ -296,7 +296,11 @@ pub async fn install_modpack(
         let (addons, manual) = installed?;
         instance.pack = Some(PackOrigin { addons, ..origin });
         launcher.instances.save(&instance).await?;
-        Ok(ImportResult { instance, manual })
+        Ok(ImportResult {
+            instance,
+            manual,
+            mods_left_behind: false,
+        })
     })
     .await;
     drop(task);
@@ -361,20 +365,25 @@ pub async fn update_modpack(
             ..origin
         });
         launcher.instances.save(&instance).await?;
-        Ok(ImportResult { instance, manual })
+        Ok(ImportResult {
+            instance,
+            manual,
+            mods_left_behind: false,
+        })
     })
     .await;
     drop(task);
-    let result = match result {
+    let mut result = match result {
         Ok(result) => result,
         Err(err) => {
-            // Only an update cut short by closing the launcher is picked up again on the next
-            // start; one that failed or was stopped has already been reported.
-            if let Some(mut saved) = launcher.instances.get(&instance_id).await
+            // A stopped update stays stopped; one cut short any other way is finished on the
+            // next start, since the instance may hold half of each version.
+            if matches!(err, CommandError::Cancelled)
+                && let Some(mut saved) = launcher.instances.get(&instance_id).await
                 && let Some(pack) = saved.pack.as_mut()
                 && pack.installing.take().is_some()
             {
-                launcher.instances.save(&saved).await?;
+                let _ = launcher.instances.save(&saved).await;
             }
             return Err(err);
         }
@@ -391,7 +400,7 @@ pub async fn update_modpack(
             .as_ref()
             .map(|pack| pack.addons.clone())
             .unwrap_or_default();
-        move_mods(
+        let left_behind = move_mods(
             &app,
             &launcher,
             &instance_id,
@@ -400,7 +409,9 @@ pub async fn update_modpack(
             &pack_files,
         )
         .await
-        .unwrap_or_else(|err| log::warn!("could not move the player's mods along: {err}"));
+        .inspect_err(|err| log::warn!("could not move the player's mods along: {err}"))
+        .is_err();
+        result.mods_left_behind = left_behind;
     }
     Ok(result)
 }
@@ -412,8 +423,12 @@ pub(crate) async fn follow_renames(
     launcher: &Launcher,
     instance_id: &str,
     kind: ContentKind,
+    world: Option<&str>,
     swaps: &[(ModFile, RemoteFile)],
 ) -> CommandResult<()> {
+    if world.is_some() {
+        return Ok(());
+    }
     let Some(mut instance) = launcher.instances.get(instance_id).await else {
         return Ok(());
     };

@@ -19,6 +19,8 @@ const MIRROR: &str = "https://optifine.net/adloadx";
 const PAGE_KEPT: Duration = Duration::from_secs(10 * 60);
 
 static PAGE: tokio::sync::Mutex<Option<(Instant, String)>> = tokio::sync::Mutex::const_new(None);
+/// One window at a time: a double click must not try to open a second one with the same name.
+static OPENING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// Game versions with an `OptiFine` build, as listed on its downloads page.
 #[tauri::command]
@@ -87,6 +89,7 @@ pub async fn open_optifine(
     let mods = launcher.instances.game_dir(&instance_id).join("mods");
     tokio::fs::create_dir_all(&mods).await?;
     let label = format!("optifine-{instance_id}");
+    let _opening = OPENING.lock().await;
     if let Some(window) = app.get_webview_window(&label) {
         let _ = window.set_focus();
         return Ok(());
@@ -99,11 +102,6 @@ pub async fn open_optifine(
         Err(_) => None,
     }
     .unwrap_or_else(|| DOWNLOADS.parse().expect("the downloads address is valid"));
-    // A second click while the page loaded finds the window the first one opened.
-    if let Some(window) = app.get_webview_window(&label) {
-        let _ = window.set_focus();
-        return Ok(());
-    }
     WebviewWindowBuilder::new(&app, label, WebviewUrl::External(url))
         .title("OptiFine")
         .inner_size(1040.0, 760.0)

@@ -51,6 +51,8 @@ export const pl: Messages = {
     copyName: "{name} (kopia)",
   },
   modpacks: {
+    modsLeftBehind:
+      "Paczka została zaktualizowana, ale twoich własnych modów nie udało się przenieść na nową wersję. Zaktualizuj je w karcie modów lub wyłącz niepasujące.",
     title: "Modpacki",
     search: "Szukaj modpacków",
     install: "Zainstaluj",

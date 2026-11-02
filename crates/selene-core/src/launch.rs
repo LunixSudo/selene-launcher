@@ -405,6 +405,7 @@ const OTHER_COLLECTORS: &[&str] = &[
     "-XX:+UseShenandoahGC",
     "-XX:+UseParallelGC",
     "-XX:+UseParallelOldGC",
+    "-XX:+UseParNewGC",
     "-XX:+UseSerialGC",
     "-XX:+UseConcMarkSweepGC",
     "-XX:+UseEpsilonGC",

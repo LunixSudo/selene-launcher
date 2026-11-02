@@ -169,6 +169,7 @@ export interface ManualDownload {
 export interface ImportResult {
   instance: Instance;
   manual: ManualDownload[];
+  modsLeftBehind: boolean;
 }
 
 export interface CatalogItem {

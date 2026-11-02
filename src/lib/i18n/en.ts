@@ -51,6 +51,8 @@ export const en: Messages = {
     copyName: "{name} (copy)",
   },
   modpacks: {
+    modsLeftBehind:
+      "The pack is updated, but your own mods could not be moved to the new version. Update them in the mods tab or switch off the ones that do not fit.",
     title: "Modpacks",
     search: "Search modpacks",
     install: "Install",

@@ -33,12 +33,15 @@
   let error = $state<string | null>(null);
   let manual = $derived(instance.maxMemoryMb);
 
-  // Saving any option replaces the instance object; the memory only needs asking per instance.
-  const instanceId = $derived(instance.id);
+  // Saving any option replaces the instance object; the advice only changes with what is played.
+  const memoryKey = $derived(
+    `${instance.id}|${instance.version}|${instance.loader?.version ?? ""}`,
+  );
 
   $effect(() => {
+    const [id] = memoryKey.split("|");
     api
-      .memoryInfo(instanceId)
+      .memoryInfo(id)
       .then((value) => {
         info = value;
       })

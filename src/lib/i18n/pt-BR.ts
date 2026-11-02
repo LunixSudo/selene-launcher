@@ -51,6 +51,8 @@ export const ptBR: Messages = {
     copyName: "{name} (cópia)",
   },
   modpacks: {
+    modsLeftBehind:
+      "O modpack foi atualizado, mas seus próprios mods não puderam ir para a nova versão. Atualize-os na aba de mods ou desative os que não servem.",
     title: "Modpacks",
     search: "Buscar modpacks",
     install: "Instalar",

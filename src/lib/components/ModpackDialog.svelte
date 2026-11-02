@@ -109,7 +109,11 @@
       replaceInstance(result.instance);
       library.importManual = result.manual;
       prepare(target.id);
-      open = false;
+      if (result.modsLeftBehind) {
+        error = t("modpacks.modsLeftBehind");
+      } else {
+        open = false;
+      }
     } catch (err) {
       error = describeError(err);
     } finally {

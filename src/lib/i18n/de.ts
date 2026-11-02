@@ -51,6 +51,8 @@ export const de: Messages = {
     copyName: "{name} (Kopie)",
   },
   modpacks: {
+    modsLeftBehind:
+      "Das Modpack ist aktualisiert, aber deine eigenen Mods konnten nicht auf die neue Version umgestellt werden. Aktualisiere sie im Mods-Tab oder schalte unpassende aus.",
     title: "Modpacks",
     search: "Modpacks suchen",
     install: "Installieren",

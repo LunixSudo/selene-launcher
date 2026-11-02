@@ -88,15 +88,21 @@ export function prepare(id: string) {
   preparing.set(id, task);
 }
 
+/** Instances whose interrupted modpack install or update is being finished. */
+const finishing = new Set<string>();
+
 /** Downloads the games of all instances one after another, at startup and after signing in. */
 export async function prepareAll() {
   if (!library.loaded) {
     await loadInstances();
   }
   for (const { id, pack } of [...library.instances]) {
-    if (pack?.installing && !library.tasks[id]) {
-      // Runs alongside, so one long pack does not hold up the other instances.
-      void finishPack(id, pack.installing).then(() => prepare(id));
+    if (pack?.installing) {
+      if (!finishing.has(id) && !library.tasks[id]) {
+        // Runs alongside, so one long pack does not hold up the other instances.
+        finishing.add(id);
+        void finishPack(id, pack.installing).finally(() => finishing.delete(id));
+      }
       continue;
     }
     if (!preparing.has(id) && !library.launches[id] && !library.tasks[id]) {

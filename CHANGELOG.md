@@ -201,6 +201,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A long bug report, or one written in Cyrillic, still opens on GitHub: the log excerpt and
+  then the description shrink to fit, and the user name is hidden in every way paths are
+  written.
+- An interrupted modpack update no longer holds up preparing the other instances, and a
+  stopped one is not started again.
+- After a pack update the player's own mods move along only when the game version or loader
+  changed, and the update says so when they could not be moved.
+- A double click on "Install OptiFine" opens one window.
 - Picking ZGC or another collector by hand no longer stops the game from starting next to
   the built-in G1 arguments.
 - The third-party licenses page shows the list instead of saying it is missing, and Back

@@ -101,7 +101,7 @@ pub(crate) async fn move_mods(
     )
     .await?;
     drop(task);
-    super::modpacks::follow_renames(launcher, instance_id, ContentKind::Mod, &swaps).await?;
+    super::modpacks::follow_renames(launcher, instance_id, ContentKind::Mod, None, &swaps).await?;
     for (file, _) in &plan.incompatible {
         mods::set_enabled(&game_dir, ContentKind::Mod, &file.file_name, false).await?;
     }

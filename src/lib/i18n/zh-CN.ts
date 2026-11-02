@@ -51,6 +51,8 @@ export const zhCN: Messages = {
     copyName: "{name}（副本）",
   },
   modpacks: {
+    modsLeftBehind:
+      "整合包已更新，但你自己添加的模组未能迁移到新版本。请在模组标签页中更新它们，或关闭不兼容的模组。",
     title: "整合包",
     search: "搜索整合包",
     install: "安装",

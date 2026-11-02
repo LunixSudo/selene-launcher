@@ -25,6 +25,8 @@ pub struct ImportResult {
     pub(crate) instance: Instance,
     /// Mods from a CurseForge pack that have to be downloaded from the website.
     pub(crate) manual: Vec<ManualDownload>,
+    /// The player's own mods could not be moved to the pack's new game version or loader.
+    pub(crate) mods_left_behind: bool,
 }
 
 /// A pack file read from disk, in either format.
@@ -137,7 +139,11 @@ pub async fn import_pack(
     .await;
     drop(task);
     let (_, manual) = discard_on_error(&launcher, &instance.id, installed).await?;
-    Ok(ImportResult { instance, manual })
+    Ok(ImportResult {
+        instance,
+        manual,
+        mods_left_behind: false,
+    })
 }
 
 /// A failed import removes the instance it made. A cancelled one was cancelled by deleting

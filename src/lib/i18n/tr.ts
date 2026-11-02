@@ -51,6 +51,8 @@ export const tr: Messages = {
     copyName: "{name} (kopya)",
   },
   modpacks: {
+    modsLeftBehind:
+      "Paket güncellendi ama kendi modların yeni sürüme taşınamadı. Onları modlar sekmesinden güncelle ya da uymayanları kapat.",
     title: "Mod paketleri",
     search: "Mod paketi ara",
     install: "Yükle",
