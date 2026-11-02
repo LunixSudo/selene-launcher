@@ -4,7 +4,7 @@
   import { coverOf } from "#lib/appearance.ts";
   import { describeError } from "#lib/errors.ts";
   import { locale, t } from "#lib/i18n/index.svelte.ts";
-  import { hasFlag, JAVA_FLAGS, type JavaFlag, toggleFlag } from "#lib/java-args.ts";
+  import { COLLECTORS, hasFlag, JAVA_FLAGS, type JavaFlag, toggleFlag } from "#lib/java-args.ts";
   import { LOADER_NAMES } from "#lib/loaders.ts";
   import { replaceInstance } from "#lib/state/instances.svelte.ts";
   import {
@@ -14,6 +14,7 @@
   } from "#lib/state/settings.svelte.ts";
   import BackdropPicker from "./BackdropPicker.svelte";
   import ChangeVersionDialog from "./ChangeVersionDialog.svelte";
+  import ConfirmDialog from "./ConfirmDialog.svelte";
 
   let { instance }: { instance: Instance } = $props();
 
@@ -89,7 +90,23 @@
     );
   });
 
-  function setFlag(flag: JavaFlag, on: boolean) {
+  let switchingTo = $state<JavaFlag | null>(null);
+  let confirmingSwitch = $state(false);
+
+  /** Changing the collector can stop the game from starting, so it is confirmed first. */
+  function setFlag(flag: JavaFlag, on: boolean, input: HTMLInputElement) {
+    const switches =
+      on && COLLECTORS.includes(flag) && (flag === "zgc" || hasFlag(javaArgs, "zgc"));
+    if (switches) {
+      input.checked = false;
+      switchingTo = flag;
+      confirmingSwitch = true;
+      return;
+    }
+    applyFlag(flag, on);
+  }
+
+  function applyFlag(flag: JavaFlag, on: boolean) {
     javaArgs = toggleFlag(javaArgs, flag, on);
     void saveLaunch({});
   }
@@ -131,6 +148,21 @@
 <section class="group">
   <h2>{t("launchOptions.javaTitle")}</h2>
 
+  <div class="row">
+    <div class="java">
+      <span>{t("launchOptions.java")}</span>
+      <span class="hint path">{instance.javaPath ?? t("launchOptions.javaAuto")}</span>
+    </div>
+    {#if instance.javaPath}
+      <button type="button" class="pill-button" onclick={() => saveLaunch({ javaPath: null })}>
+        {t("launchOptions.javaReset")}
+      </button>
+    {/if}
+    <button type="button" class="pill-button" onclick={chooseJava}>
+      {t("launchOptions.chooseJava")}
+    </button>
+  </div>
+
   {#if info}
     {@const recommended = info.recommended}
     <label class="row">
@@ -167,21 +199,6 @@
       <p class="hint">{t("instance.memoryManualHint")}</p>
     {/if}
   {/if}
-
-  <div class="row">
-    <div class="java">
-      <span>{t("launchOptions.java")}</span>
-      <span class="hint path">{instance.javaPath ?? t("launchOptions.javaAuto")}</span>
-    </div>
-    {#if instance.javaPath}
-      <button type="button" class="pill-button" onclick={() => saveLaunch({ javaPath: null })}>
-        {t("launchOptions.javaReset")}
-      </button>
-    {/if}
-    <button type="button" class="pill-button" onclick={chooseJava}>
-      {t("launchOptions.chooseJava")}
-    </button>
-  </div>
 
   <label class="row">
     <span>{t("launchOptions.autoArgs")}</span>
@@ -220,7 +237,7 @@
           <input
             type="checkbox"
             checked={hasFlag(javaArgs, flag)}
-            onchange={(event) => setFlag(flag, event.currentTarget.checked)}
+            onchange={(event) => setFlag(flag, event.currentTarget.checked, event.currentTarget)}
           >
           <span>
             {t(`launchOptions.flags.${flag}`)}
@@ -252,6 +269,18 @@
 </section>
 
 <ChangeVersionDialog {instance} bind:open={changingVersion} />
+
+<ConfirmDialog
+  bind:open={confirmingSwitch}
+  title={t("launchOptions.collectorTitle")}
+  message={switchingTo === "zgc" ? t("launchOptions.collectorZgc") : t("launchOptions.collectorG1")}
+  confirmLabel={t("launchOptions.collectorConfirm")}
+  onconfirm={async () => {
+    if (switchingTo) {
+      applyFlag(switchingTo, true);
+    }
+  }}
+/>
 
 <style>
   .group {
@@ -323,6 +352,14 @@
 
   .search {
     width: 100%;
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--field);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
   }
 
   .flag code {

@@ -86,7 +86,10 @@ fn build_command_for(
     let substitute = |arg: &str| substitute(arg, &variables);
 
     let mut args = vec![format!("-Xmx{}M", options.max_memory_mb)];
-    args.extend(DEFAULT_JVM_ARGS.iter().map(ToString::to_string));
+    // Java refuses to start with two collectors, so a player's own choice replaces G1.
+    if !picks_other_collector(&options.extra_jvm_args) {
+        args.extend(DEFAULT_JVM_ARGS.iter().map(ToString::to_string));
+    }
     args.extend(options.extra_jvm_args.iter().cloned());
 
     if let Some(arguments) = &version.arguments {
@@ -392,6 +395,11 @@ fn language_for(version: &VersionInfo, language: &str) -> String {
     }
 }
 
+fn picks_other_collector(args: &[String]) -> bool {
+    args.iter()
+        .any(|arg| arg.starts_with("-XX:+Use") && arg.ends_with("GC") && arg != "-XX:+UseG1GC")
+}
+
 /// Added on top of the official arguments, which keep their 50 ms pause target. Every flag
 /// here is understood by Java 8 through current releases and costs nothing on a weak PC.
 const SAFE_JVM_ARGS: &[&str] = &[
@@ -423,6 +431,20 @@ pub fn tuned_jvm_args(max_memory_mb: u32, cores: usize) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn leaves_g1_out_for_another_collector() {
+        let args = |list: &[&str]| list.iter().map(|&arg| arg.to_owned()).collect::<Vec<_>>();
+        assert!(picks_other_collector(&args(&["-XX:+UseZGC"])));
+        assert!(picks_other_collector(&args(&["-XX:+UseShenandoahGC"])));
+        assert!(!picks_other_collector(&args(&[
+            "-XX:+UseG1GC",
+            "-XX:+DisableExplicitGC"
+        ])));
+        assert!(!picks_other_collector(&args(&[
+            "-XX:+UseStringDeduplication"
+        ])));
+    }
 
     #[test]
     fn tunes_more_only_with_room_to_spare() {

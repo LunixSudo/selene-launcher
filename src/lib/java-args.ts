@@ -2,6 +2,11 @@
 export const JAVA_FLAGS = {
   g1: ["-XX:+UseG1GC", "-XX:MaxGCPauseMillis=50"],
   zgc: ["-XX:+UseZGC"],
+  g1Mixed: [
+    "-XX:G1HeapWastePercent=5",
+    "-XX:G1MixedGCCountTarget=4",
+    "-XX:G1MixedGCLiveThresholdPercent=90",
+  ],
   parallelRef: ["-XX:+ParallelRefProcEnabled"],
   dedupe: ["-XX:+UseStringDeduplication"],
   explicitGc: ["-XX:+DisableExplicitGC"],
@@ -20,7 +25,7 @@ export const JAVA_FLAGS = {
 export type JavaFlag = keyof typeof JAVA_FLAGS;
 
 /** Flags that pick a garbage collector; Java refuses to start with two. */
-const COLLECTORS: JavaFlag[] = ["g1", "zgc"];
+export const COLLECTORS: JavaFlag[] = ["g1", "zgc"];
 
 function tokens(args: string): string[] {
   return args.split(/\s+/).filter(Boolean);
