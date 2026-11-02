@@ -531,6 +531,9 @@ export const ptBR: Messages = {
     cooldown: "O nome poderá ser mudado de novo em {date}.",
     create: "Criar",
     change: "Mudar",
+    confirm:
+      "Mudar seu nome para {name}? A próxima mudança só será possível em 30 dias, e outra pessoa pode pegar seu nome antigo.",
+    confirmChange: "Sim, mudar",
     status: {
       available: "O nome está livre",
       taken: "O nome está em uso",

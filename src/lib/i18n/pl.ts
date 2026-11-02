@@ -528,6 +528,9 @@ export const pl: Messages = {
     cooldown: "Nick będzie można zmienić ponownie {date}.",
     create: "Utwórz",
     change: "Zmień",
+    confirm:
+      "Zmienić nick na {name}? Kolejna zmiana będzie możliwa dopiero za 30 dni, a stary nick może zająć ktoś inny.",
+    confirmChange: "Tak, zmień",
     status: {
       available: "Nick jest wolny",
       taken: "Nick jest zajęty",

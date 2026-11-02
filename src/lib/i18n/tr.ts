@@ -535,6 +535,9 @@ export const tr: Messages = {
     cooldown: "Ad {date} tarihinde tekrar değiştirilebilir.",
     create: "Oluştur",
     change: "Değiştir",
+    confirm:
+      "Adın {name} olarak değişsin mi? Sonraki değişiklik ancak 30 gün sonra mümkün ve eski adını başkası alabilir.",
+    confirmChange: "Evet, değiştir",
     status: {
       available: "Ad boşta",
       taken: "Ad alınmış",

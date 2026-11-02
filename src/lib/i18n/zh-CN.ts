@@ -510,6 +510,8 @@ export const zhCN: Messages = {
     cooldown: "可在 {date} 再次更改名字。",
     create: "创建",
     change: "更改",
+    confirm: "将名字改为 {name}？30 天内无法再次更改，旧名字可能会被他人占用。",
+    confirmChange: "确认更改",
     status: {
       available: "名字可用",
       taken: "名字已被占用",

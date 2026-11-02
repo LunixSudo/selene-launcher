@@ -12,6 +12,8 @@
   let status = $state<NameStatus | null>(null);
   let change = $state<NameChange | null>(null);
   let saving = $state(false);
+  /** A change waits for a second press: the next one is only allowed in 30 days. */
+  let confirming = $state(false);
   let error = $state<string | null>(null);
 
   const open = $derived(session.naming !== null);
@@ -27,6 +29,7 @@
     status = null;
     error = null;
     change = null;
+    confirming = false;
     if (!creating) {
       api
         .nameChange()
@@ -42,6 +45,7 @@
   $effect(() => {
     const wanted = name;
     status = null;
+    confirming = false;
     if (!open || !NAME_PATTERN.test(wanted) || wanted === activeAccount()?.name) {
       return;
     }
@@ -65,6 +69,10 @@
   }
 
   async function save() {
+    if (!creating && !confirming) {
+      confirming = true;
+      return;
+    }
     saving = true;
     error = null;
     try {
@@ -104,6 +112,9 @@
   {:else if status}
     <p class="status" class:ok={status === "available"}>{t(`playerName.status.${status}`)}</p>
   {/if}
+  {#if confirming}
+    <p class="warning" role="alert">{t("playerName.confirm", { name })}</p>
+  {/if}
   {#if error}
     <p class="error" role="alert">{error}</p>
   {/if}
@@ -115,7 +126,13 @@
       class="primary"
       disabled={saving || blocked || !valid || status === "taken" || status === "notAllowed"}
     >
-      {t(creating ? "playerName.create" : "playerName.change")}
+      {t(
+        creating
+          ? "playerName.create"
+          : confirming
+            ? "playerName.confirmChange"
+            : "playerName.change",
+      )}
     </button>
   {/snippet}
 </Dialog>
@@ -135,6 +152,15 @@
 
   .status.ok {
     color: var(--accent);
+  }
+
+  .warning {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, #e0a100 16%, transparent);
+    font-size: 13px;
+    line-height: 1.5;
   }
 
   .error {

@@ -526,6 +526,9 @@ export const en: Messages = {
     cooldown: "The name can be changed again on {date}.",
     create: "Create",
     change: "Change",
+    confirm:
+      "Change your name to {name}? The next change is only possible in 30 days, and your old name may be taken by someone else.",
+    confirmChange: "Yes, change",
     status: {
       available: "The name is free",
       taken: "The name is taken",

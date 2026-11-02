@@ -541,6 +541,9 @@ export const de: Messages = {
     cooldown: "Der Name kann am {date} wieder geändert werden.",
     create: "Erstellen",
     change: "Ändern",
+    confirm:
+      "Namen in {name} ändern? Die nächste Änderung ist erst in 30 Tagen möglich, und dein alter Name kann vergeben werden.",
+    confirmChange: "Ja, ändern",
     status: {
       available: "Der Name ist frei",
       taken: "Der Name ist vergeben",

@@ -285,3 +285,7 @@ All notable changes to this project are documented here. The format follows
   free and the date of the next allowed change.
 - The mod list marks two enabled copies of one mod, found by project or by the mod id in
   the file, so mods added by hand count too.
+- Forge for 1.7.10 to 1.12.2, including the 1.12.2 builds before 14.23.5.2851: the old
+  installers are unpacked instead of run, since they only work with a window.
+- Changing the player name asks once more before it goes through, as the next change is 30
+  days away.

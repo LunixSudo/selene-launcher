@@ -537,6 +537,9 @@ export const es: Messages = {
     cooldown: "Podrás cambiar el nombre de nuevo el {date}.",
     create: "Crear",
     change: "Cambiar",
+    confirm:
+      "¿Cambiar tu nombre a {name}? El próximo cambio solo será posible en 30 días y otra persona podría tomar tu nombre anterior.",
+    confirmChange: "Sí, cambiar",
     status: {
       available: "El nombre está libre",
       taken: "El nombre está ocupado",

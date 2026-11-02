@@ -33,8 +33,6 @@ const NEOFORGE_API_TIMEOUT: Duration = Duration::from_secs(8);
 const NEOFORGE_1_20_1_MAVEN_URL: &str = "https://maven.neoforged.net/releases/net/neoforged/forge";
 const NEOFORGE_1_20_1_VERSIONS_URL: &str =
     "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/forge";
-/// Forge 1.12.2 builds before this one ship the old installer, which only works with a window.
-const FIRST_HEADLESS_1_12_2_BUILD: u32 = 2851;
 /// The installers refuse to install a client without the official launcher's profile list.
 const LAUNCHER_PROFILES: &str = "launcher_profiles.json";
 const OUTPUT_TAIL_LINES: usize = 20;
@@ -182,7 +180,7 @@ async fn forge_releases(client: &Client, game_version: &str) -> Result<Vec<Loade
         .iter()
         .rev()
         .filter_map(|build| build.strip_prefix(&prefix))
-        .filter(|build| has_headless_installer(game_version, build))
+        .filter(|_| has_installer(game_version))
         .map(str::to_owned)
         .collect();
     Ok(builds
@@ -298,7 +296,7 @@ fn neoforge_game_version(version: &str) -> Option<String> {
     }
 }
 
-fn has_headless_installer(game_version: &str, build: &str) -> bool {
+fn has_installer(game_version: &str) -> bool {
     let Some(rest) = game_version.strip_prefix("1.") else {
         return true;
     };
@@ -307,12 +305,9 @@ fn has_headless_installer(game_version: &str, build: &str) -> bool {
         .next()
         .and_then(|minor| minor.parse::<u32>().ok());
     match minor {
-        Some(minor) if minor >= 13 => true,
-        Some(12) if game_version == "1.12.2" => build
-            .strip_prefix("14.23.5.")
-            .and_then(|number| number.parse::<u32>().ok())
-            .is_some_and(|number| number >= FIRST_HEADLESS_1_12_2_BUILD),
-        _ => false,
+        // The old installers carry what they install, see `install_legacy`.
+        Some(minor) => minor >= 7,
+        None => false,
     }
 }
 
@@ -384,6 +379,20 @@ where
     )
     .await?;
 
+    // Installers before Forge 1.12.2-14.23.5.2851 only work with a window, but they carry
+    // the finished version and the Forge jar, so nothing has to run.
+    if let Some(legacy) = read_legacy_profile(&installer) {
+        let result = install_legacy(dirs, &id, &installer, legacy).await;
+        let _ = tokio::fs::remove_file(&installer).await;
+        let _ = tokio::fs::remove_dir(&work_dir).await;
+        result?;
+        // Its libraries download with the game's, so they are not there yet.
+        return read_version(dirs, &id)
+            .await
+            .map(Into::into)
+            .ok_or_else(|| Error::LoaderInstaller(format!("no version {id} after installing")));
+    }
+
     let profile = match read_profile(&installer) {
         Ok(profile) => profile,
         Err(err) => {
@@ -413,10 +422,14 @@ where
 }
 
 /// The installed version, if its JSON is there with every library it lists.
-async fn read_installed(dirs: &GameDirs, id: &str) -> Option<InstalledVersion> {
+async fn read_version(dirs: &GameDirs, id: &str) -> Option<InstalledVersion> {
     let path = dirs.versions().join(id).join(format!("{id}.json"));
     let bytes = tokio::fs::read(path).await.ok()?;
-    let version: InstalledVersion = serde_json::from_slice(&bytes).ok()?;
+    serde_json::from_slice(&bytes).ok()
+}
+
+async fn read_installed(dirs: &GameDirs, id: &str) -> Option<InstalledVersion> {
+    let version = read_version(dirs, id).await?;
     let libraries = dirs.libraries();
     let complete = version
         .libraries
@@ -503,6 +516,122 @@ where
         output.push_str(errors.trim());
         Err(Error::LoaderInstaller(output.trim().to_owned()))
     }
+}
+
+/// `install_profile.json` of the old installers: the version to write and where the Forge jar
+/// inside the installer goes.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyProfile {
+    install: LegacyInstall,
+    version_info: LegacyVersion,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyInstall {
+    path: String,
+    file_path: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LegacyVersion {
+    main_class: String,
+    minecraft_arguments: Option<String>,
+    #[serde(default)]
+    libraries: Vec<LegacyLibrary>,
+}
+
+#[derive(Deserialize)]
+struct LegacyLibrary {
+    name: String,
+    url: Option<String>,
+    /// `false` marks libraries only the server needs.
+    clientreq: Option<bool>,
+    natives: Option<serde_json::Value>,
+}
+
+const MOJANG_LIBRARIES_URL: &str = "https://libraries.minecraft.net/";
+
+fn read_legacy_profile(installer: &Path) -> Option<LegacyProfile> {
+    let file = std::fs::File::open(installer).ok()?;
+    let mut archive = zip::ZipArchive::new(file).ok()?;
+    let text = read_entry(&mut archive, installer, "install_profile.json").ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+/// Writes the version the old installer would have and unpacks its Forge jar. Libraries
+/// get the same downloads as any other, so they come through mirrors too.
+async fn install_legacy(
+    dirs: &GameDirs,
+    id: &str,
+    installer: &Path,
+    profile: LegacyProfile,
+) -> Result<()> {
+    let forge_path = loader::maven_path(&profile.install.path)
+        .map(|path| dirs.libraries().join(path))
+        .ok_or_else(|| {
+            Error::LoaderInstaller(format!("bad Forge name {}", profile.install.path))
+        })?;
+    let installer = installer.to_owned();
+    let entry = profile.install.file_path.clone();
+    let target = forge_path.clone();
+    tokio::task::spawn_blocking(move || -> Result<()> {
+        let file = std::fs::File::open(&installer).map_err(|err| Error::io(&installer, err))?;
+        let mut archive =
+            zip::ZipArchive::new(file).map_err(|err| Error::io(&installer, err.into()))?;
+        let mut jar = archive
+            .by_name(&entry)
+            .map_err(|err| Error::io(installer.join(&entry), err.into()))?;
+        let mut bytes = Vec::new();
+        jar.read_to_end(&mut bytes)
+            .map_err(|err| Error::io(installer.join(&entry), err))?;
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent).map_err(|err| Error::io(parent, err))?;
+        }
+        crate::fs::write_atomic_blocking(&target, &bytes)
+    })
+    .await
+    .map_err(|err| Error::LoaderInstaller(err.to_string()))??;
+
+    let version = legacy_version_json(&profile.version_info);
+    let path = dirs.versions().join(id).join(format!("{id}.json"));
+    if let Some(parent) = path.parent() {
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|err| Error::io(parent, err))?;
+    }
+    crate::fs::write_atomic(&path, &serde_json::to_vec_pretty(&version)?).await
+}
+
+/// The old version format in the shape the newer installers write. Natives stay with the
+/// game version, which describes them for every platform.
+fn legacy_version_json(version: &LegacyVersion) -> serde_json::Value {
+    let libraries: Vec<serde_json::Value> = version
+        .libraries
+        .iter()
+        .filter(|library| library.clientreq != Some(false) && library.natives.is_none())
+        .filter_map(|library| {
+            let path = loader::maven_path(&library.name)?;
+            let base = library.url.as_deref().unwrap_or(MOJANG_LIBRARIES_URL);
+            let base = base.trim_end_matches('/');
+            Some(serde_json::json!({
+                "name": library.name,
+                "downloads": { "artifact": {
+                    "path": path,
+                    "url": format!("{base}/{path}"),
+                    "sha1": "",
+                    "size": 0,
+                }},
+            }))
+        })
+        .collect();
+    serde_json::json!({
+        "mainClass": version.main_class,
+        "minecraftArguments": version.minecraft_arguments,
+        "libraries": libraries,
+    })
 }
 
 fn read_profile(installer: &Path) -> Result<Profile> {
@@ -607,12 +736,43 @@ mod tests {
     }
 
     #[test]
-    fn skips_forge_builds_that_need_a_window() {
-        assert!(has_headless_installer("1.20.1", "47.4.10"));
-        assert!(has_headless_installer("26.1.2", "64.1.5"));
-        assert!(has_headless_installer("1.12.2", "14.23.5.2860"));
-        assert!(!has_headless_installer("1.12.2", "14.23.5.2847"));
-        assert!(!has_headless_installer("1.8.9", "11.15.1.2318"));
+    fn offers_forge_from_1_7() {
+        assert!(has_installer("1.20.1"));
+        assert!(has_installer("26.1.2"));
+        assert!(has_installer("1.12.2"));
+        assert!(has_installer("1.7.10"));
+        assert!(!has_installer("1.6.4"));
+    }
+
+    #[test]
+    fn turns_old_profiles_into_versions() {
+        let version: LegacyVersion = serde_json::from_str(
+            r#"{
+                "mainClass": "net.minecraft.launchwrapper.Launch",
+                "minecraftArguments": "--tweakClass x",
+                "libraries": [
+                    {"name": "net.minecraftforge:forge:1.8.9-11.15.1.2318-1.8.9",
+                     "url": "https://maven.minecraftforge.net/"},
+                    {"name": "net.minecraft:launchwrapper:1.12", "serverreq": true},
+                    {"name": "org.jline:jline:3.5.1", "clientreq": false},
+                    {"name": "org.lwjgl:lwjgl-platform:2.9.4", "natives": {"windows": "natives-windows"}}
+                ]
+            }"#,
+        )
+        .unwrap();
+        let json = legacy_version_json(&version);
+        let libraries = json["libraries"].as_array().unwrap();
+        assert_eq!(libraries.len(), 2);
+        assert_eq!(
+            libraries[0]["downloads"]["artifact"]["url"],
+            "https://maven.minecraftforge.net/net/minecraftforge/forge/1.8.9-11.15.1.2318-1.8.9/forge-1.8.9-11.15.1.2318-1.8.9.jar"
+        );
+        assert_eq!(
+            libraries[1]["downloads"]["artifact"]["url"],
+            "https://libraries.minecraft.net/net/minecraft/launchwrapper/1.12/launchwrapper-1.12.jar"
+        );
+        let installed: InstalledVersion = serde_json::from_value(json).unwrap();
+        assert_eq!(installed.main_class, "net.minecraft.launchwrapper.Launch");
     }
 
     #[test]
