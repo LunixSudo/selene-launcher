@@ -392,10 +392,13 @@ where
         }
     };
     // The installer only downloads what is missing, so libraries fetched here through the
-    // official mirrors spare it a host that may be unreachable. It retries the rest itself.
+    // official mirrors spare it a host that may be unreachable. Whatever fails here the
+    // installer still tries itself, and its error is the one that tells what went wrong.
     let env = Environment::current(Features::default());
     let libraries = version::library_downloads(&profile.libraries, &env, &dirs.libraries());
-    let _ = download::download_all(client, libraries, 8, |_| {}).await;
+    if let Err(err) = download::download_all(client, libraries, 8, |_| {}).await {
+        log::warn!("prefetching {id} libraries failed, the installer will try: {err}");
+    }
 
     let result = run_installer(dirs, &installer, &profile, java, &on_progress).await;
     let _ = tokio::fs::remove_file(&installer).await;
@@ -419,7 +422,10 @@ async fn read_installed(dirs: &GameDirs, id: &str) -> Option<InstalledVersion> {
         .libraries
         .iter()
         .filter_map(|library| library.downloads.artifact.as_ref()?.path.as_ref())
-        .all(|path| libraries.join(path).is_file());
+        .all(|path| {
+            std::fs::metadata(libraries.join(path))
+                .is_ok_and(|file| file.is_file() && file.len() > 0)
+        });
     complete.then_some(version)
 }
 

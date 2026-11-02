@@ -338,10 +338,17 @@ pub(crate) async fn fetch_sha1(client: &Client, jar_url: &str) -> String {
             .await?)
     }
     .await;
-    // Some repositories append the file name after the hash.
     text.ok()
-        .and_then(|text| text.split_whitespace().next().map(str::to_owned))
+        .and_then(|text| parse_sha1(&text))
         .unwrap_or_default()
+}
+
+/// The hash in a `.sha1` file. Some repositories append the file name after it, and a blocked
+/// network may answer with a web page, which must not pass for a hash.
+fn parse_sha1(text: &str) -> Option<String> {
+    let hash = text.split_whitespace().next()?;
+    (hash.len() == 40 && hash.bytes().all(|byte| byte.is_ascii_hexdigit()))
+        .then(|| hash.to_ascii_lowercase())
 }
 
 /// `group:artifact:version[:classifier]` to `group/path/artifact/version/artifact-version[-classifier].jar`.
@@ -406,6 +413,18 @@ fn library_key(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_only_real_hashes_from_sha1_files() {
+        let hash = "a9993e364706816aba3e25717850c26c9cd0d89d";
+        assert_eq!(parse_sha1(hash).as_deref(), Some(hash));
+        assert_eq!(
+            parse_sha1(&format!("{}  forge.jar\n", hash.to_uppercase())).as_deref(),
+            Some(hash)
+        );
+        assert_eq!(parse_sha1("<!DOCTYPE html><html>blocked</html>"), None);
+        assert_eq!(parse_sha1(""), None);
+    }
 
     #[test]
     fn builds_maven_paths() {

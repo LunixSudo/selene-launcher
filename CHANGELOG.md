@@ -109,6 +109,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The launcher keeps a small log in `logs/launcher.log` in its data folder: which sources
+  answered, which failed and why. It holds no tokens or keys.
+
 - Starting an installed game no longer hashes every asset and library again: files that are
   in place with the right size are trusted, since they were checked when downloaded.
 - The version list, version files, loader profiles and the Java list are kept on disk, so a
@@ -263,3 +266,10 @@ All notable changes to this project are documented here. The format follows
 - Java for the newest and most played versions downloads even before signing in, and
   downloads cut short last time go on quietly after the launcher starts. While a game is
   running, background downloads use fewer connections.
+- A download source that keeps the launcher waiting no longer holds everything up: after a
+  second and a half the next mirror is asked as well, and the first good answer wins.
+- A host that breaks off a download, sends a damaged file, a web page or nothing at all is
+  skipped on the next try, which now waits longer each time.
+- A `.sha1` file that turns out to be a web page no longer makes a loader download fail
+  every time.
+- A Forge or NeoForge install whose libraries are empty files is installed again.

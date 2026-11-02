@@ -20,6 +20,7 @@ base64 = "0.23.1"
 chrono = { version = "0.4.45", default-features = false, features = ["clock", "serde", "std"] }
 discord-rich-presence = "1.1.0"
 keyring = { version = "3.6.3", features = ["windows-native", "apple-native", "linux-native"] }
+log = "0.4.34"
 reqwest = { version = "0.13.5", default-features = false }
 selene-core = { path = "../crates/selene-core" }
 serde = { version = "1.0.229", features = ["derive"] }
@@ -28,6 +29,7 @@ sys-locale = "0.3"
 sysinfo = { version = "0.38.4", default-features = false, features = ["system"] }
 tauri = { version = "2.11.6", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-log = "2.10.1"
 tauri-plugin-notification = "2.8.0"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2.5.5"

@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use futures_util::{StreamExt, TryStreamExt, stream};
+use reqwest::header::CONTENT_TYPE;
 use reqwest::{Client, StatusCode};
 use sha1::{Digest, Sha1};
 use tokio::fs::{self, File};
@@ -268,7 +269,8 @@ async fn fetch_with_retry(client: &Client, download: &Download) -> Result<()> {
     loop {
         match fetch(client, download).await {
             Err(err) if is_retryable(&err) && attempt < MAX_ATTEMPTS => {
-                tokio::time::sleep(RETRY_DELAY * attempt).await;
+                // Doubles each time, so a server asking to slow down gets the room.
+                tokio::time::sleep(RETRY_DELAY * 2u32.pow(attempt - 1)).await;
                 attempt += 1;
             }
             Err(err) => {
@@ -289,7 +291,7 @@ fn is_retryable(err: &Error) -> bool {
                 || status == StatusCode::REQUEST_TIMEOUT
                 || status == StatusCode::TOO_MANY_REQUESTS
         }),
-        Error::ChecksumMismatch { .. } => true,
+        Error::ChecksumMismatch { .. } | Error::NotTheFile { .. } => true,
         _ => false,
     }
 }
@@ -318,13 +320,31 @@ async fn fetch_into(client: &Client, download: &Download, partial: &Path) -> Res
         .await
         .map_err(|err| Error::io(partial, err))?;
     let mut hasher = Sha1::new();
-    let mut body = http::get(client, &download.url)
-        .await?
-        .error_for_status()?
-        .bytes_stream();
+    let response = http::get(client, &download.url).await?.error_for_status()?;
+    let source = response.url().to_string();
+    let is_page = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.starts_with("text/html"));
+    if is_page && download.sha1.is_empty() {
+        // Blocked or captive networks answer with a page of their own, and without a
+        // checksum nothing else would notice.
+        http::mark_down(&source);
+        return Err(Error::NotTheFile {
+            url: source,
+            reason: "a web page",
+        });
+    }
+    let mut written = 0;
+    let mut body = response.bytes_stream();
 
     while let Some(chunk) = body.next().await {
-        let chunk = chunk?;
+        let chunk = chunk.inspect_err(|_| {
+            // The next try goes to another source instead of the one that broke off.
+            http::mark_down(&source);
+        })?;
+        written += chunk.len() as u64;
         if let Some(delay) = throttle_delay(chunk.len()).filter(|delay| !delay.is_zero()) {
             tokio::time::sleep(delay).await;
         }
@@ -338,11 +358,32 @@ async fn fetch_into(client: &Client, download: &Download, partial: &Path) -> Res
 
     let actual = hex(&hasher.finalize());
     if !download.sha1.is_empty() && !actual.eq_ignore_ascii_case(&download.sha1) {
+        http::mark_down(&source);
         return Err(Error::ChecksumMismatch {
-            url: download.url.clone(),
+            url: source,
             expected: download.sha1.clone(),
             actual,
         });
+    }
+    if download.sha1.is_empty() {
+        let reason = if written == 0 {
+            Some("nothing")
+        } else if download.size > 0 && written != download.size {
+            Some("a file of the wrong size")
+        } else {
+            None
+        };
+        if let Some(reason) = reason {
+            http::mark_down(&source);
+            return Err(Error::NotTheFile {
+                url: source,
+                reason,
+            });
+        }
+        log::info!(
+            "{} has no checksum, kept after checking its size",
+            download.url
+        );
     }
 
     crate::fs::rename(partial, path).await
@@ -370,7 +411,62 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    use tokio::net::TcpListener;
+
     use super::*;
+
+    /// Serves `response` to every connection, as a host that is blocked or broken would.
+    async fn serve(response: &'static str) -> String {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let mut request = [0; 1024];
+                let _ = stream.read(&mut request).await;
+                let _ = stream.write_all(response.as_bytes()).await;
+            }
+        });
+        format!("http://{address}/file.jar")
+    }
+
+    async fn fetch_unchecked(url: String, size: u64) -> (Result<()>, PathBuf, tempfile::TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("file.jar");
+        let client = Client::builder().no_proxy().build().unwrap();
+        let download = Download {
+            url,
+            path: path.clone(),
+            sha1: String::new(),
+            size,
+        };
+        (fetch(&client, &download).await, path, dir)
+    }
+
+    #[tokio::test]
+    async fn refuses_a_web_page_without_a_checksum() {
+        let url = serve(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 13\r\n\r\n<html></html>",
+        )
+        .await;
+        let (result, path, _dir) = fetch_unchecked(url, 0).await;
+        assert!(matches!(result, Err(Error::NotTheFile { .. })));
+        assert!(!path.exists());
+    }
+
+    #[tokio::test]
+    async fn refuses_an_empty_or_short_file_without_a_checksum() {
+        let empty = serve("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n").await;
+        let (result, path, _dir) = fetch_unchecked(empty, 0).await;
+        assert!(matches!(result, Err(Error::NotTheFile { .. })));
+        assert!(!path.exists());
+
+        let short = serve("HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc").await;
+        let (result, _, _dir) = fetch_unchecked(short.clone(), 10).await;
+        assert!(matches!(result, Err(Error::NotTheFile { .. })));
+        let (result, path, _dir) = fetch_unchecked(short, 3).await;
+        assert!(result.is_ok());
+        assert_eq!(std::fs::read(path).unwrap(), b"abc");
+    }
 
     #[test]
     fn throttling_spreads_bytes_over_time() {

@@ -25,6 +25,9 @@ pub enum Error {
         actual: String,
     },
 
+    #[error("{url} sent {reason} instead of the file")]
+    NotTheFile { url: String, reason: &'static str },
+
     #[error("java runtime `{component}` is not available for {platform}")]
     JavaUnavailable { component: String, platform: String },
 

@@ -129,12 +129,34 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         Some(dir) => dir,
         None => app.path().data_dir()?.join("SeleneLauncher"),
     };
+    app.handle().plugin(diagnostics_log(&data_dir))?;
     // World icons and screenshots are shown straight from the instance folders.
     app.asset_protocol_scope()
         .allow_directory(&data_dir, true)?;
     let args: Vec<String> = std::env::args().collect();
     app.manage(Launcher::new(&data_dir, launch_arg(&args))?);
     Ok(())
+}
+
+/// A log of what the launcher did, kept small, for when a download or a start goes wrong.
+/// Only URLs, sources and errors go in; tokens and keys never do.
+fn diagnostics_log(data_dir: &std::path::Path) -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
+
+    const MAX_LOG_BYTES: u128 = 2 * 1024 * 1024;
+    tauri_plugin_log::Builder::new()
+        .clear_targets()
+        .target(Target::new(TargetKind::Folder {
+            path: data_dir.join("logs"),
+            file_name: Some("launcher".into()),
+        }))
+        .level(log::LevelFilter::Info)
+        // Their own logs repeat each request with its headers.
+        .level_for("reqwest", log::LevelFilter::Warn)
+        .level_for("hyper_util", log::LevelFilter::Warn)
+        .max_file_size(MAX_LOG_BYTES)
+        .rotation_strategy(RotationStrategy::KeepOne)
+        .build()
 }
 
 /// Without a window there is nowhere else to say why the launcher did not open. The usual

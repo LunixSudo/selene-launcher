@@ -1,6 +1,9 @@
+use std::future::Future;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use futures_util::StreamExt;
+use futures_util::stream::FuturesUnordered;
 use reqwest::{Client, RequestBuilder, Response, StatusCode, Url};
 use serde::de::DeserializeOwned;
 
@@ -192,24 +195,11 @@ pub async fn get(client: &Client, url: &str) -> Result<Response> {
     // Hosts that failed lately go last, still there in case the others fail too.
     sources.sort_by_key(|source| is_down(source));
 
-    let mut last = None;
-    for source in &sources {
-        let response = client.get(source).send().await;
-        match &response {
-            Ok(answer) if !host_failed(answer.status()) => {
-                // The copies lack some files that may still be upstream.
-                if !(is_fallback(source) && answer.status() == StatusCode::NOT_FOUND) {
-                    return Ok(response?);
-                }
-            }
-            _ => mark_down(source),
-        }
-        last = Some(response);
-    }
-    match last {
-        Some(response) => Ok(response?),
-        None => Ok(client.get(url).send().await?),
-    }
+    let sources = sources
+        .into_iter()
+        .map(|source| (source.clone(), source))
+        .collect();
+    Ok(race(sources, |url| client.get(url).send()).await?)
 }
 
 /// Sends an API request, and the same request to the API's copy when the API cannot be
@@ -235,24 +225,62 @@ pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> 
     // Hosts that failed lately go last, still there in case the others fail too.
     requests.sort_by_key(|request| is_down(request.url().as_str()));
 
+    let requests = requests
+        .into_iter()
+        .map(|request| (request.url().to_string(), request))
+        .collect();
+    Ok(race(requests, |request| client.execute(request)).await?)
+}
+
+/// How long a source may keep us waiting for an answer before the next one is asked too.
+/// Blocked hosts in some countries hang instead of refusing, and waiting out each of them in
+/// turn is what made lists load forever.
+const HEDGE_AFTER: Duration = Duration::from_millis(1500);
+
+/// Sends to the sources in order, asking the next one as well whenever the ones asked so far
+/// stay silent for [`HEDGE_AFTER`] or fail. The first good answer wins and the requests still
+/// out are dropped. Fails with the last answer if no source gives a good one; `sources`
+/// must not be empty.
+async fn race<T, F, Fut>(sources: Vec<(String, T)>, send: F) -> reqwest::Result<Response>
+where
+    F: Fn(T) -> Fut,
+    Fut: Future<Output = reqwest::Result<Response>>,
+{
+    let ask = |(url, item): (String, T)| {
+        let request = send(item);
+        async move { (url, request.await) }
+    };
+    let mut waiting = sources.into_iter();
+    let mut asked = FuturesUnordered::new();
     let mut last = None;
-    for request in requests {
-        let url = request.url().to_string();
-        let response = client.execute(request).await;
-        match &response {
-            Ok(answer) if !host_failed(answer.status()) => {
-                if !(is_fallback(&url) && answer.status() == StatusCode::NOT_FOUND) {
-                    return Ok(response?);
+    loop {
+        if asked.is_empty() {
+            match waiting.next() {
+                Some(source) => asked.push(ask(source)),
+                None => break,
+            }
+        }
+        tokio::select! {
+            Some((url, response)) = asked.next() => {
+                match &response {
+                    Ok(answer) if !host_failed(answer.status()) => {
+                        // The copies lack some files that may still be upstream.
+                        if !(is_fallback(&url) && answer.status() == StatusCode::NOT_FOUND) {
+                            return response;
+                        }
+                    }
+                    _ => mark_down(&url),
+                }
+                last = Some(response);
+            }
+            () = tokio::time::sleep(HEDGE_AFTER), if waiting.len() > 0 => {
+                if let Some(source) = waiting.next() {
+                    asked.push(ask(source));
                 }
             }
-            _ => mark_down(&url),
         }
-        last = Some(response);
     }
-    match last {
-        Some(response) => Ok(response?),
-        None => unreachable!("two requests were sent"),
-    }
+    last.expect("at least one source is asked")
 }
 
 fn host_of(url: &str) -> &str {
@@ -336,5 +364,84 @@ mod tests {
             Some("https://mod.mcimirror.top/modrinth/v2/project/abc")
         );
         assert_eq!(fallback_of("https://example.com/a.jar"), None);
+    }
+
+    fn answer(status: u16) -> Response {
+        http::Response::builder()
+            .status(status)
+            .body(Vec::<u8>::new())
+            .unwrap()
+            .into()
+    }
+
+    fn sources(urls: &[&'static str]) -> Vec<(String, &'static str)> {
+        urls.iter().map(|url| ((*url).to_owned(), *url)).collect()
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn asks_the_next_source_while_one_hangs() {
+        let started = tokio::time::Instant::now();
+        let response = race(
+            sources(&["https://hangs.test/a", "https://quick.test/a"]),
+            |url| async move {
+                if url.contains("hangs") {
+                    tokio::time::sleep(Duration::from_secs(60)).await;
+                }
+                Ok(answer(200))
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn moves_on_from_failing_hosts() {
+        let response = race(
+            sources(&["https://broken.test/a", "https://working.test/a"]),
+            |url| async move { Ok(answer(if url.contains("broken") { 503 } else { 200 })) },
+        )
+        .await
+        .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(is_down("https://broken.test/b"));
+        assert!(!is_down("https://working.test/b"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn trusts_a_missing_file_only_upstream() {
+        let fallback_missing = race(
+            vec![
+                (format!("{BMCLAPI}a"), 404),
+                ("https://upstream.test/a".to_owned(), 200),
+            ],
+            |status| async move { Ok(answer(status)) },
+        )
+        .await
+        .unwrap();
+        assert_eq!(fallback_missing.status(), StatusCode::OK);
+
+        let upstream_missing = race(
+            vec![
+                ("https://upstream.test/a".to_owned(), 404),
+                (format!("{BMCLAPI}a"), 200),
+            ],
+            |status| async move { Ok(answer(status)) },
+        )
+        .await
+        .unwrap();
+        assert_eq!(upstream_missing.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn returns_the_last_failure_when_all_fail() {
+        let response = race(
+            sources(&["https://a.test/", "https://b.test/"]),
+            |_| async { Ok(answer(500)) },
+        )
+        .await
+        .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }
