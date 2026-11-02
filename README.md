@@ -61,13 +61,15 @@ There is no cracked mode. You need a Minecraft: Java Edition license to play.
 There is no release yet. Until the first one goes to
 [GitHub Releases](https://github.com/LunixSudo/selene-launcher/releases), test builds are
 attached to runs of the [Build](https://github.com/LunixSudo/selene-launcher/actions/workflows/build.yml)
-workflow: a Windows installer and a portable `.zip`. The installer is not signed yet, so
-Windows SmartScreen may warn about it.
+workflow: a Windows installer and a portable `.zip`, and for Linux an AppImage and a `.deb`
+package. The Windows installer is not signed yet, so SmartScreen may warn about it. The Linux
+builds are new and not tested much yet; they do not update themselves.
 
 ## Privacy
 
 The launcher has no servers of its own and collects nothing. Your sign-in token is kept in
-the Windows credential store and is only sent to Microsoft and Mojang. See
+the Windows credential store (on Linux, the Secret Service keyring) and is only sent to
+Microsoft and Mojang. See
 [PRIVACY.md](PRIVACY.md) ([на русском](PRIVACY.ru.md)) for every service the launcher talks
 to and why. The installer shows the policy in the system language before installing, and the launcher
 asks again after an update that changes it.

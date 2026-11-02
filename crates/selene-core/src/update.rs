@@ -41,7 +41,11 @@ struct Asset {
 }
 
 /// The newest release if it is newer than `current` and ships a verifiable installer.
+/// Only Windows updates itself; on Linux the package manager or a new download does.
 pub async fn check(client: &Client, current: &str) -> Result<Option<Update>> {
+    if !cfg!(windows) {
+        return Ok(None);
+    }
     let release: Release = client
         .get(LATEST_RELEASE_URL)
         .header("Accept", "application/vnd.github+json")

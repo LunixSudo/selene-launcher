@@ -108,6 +108,8 @@ All notable changes to this project are documented here. The format follows
 - Machine translations of the interface into Ukrainian, German, Spanish, Brazilian Portuguese,
   Polish, Turkish and Simplified Chinese. The language follows the system on first start.
 - The Back link in the settings and on the skins page returns to the page you came from.
+- Linux builds: an AppImage and a `.deb` package. The sign-in token goes into the Secret
+  Service keyring, and launcher updates come as new downloads instead of in-app.
 - Settings are split into Appearance, Game, Downloads and General.
 - Fullscreen and a custom window size are launcher settings and exclude each other. The game
   opens in a window while it loads and goes fullscreen once it has, so Windows no longer marks
