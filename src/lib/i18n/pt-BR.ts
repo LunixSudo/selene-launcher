@@ -283,6 +283,7 @@ export const ptBR: Messages = {
     changeVersion: "Mudar versão",
     requires: "Precisa de {title}",
     conflictsWith: "Conflita com {title}",
+    duplicate: "Mesmo mod que {title}",
     notForVersion: "Não é para {version}",
     enableAnyway: {
       title: "Ativar {name}?",

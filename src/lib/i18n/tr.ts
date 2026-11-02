@@ -282,6 +282,7 @@ export const tr: Messages = {
     changeVersion: "Sürümü değiştir",
     requires: "{title} gerekli",
     conflictsWith: "{title} ile çakışıyor",
+    duplicate: "{title} ile aynı mod",
     notForVersion: "{version} için değil",
     enableAnyway: {
       title: "{name} açılsın mı?",

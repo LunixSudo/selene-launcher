@@ -177,8 +177,43 @@ pub(super) async fn list_installed(
             }
         })
         .collect();
+    mark_duplicates(&mut installed);
     installed.sort_by_cached_key(|installed| display_name(installed).to_lowercase());
     Ok(installed)
+}
+
+/// Flags enabled files that are the same project, or declare the same mod id, as another
+/// enabled file. The game refuses to start with two copies of one mod.
+fn mark_duplicates(installed: &mut [InstalledFile]) {
+    let keys = |file: &InstalledFile| -> Vec<String> {
+        let project = file
+            .project
+            .iter()
+            .map(|project| format!("{:?}:{}", project.source, project.id));
+        let ids = file.file.mod_ids.iter().map(|id| format!("id:{id}"));
+        project.chain(ids).collect()
+    };
+    let mut owners: HashMap<String, Vec<usize>> = HashMap::new();
+    for (index, file) in installed.iter().enumerate() {
+        if file.file.enabled {
+            for key in keys(file) {
+                owners.entry(key).or_default().push(index);
+            }
+        }
+    }
+    let mut twins: Vec<(usize, String)> = Vec::new();
+    for indices in owners.values().filter(|indices| indices.len() > 1) {
+        for &index in indices {
+            for &other in indices.iter().filter(|&&other| other != index) {
+                twins.push((index, installed[other].file.file_name.clone()));
+            }
+        }
+    }
+    twins.sort();
+    twins.dedup();
+    for (index, title) in twins {
+        installed[index].issues.push(Issue::Duplicate { title });
+    }
 }
 
 /// Enabled mods made for another game version or loader, which the player turned on anyway.

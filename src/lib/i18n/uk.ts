@@ -277,6 +277,7 @@ export const uk: Messages = {
     changeVersion: "Змінити версію",
     requires: "Потрібен {title}",
     conflictsWith: "Конфліктує з {title}",
+    duplicate: "Той самий мод, що {title}",
     notForVersion: "Не для {version}",
     enableAnyway: {
       title: "Увімкнути {name}?",

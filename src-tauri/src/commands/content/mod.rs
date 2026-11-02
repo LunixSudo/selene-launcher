@@ -140,6 +140,9 @@ pub enum Issue {
     Requires { title: String },
     /// An installed mod is marked as incompatible with this one.
     ConflictsWith { title: String },
+    /// Another enabled file, named by `title`, is the same mod: often an older copy added
+    /// by hand.
+    Duplicate { title: String },
 }
 
 #[derive(Debug, Clone, Serialize)]

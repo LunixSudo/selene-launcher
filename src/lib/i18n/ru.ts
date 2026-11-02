@@ -273,6 +273,7 @@ export const ru = {
     changeVersion: "Сменить версию",
     requires: "Нужен {title}",
     conflictsWith: "Конфликтует с {title}",
+    duplicate: "Тот же мод, что {title}",
     notForVersion: "Не для {version}",
     enableAnyway: {
       title: "Включить «{name}»?",

@@ -269,6 +269,7 @@ export const zhCN: Messages = {
     changeVersion: "更换版本",
     requires: "需要 {title}",
     conflictsWith: "与 {title} 冲突",
+    duplicate: "与 {title} 是同一个模组",
     notForVersion: "不适用于 {version}",
     enableAnyway: {
       title: "启用 {name}？",

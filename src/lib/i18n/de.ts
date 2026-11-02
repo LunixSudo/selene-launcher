@@ -289,6 +289,7 @@ export const de: Messages = {
     changeVersion: "Version ändern",
     requires: "Benötigt {title}",
     conflictsWith: "Konflikt mit {title}",
+    duplicate: "Gleicher Mod wie {title}",
     notForVersion: "Nicht für {version}",
     enableAnyway: {
       title: "{name} aktivieren?",

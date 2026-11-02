@@ -315,7 +315,8 @@
     color: #c98a00;
   }
 
-  .issue.conflictsWith {
+  .issue.conflictsWith,
+  .issue.duplicate {
     background: color-mix(in srgb, var(--danger) 16%, transparent);
     color: var(--danger);
   }

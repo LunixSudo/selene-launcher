@@ -89,6 +89,10 @@ pub struct ModFile {
     pub enabled: bool,
     pub sha1: String,
     pub size: u64,
+    /// The ids the mod declares for its loader, which two copies of one mod share even
+    /// when they are different files.
+    #[serde(skip)]
+    pub mod_ids: Vec<String>,
 }
 
 /// A mod file to download from Modrinth or CurseForge.
@@ -130,11 +134,18 @@ pub async fn list(game_dir: &Path, kind: ContentKind) -> Result<Vec<ModFile>> {
             let metadata = fs::metadata(&path)
                 .await
                 .map_err(|err| Error::io(&path, err))?;
+            let sha1 = cached_sha1(&path, &metadata).await?;
+            let mod_ids = if kind == ContentKind::Mod {
+                cached_mod_ids(&path, &sha1).await
+            } else {
+                Vec::new()
+            };
             Ok::<_, Error>(ModFile {
-                sha1: cached_sha1(&path, &metadata).await?,
+                sha1,
                 file_name,
                 enabled,
                 size: metadata.len(),
+                mod_ids,
             })
         })
         .buffer_unordered(HASH_CONCURRENCY)
@@ -158,6 +169,99 @@ async fn cached_sha1(path: &Path, metadata: &std::fs::Metadata) -> Result<String
     let sha1 = download::sha1_file(path).await?;
     lock_hashes().insert(path.to_owned(), (stamp, sha1.clone()));
     Ok(sha1)
+}
+
+async fn cached_mod_ids(path: &Path, sha1: &str) -> Vec<String> {
+    static IDS: OnceLock<Mutex<HashMap<String, Vec<String>>>> = OnceLock::new();
+    let ids = IDS.get_or_init(Mutex::default);
+    let lock = || ids.lock().unwrap_or_else(PoisonError::into_inner);
+    if let Some(known) = lock().get(sha1) {
+        return known.clone();
+    }
+    let path = path.to_owned();
+    let found = tokio::task::spawn_blocking(move || read_mod_ids(&path))
+        .await
+        .unwrap_or_default();
+    lock().insert(sha1.to_owned(), found.clone());
+    found
+}
+
+/// The mod ids in a jar's metadata, for Fabric, Quilt, Forge, NeoForge and old Forge alike.
+fn read_mod_ids(path: &Path) -> Vec<String> {
+    use std::io::Read;
+
+    let Some(mut archive) = std::fs::File::open(path)
+        .ok()
+        .and_then(|file| zip::ZipArchive::new(file).ok())
+    else {
+        return Vec::new();
+    };
+    let mut read = |name: &str| {
+        let mut text = String::new();
+        archive.by_name(name).ok()?.read_to_string(&mut text).ok()?;
+        Some(text)
+    };
+    let mut ids = Vec::new();
+    if let Some(json) = read("fabric.mod.json") {
+        ids.extend(json_id(&json, &["id"]));
+    }
+    if let Some(json) = read("quilt.mod.json") {
+        ids.extend(json_id(&json, &["quilt_loader", "id"]));
+    }
+    for name in ["META-INF/mods.toml", "META-INF/neoforge.mods.toml"] {
+        if let Some(toml) = read(name) {
+            ids.extend(toml_mod_ids(&toml));
+        }
+    }
+    if let Some(json) = read("mcmod.info") {
+        ids.extend(mcmod_ids(&json));
+    }
+    ids.sort();
+    ids.dedup();
+    ids
+}
+
+fn json_id(json: &str, path: &[&str]) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(json).ok()?;
+    let id = path.iter().try_fold(&value, |value, key| value.get(key))?;
+    id.as_str().map(str::to_owned)
+}
+
+/// `modId="…"` lines from `mods.toml`. Libraries the loader brings, like `minecraft` and
+/// `forge`, only show up as dependencies, which spell it `modId` too, so only the lines in a
+/// `[[mods]]` table count.
+fn toml_mod_ids(toml: &str) -> Vec<String> {
+    let mut ids = Vec::new();
+    let mut in_mods = false;
+    for line in toml.lines().map(str::trim) {
+        if line.starts_with('[') {
+            in_mods = line == "[[mods]]";
+            continue;
+        }
+        let Some(value) = line.strip_prefix("modId").map(str::trim_start) else {
+            continue;
+        };
+        if let (true, Some(value)) = (in_mods, value.strip_prefix('=')) {
+            let id = value.trim().trim_matches(|ch| ch == '"' || ch == '\'');
+            if !id.is_empty() && !id.contains('$') {
+                ids.push(id.to_owned());
+            }
+        }
+    }
+    ids
+}
+
+/// `mcmod.info` is a list of mods, or an object with one under `modList`.
+fn mcmod_ids(json: &str) -> Vec<String> {
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(json) else {
+        return Vec::new();
+    };
+    let list = value.get("modList").unwrap_or(&value);
+    list.as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| entry.get("modid")?.as_str().map(str::to_owned))
+        .collect()
 }
 
 type HashCache = HashMap<PathBuf, ((u64, Option<SystemTime>), String)>;
@@ -299,6 +403,38 @@ fn safe_file_name(file_name: &str) -> Result<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_mod_ids_from_forge_metadata() {
+        let toml = r#"
+modLoader="javafml"
+[[mods]]
+modId="jei"
+version="${file.jarVersion}"
+[[dependencies.jei]]
+    modId="minecraft"
+    mandatory=true
+[[mods]]
+    modId = 'jei_addon'
+"#;
+        assert_eq!(toml_mod_ids(toml), ["jei", "jei_addon"]);
+        assert_eq!(
+            mcmod_ids(r#"[{"modid": "optifine"}, {"modid": "extra"}]"#),
+            ["optifine", "extra"]
+        );
+        assert_eq!(
+            mcmod_ids(r#"{"modListVersion": 2, "modList": [{"modid": "ic2"}]}"#),
+            ["ic2"]
+        );
+        assert_eq!(
+            json_id(
+                r#"{"quilt_loader": {"id": "qsl"}}"#,
+                &["quilt_loader", "id"]
+            )
+            .as_deref(),
+            Some("qsl")
+        );
+    }
 
     #[tokio::test]
     async fn lists_and_toggles_mods() {

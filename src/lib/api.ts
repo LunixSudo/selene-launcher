@@ -182,7 +182,7 @@ export interface ProjectRef {
   id: string;
 }
 
-export type Issue = { kind: "requires"; title: string } | { kind: "conflictsWith"; title: string };
+export type Issue = { kind: "requires" | "conflictsWith" | "duplicate"; title: string };
 
 export interface InstalledFile {
   fileName: string;

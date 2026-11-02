@@ -283,3 +283,5 @@ All notable changes to this project are documented here. The format follows
 - A new account that owns the game but has no player yet is asked for a name right after
   signing in, and the account menu can change the player name, with a check that the name is
   free and the date of the next allowed change.
+- The mod list marks two enabled copies of one mod, found by project or by the mod id in
+  the file, so mods added by hand count too.

@@ -280,6 +280,7 @@ export const pl: Messages = {
     changeVersion: "Zmień wersję",
     requires: "Wymaga {title}",
     conflictsWith: "Konflikt z {title}",
+    duplicate: "Ten sam mod co {title}",
     notForVersion: "Nie dla {version}",
     enableAnyway: {
       title: "Włączyć {name}?",
