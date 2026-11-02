@@ -1,6 +1,7 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
   import { api, type World } from "#lib/api.ts";
+  import { coverOf, ICONS } from "#lib/appearance.ts";
   import { describeError } from "#lib/errors.ts";
   import { relativeTime } from "#lib/format.ts";
   import { t } from "#lib/i18n/index.svelte.ts";
@@ -11,6 +12,14 @@
   import Dialog from "./Dialog.svelte";
 
   let { instanceId }: { instanceId: string } = $props();
+
+  const MODE_ICONS: Record<NonNullable<World["gameMode"]>, string> = {
+    survival: "sword",
+    creative: "cube",
+    adventure: "mountain",
+    spectator: "star",
+    hardcore: "heart",
+  };
 
   let worlds = $state<World[] | null>(null);
   let error = $state<string | null>(null);
@@ -111,7 +120,16 @@
         {#if world.icon}
           <img class="row-icon" src={convertFileSrc(world.icon)} alt="">
         {:else}
-          <span class="row-icon" aria-hidden="true"></span>
+          <!-- The game saves a picture once the world has been played and left. -->
+          <span
+            class="row-icon placeholder"
+            style:background={coverOf(world.folder, null)}
+            aria-hidden="true"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d={ICONS[MODE_ICONS[world.gameMode ?? "survival"]]} />
+            </svg>
+          </span>
         {/if}
         <div class="row-info">
           <span class="row-title">{world.name}</span>
@@ -190,6 +208,21 @@
 </Dialog>
 
 <style>
+  .placeholder {
+    display: grid;
+    place-items: center;
+  }
+
+  .placeholder svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   .error {
     margin: 0;
     color: var(--danger);
