@@ -1,9 +1,17 @@
 <script lang="ts">
+  import { goBack } from "#lib/history.ts";
   import { t } from "#lib/i18n/index.svelte.ts";
   import { scrollFade } from "#lib/scroll-fade.ts";
 
   let text = $state<string | null>(null);
   let failed = $state(false);
+
+  // Going back, not forward to the settings, keeps their own Back button from returning here.
+  function back(event: MouseEvent) {
+    if (goBack()) {
+      event.preventDefault();
+    }
+  }
 
   $effect(() => {
     fetch("/third-party-licenses.txt")
@@ -19,7 +27,7 @@
 
 <section class="page">
   <header>
-    <a class="back-link" href="/settings">
+    <a class="back-link" href="/settings" onclick={back}>
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
       {t("settings.title")}
     </a>
