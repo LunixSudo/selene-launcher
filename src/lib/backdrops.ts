@@ -12,6 +12,68 @@ export const SHADER_BACKDROPS: ShaderBackdrop[] = [
 /** The canvas renders at this share of the window size; soft light needs no more. */
 const RENDER_SCALE = 0.5;
 
+/** Slow light looks just as smooth at 30 frames, and every frame also re-blurs the glass. */
+const FRAME_MS = 1000 / 30;
+/** When frames come this late the PC is busy, so the background asks for half as many. */
+const BUSY_FRAME_MS = 50;
+const BUSY_STEP = 2;
+
+/**
+ * Calls `draw` up to 30 times a second, fewer when the PC cannot keep up, and not at all
+ * while the window is in the background, such as while the game is played. Returns a
+ * function that stops it.
+ */
+export function animationLoop(draw: (now: number) => void): () => void {
+  let frame = 0;
+  let last = 0;
+  let late = 0;
+  let step = FRAME_MS;
+  let focused = document.hasFocus();
+
+  const tick = (now: number) => {
+    frame = requestAnimationFrame(tick);
+    const since = now - last;
+    if (since < step - 1) {
+      return;
+    }
+    // A few late frames in a row, not one hiccup, slow it down.
+    late = since > BUSY_FRAME_MS && last > 0 ? late + 1 : 0;
+    if (late > 10) {
+      step = Math.min(step * BUSY_STEP, FRAME_MS * 4);
+      late = 0;
+    }
+    last = now;
+    draw(now);
+  };
+  const start = () => {
+    cancelAnimationFrame(frame);
+    last = 0;
+    frame = requestAnimationFrame(tick);
+  };
+  const onFocus = () => {
+    focused = true;
+    start();
+  };
+  const onBlur = () => {
+    focused = false;
+    cancelAnimationFrame(frame);
+  };
+
+  addEventListener("focus", onFocus);
+  addEventListener("blur", onBlur);
+  if (focused) {
+    start();
+  } else {
+    // One frame, so the background is not blank until the window is focused.
+    frame = requestAnimationFrame(draw);
+  }
+  return () => {
+    cancelAnimationFrame(frame);
+    removeEventListener("focus", onFocus);
+    removeEventListener("blur", onBlur);
+  };
+}
+
 const VERTEX = `
 attribute vec2 position;
 void main() {
@@ -351,16 +413,13 @@ export function startShader(canvas: HTMLCanvasElement, kind: ShaderBackdrop): ((
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   // Each start picks up somewhere else in the animation, so it never opens on the same frame.
   const offset = Math.random() * 300;
-  let frame = 0;
   let drawn = 0;
 
+  // Reading styles every frame is costly; every 30th frame still follows a theme switch.
   const draw = (now: number) => {
-    // Reading styles every frame is costly; once a second still follows a theme switch.
-    renderer.draw(offset + (still ? 0 : now / 1000), still || drawn++ % 60 === 0);
-    if (!still) {
-      frame = requestAnimationFrame(draw);
-    }
+    renderer.draw(offset + (still ? 0 : now / 1000), still || drawn++ % 30 === 0);
   };
+  let frame = 0;
   const resize = () => {
     canvas.width = Math.max(1, Math.round(canvas.clientWidth * RENDER_SCALE));
     canvas.height = Math.max(1, Math.round(canvas.clientHeight * RENDER_SCALE));
@@ -373,12 +432,11 @@ export function startShader(canvas: HTMLCanvasElement, kind: ShaderBackdrop): ((
   resize();
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
-  if (!still) {
-    frame = requestAnimationFrame(draw);
-  }
+  const stop = still ? null : animationLoop(draw);
 
   return () => {
     cancelAnimationFrame(frame);
+    stop?.();
     observer.disconnect();
     renderer.dispose();
   };

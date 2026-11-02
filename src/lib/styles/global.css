@@ -331,6 +331,13 @@ textarea:focus-visible {
   background: var(--background);
 }
 
+/* Nobody watches them meanwhile, and the game gets the GPU to itself. */
+:root[data-window="background"] *,
+:root[data-window="background"] *::before,
+:root[data-window="background"] *::after {
+  animation-play-state: paused !important;
+}
+
 /* Blur costs the GPU even behind an opaque surface, and solid is the style for slower PCs. */
 :root[data-style="solid"] * {
   backdrop-filter: none !important;

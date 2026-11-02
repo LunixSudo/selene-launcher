@@ -43,6 +43,22 @@
     applySettings();
   });
 
+  // Endless animations stop while the window is in the background, so they cost the game
+  // nothing while it is played.
+  $effect(() => {
+    const root = document.documentElement;
+    const update = () => {
+      root.dataset.window = document.hasFocus() ? "active" : "background";
+    };
+    update();
+    addEventListener("focus", update);
+    addEventListener("blur", update);
+    return () => {
+      removeEventListener("focus", update);
+      removeEventListener("blur", update);
+    };
+  });
+
   let sentPresence = "";
   $effect(() => {
     const presence = settings.discordStatus ? discordPresence() : null;

@@ -1,6 +1,11 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { SHADER_BACKDROPS, type ShaderBackdrop, startShader } from "#lib/backdrops.ts";
+  import {
+    animationLoop,
+    SHADER_BACKDROPS,
+    type ShaderBackdrop,
+    startShader,
+  } from "#lib/backdrops.ts";
   import type { Backdrop } from "#lib/state/settings.svelte.ts";
 
   const STAR_COUNT = 170;
@@ -85,8 +90,8 @@
     const draw = (now: number) => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
-      // Reading styles every frame is costly; once a second still follows a theme switch.
-      if (still || drawn++ % 60 === 0) {
+      // Reading styles every frame is costly; every 30th frame still follows a theme switch.
+      if (still || drawn++ % 30 === 0) {
         color = getComputedStyle(canvas).color;
       }
       context.clearRect(0, 0, width, height);
@@ -129,19 +134,15 @@
       }
       shooting = shooting.filter((star) => star.x > -star.length && star.y < height + star.length);
       context.globalAlpha = 1;
-      if (!still) {
-        frame = requestAnimationFrame(draw);
-      }
     };
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
-    if (!still) {
-      frame = requestAnimationFrame(draw);
-    }
+    const stop = still ? null : animationLoop(draw);
 
     return () => {
       cancelAnimationFrame(frame);
+      stop?.();
       observer.disconnect();
     };
   }
