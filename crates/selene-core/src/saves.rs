@@ -249,8 +249,11 @@ fn folder_for(saves: &Path, name: &str, current: &str) -> String {
 
 /// Resolves a world folder, refusing names that would point outside `saves`.
 pub fn world_dir(game_dir: &Path, folder: &str) -> Result<PathBuf> {
-    let valid =
-        !folder.is_empty() && !folder.contains(['/', '\\']) && folder != "." && folder != "..";
+    // A colon would make `join` start over at a Windows drive.
+    let valid = !folder.is_empty()
+        && !folder.contains(['/', '\\', ':'])
+        && folder != "."
+        && folder != "..";
     let dir = saves_dir(game_dir).join(folder);
     if valid && dir.is_dir() {
         Ok(dir)
@@ -373,7 +376,7 @@ pub fn screenshots(game_dir: &Path) -> Result<Vec<Screenshot>> {
 /// Resolves a screenshot by file name, refusing names that would point elsewhere.
 pub fn screenshot_path(game_dir: &Path, name: &str) -> Result<PathBuf> {
     let path = game_dir.join(SCREENSHOTS_DIR).join(name);
-    if name.contains(['/', '\\']) || name.starts_with('.') || !path.is_file() {
+    if name.contains(['/', '\\', ':']) || name.starts_with('.') || !path.is_file() {
         return Err(Error::io(
             path,
             std::io::Error::from(std::io::ErrorKind::NotFound),
