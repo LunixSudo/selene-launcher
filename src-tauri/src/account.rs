@@ -298,6 +298,22 @@ fn active_skin(profile: &Profile) -> Option<String> {
         .map(|skin| skin.url.clone())
 }
 
+/// Takes the sign-in tokens of every saved account out of the credential store. The
+/// uninstaller asks for it when the player deletes everything, since the store outlives it.
+pub fn forget_all(path: &Path) {
+    let Some(list) = std::fs::read(path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<AccountList>(&bytes).ok())
+    else {
+        return;
+    };
+    for account in list.accounts {
+        if let Ok(entry) = credential(&account.id) {
+            let _ = entry.delete_credential();
+        }
+    }
+}
+
 fn credential(id: &str) -> CommandResult<Entry> {
     Ok(Entry::new(KEYRING_SERVICE, id)?)
 }

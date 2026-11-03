@@ -29,11 +29,19 @@ pub(crate) fn portable_data_dir() -> Option<PathBuf> {
 }
 
 const WEBVIEW2_URL: &str = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
+/// What the uninstaller starts the launcher with when the player deletes everything.
+const FORGET_ACCOUNTS_ARG: &str = "--forget-accounts";
 
 /// Starts the launcher.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[expect(clippy::too_many_lines, reason = "most of it is the list of commands")]
 pub fn run() {
+    if std::env::args().nth(1).as_deref() == Some(FORGET_ACCOUNTS_ARG) {
+        if let Some(dir) = portable_data_dir().or_else(installed_data_dir) {
+            account::forget_all(&dir.join("accounts.json"));
+        }
+        return;
+    }
     let app = tauri::Builder::default()
         // A second start, say from a desktop shortcut, hands its request to the open window.
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
@@ -145,6 +153,20 @@ pub fn run() {
         Ok(app) => app.run(keep_alive_while_playing),
         Err(err) => report_startup_error(&err),
     }
+}
+
+/// Where `setup` puts the data without a window to ask: the same folder Tauri names.
+fn installed_data_dir() -> Option<PathBuf> {
+    let base = if cfg!(windows) {
+        std::env::var_os("APPDATA").map(PathBuf::from)
+    } else {
+        std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share"))
+            })
+    };
+    base.map(|dir| dir.join("SeleneLauncher"))
 }
 
 fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {

@@ -250,10 +250,8 @@ fn folder_for(saves: &Path, name: &str, current: &str) -> String {
 /// Resolves a world folder, refusing names that would point outside `saves`.
 pub fn world_dir(game_dir: &Path, folder: &str) -> Result<PathBuf> {
     // A colon would make `join` start over at a Windows drive.
-    let valid = !folder.is_empty()
-        && !folder.contains(['/', '\\', ':'])
-        && folder != "."
-        && folder != "..";
+    let valid =
+        !folder.is_empty() && !folder.contains(['/', '\\', ':']) && folder != "." && folder != "..";
     let dir = saves_dir(game_dir).join(folder);
     if valid && dir.is_dir() {
         Ok(dir)
