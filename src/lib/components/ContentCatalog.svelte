@@ -89,16 +89,21 @@
   );
 
   $effect(() => {
-    void source;
-    void kind;
+    let stale = false;
     chosenCategories = [];
     categories = [];
     api
       .catalogCategories(kind, source)
       .then((tags) => {
-        categories = tags;
+        // Switching back and forth quickly must not end on the other source's list.
+        if (!stale) {
+          categories = tags;
+        }
       })
       .catch(() => {});
+    return () => {
+      stale = true;
+    };
   });
 
   $effect(() => {
@@ -131,17 +136,26 @@
     return "modrinth";
   }
 
+  let installedLoads = 0;
+
   async function loadInstalled(id: string, current: ContentKind, place: string | null) {
+    const load = ++installedLoads;
     installed = new Map();
     if (current === "dataPack" && !place) {
       return;
     }
     try {
-      installed = new Map(
-        Object.entries(await api.installedProjects(id, current, worldFor(current, place))),
-      );
+      const found = await api.installedProjects(id, current, worldFor(current, place));
+      const iris =
+        current === "shaderPack" &&
+        `modrinth:${IRIS.id}` in (await api.installedProjects(id, "mod", null));
+      // An older load that finishes late must not show another tab's projects.
+      if (load !== installedLoads) {
+        return;
+      }
+      installed = new Map(Object.entries(found));
       if (current === "shaderPack") {
-        hasIris = `modrinth:${IRIS.id}` in (await api.installedProjects(id, "mod", null));
+        hasIris = iris;
       }
     } catch {
       // Without it every entry just offers to install.

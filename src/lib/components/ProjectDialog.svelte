@@ -64,22 +64,35 @@
     expanded = null;
     error = null;
     const ref = project;
+    // A project opened right after another must not show the first one's late answers.
+    let stale = false;
     api
       .projectPage(kind, ref)
       .then((loaded) => {
-        page = loaded;
+        if (!stale) {
+          page = loaded;
+        }
       })
       .catch((err) => {
-        error = describeError(err);
+        if (!stale) {
+          error = describeError(err);
+        }
       });
     api
       .projectVersions(instanceId, kind, ref)
       .then((loaded) => {
-        versions = loaded;
+        if (!stale) {
+          versions = loaded;
+        }
       })
       .catch(() => {
-        versions = [];
+        if (!stale) {
+          versions = [];
+        }
       });
+    return () => {
+      stale = true;
+    };
   });
 
   async function toggleChangelog(version: ProjectVersion) {
