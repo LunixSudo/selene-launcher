@@ -14,6 +14,7 @@
   --field: rgb(0 0 0 / 0.04);
   --segment: #ffffff;
   --border: rgb(0 0 0 / 0.08);
+  --glass: blur(24px) saturate(1.4);
   --accent: #6b5bff;
   --accent-text: #ffffff;
   --danger: #c42b1c;
@@ -415,7 +416,7 @@ textarea:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: var(--glass);
 }
 
 .panel-title {
@@ -518,6 +519,11 @@ textarea:focus-visible {
 
 :root[data-scroll-fade="off"] .scroll-fade {
   mask-image: none;
+}
+
+/* The mask hides what lies behind the area from blur inside it, which would then only cost the GPU. */
+:root:not([data-scroll-fade="off"]) .scroll-fade > * {
+  --glass: none;
 }
 
 .sr-only {

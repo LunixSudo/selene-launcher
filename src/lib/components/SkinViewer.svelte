@@ -97,6 +97,24 @@
     };
   });
 
+  // The model is redrawn every frame, so it rests while the game or another app has focus.
+  $effect(() => {
+    const current = viewer;
+    if (!current) {
+      return;
+    }
+    const update = () => {
+      current.renderPaused = !document.hasFocus();
+    };
+    update();
+    addEventListener("focus", update);
+    addEventListener("blur", update);
+    return () => {
+      removeEventListener("focus", update);
+      removeEventListener("blur", update);
+    };
+  });
+
   $effect(() => {
     const module = animations;
     if (!viewer || !module) {
@@ -128,6 +146,8 @@
     const model = variant === "slim" ? "slim" : "default";
     return whenLoaded(skin, (image) => {
       viewer?.loadSkin(image, { model });
+      // A skin dropped from Explorer arrives while the window is still in the background.
+      viewer?.render();
       // Fades in once dressed, instead of flashing the default skin first.
       shown = true;
     });
@@ -143,7 +163,10 @@
       viewer.resetCape();
       return;
     }
-    return whenLoaded(cape, (image) => viewer?.loadCape(image, { backEquipment }));
+    return whenLoaded(cape, (image) => {
+      viewer?.loadCape(image, { backEquipment });
+      viewer?.render();
+    });
   });
 
   function press(event: PointerEvent) {

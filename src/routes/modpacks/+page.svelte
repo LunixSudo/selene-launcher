@@ -346,7 +346,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface);
-    backdrop-filter: blur(24px);
+    backdrop-filter: var(--glass);
   }
 
   img,

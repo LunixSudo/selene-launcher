@@ -113,7 +113,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     background: var(--surface);
-    backdrop-filter: blur(24px) saturate(1.4);
+    backdrop-filter: var(--glass);
     top: 0;
     /* Lifted with top, not a transform: some GPUs then blur a square around the whole shadow. */
     transition:
