@@ -35,6 +35,7 @@ export const ru = {
     playTime: "В игре {time}",
     hours: "{hours} ч {minutes} мин",
     minutes: "{minutes} мин",
+    totalPlayTime: "Всего в игре {time}, больше всего в «{name}»",
     search: "Поиск сборок",
     sorts: {
       lastPlayed: "Недавние",
@@ -293,6 +294,11 @@ export const ru = {
     gameLanguageSystem: "Как в системе",
     dataFolder: "Папка лаунчера",
     dataFolderHint: "Здесь лежат сборки, версии игры и Java.",
+    transfer: "Перенос настроек",
+    transferHint:
+      "Оформление, пресеты и параметры лаунчера одним файлом, например для нового ПК. Аккаунты в него не попадают.",
+    exportSettings: "Сохранить в файл",
+    importSettings: "Загрузить из файла",
     problem: "Сообщить о проблеме",
     problemHint: "Отчёт об ошибке на GitHub. Лог лаунчера поможет быстрее найти причину.",
     openLogs: "Папка с логом",
@@ -644,6 +650,7 @@ export const ru = {
     unsupportedLoader: "Этот загрузчик модов не поддерживается.",
     loaderInstaller: "Не удалось установить загрузчик модов. Подробности на вкладке «Логи».",
     invalidSkin: "Это не скин Minecraft: нужен PNG 64×64 или 64×32.",
+    invalidSettingsFile: "Это не файл настроек Selene Launcher.",
     noLoader: "В этой сборке нет загрузчика модов.",
     noWorld: "В сборке пока нет миров. Создайте мир в игре, и датапак можно будет добавить в него.",
     noCompatibleVersion: "У этого мода нет версии для этой сборки.",

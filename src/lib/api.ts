@@ -289,6 +289,7 @@ export type ErrorKind =
   | "unsupportedLoader"
   | "loaderInstaller"
   | "invalidSkin"
+  | "invalidSettingsFile"
   | "noLoader"
   | "noCompatibleVersion"
   | "alreadyRunning"
@@ -417,6 +418,10 @@ export const api = {
   checkUpdate: () => invoke<LauncherUpdate | null>("check_update"),
   installUpdate: () => invoke<void>("install_update"),
   setConfig: (config: LauncherConfig) => invoke<void>("set_config", { config }),
+  exportSettings: (path: string, ui: unknown) =>
+    invoke<void>("export_settings", { path, interface: ui }),
+  importSettings: (path: string) =>
+    invoke<{ interface: unknown; launcher: LauncherConfig }>("import_settings", { path }),
   skinProfile: () => invoke<SkinProfile>("skin_profile"),
   applySkin: (id: string) => invoke<SkinProfile>("apply_skin", { id }),
   resetSkin: () => invoke<SkinProfile>("reset_skin"),

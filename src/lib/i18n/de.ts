@@ -37,6 +37,7 @@ export const de: Messages = {
     playTime: "{time} gespielt",
     hours: "{hours} Std. {minutes} Min.",
     minutes: "{minutes} Min.",
+    totalPlayTime: "Insgesamt {time} gespielt, am meisten in „{name}“",
     search: "Instanzen durchsuchen",
     sorts: {
       lastPlayed: "Zuletzt gespielt",
@@ -303,6 +304,11 @@ export const de: Messages = {
     gameLanguageSystem: "Wie im System",
     dataFolder: "Launcher-Ordner",
     dataFolderHint: "Hier liegen Instanzen, Spielversionen und Java.",
+    transfer: "Einstellungen übertragen",
+    transferHint:
+      "Aussehen, Vorlagen und Launcher-Optionen in einer Datei, etwa für einen neuen PC. Konten sind nicht enthalten.",
+    exportSettings: "In Datei speichern",
+    importSettings: "Aus Datei laden",
     problem: "Problem melden",
     problemHint:
       "Ein Fehlerbericht auf GitHub. Das Launcher-Log hilft, die Ursache schneller zu finden.",
@@ -671,6 +677,7 @@ export const de: Messages = {
     loaderInstaller:
       "Der Mod-Loader konnte nicht installiert werden. Details stehen im Tab „Protokoll“.",
     invalidSkin: "Kein Minecraft-Skin: Es muss ein PNG mit 64×64 oder 64×32 sein.",
+    invalidSettingsFile: "Das ist keine Einstellungsdatei von Selene Launcher.",
     noLoader: "Diese Instanz hat keinen Mod-Loader.",
     noWorld:
       "Diese Instanz hat noch keine Welten. Erstelle eine im Spiel und füge dann das Datenpaket hinzu.",

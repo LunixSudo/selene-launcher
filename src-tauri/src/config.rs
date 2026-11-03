@@ -38,6 +38,21 @@ impl Default for Config {
     }
 }
 
+impl Config {
+    /// Drops values the launcher would not have saved itself, for settings read from a file.
+    pub fn cleaned(mut self) -> Self {
+        self.game_language = self.game_language.filter(|code| {
+            (2..=16).contains(&code.len())
+                && code
+                    .chars()
+                    .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '_')
+        });
+        self.max_downloads = self.max_downloads.filter(|&count| count > 0);
+        self.speed_limit_kib = self.speed_limit_kib.filter(|&kib| kib > 0);
+        self
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "mode")]
 pub enum GameWindow {

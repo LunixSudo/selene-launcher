@@ -40,6 +40,9 @@ pub enum CommandError {
     #[error("a game is running or installing")]
     GameRunning,
 
+    #[error("not a settings file of this launcher")]
+    InvalidSettingsFile,
+
     #[error("java not found at {}", .0.display())]
     JavaNotFound(std::path::PathBuf),
 
@@ -70,6 +73,7 @@ impl CommandError {
             Self::AlreadyRunning(_) => "alreadyRunning",
             Self::JavaNotFound(_) => "javaNotFound",
             Self::GameRunning => "gameRunning",
+            Self::InvalidSettingsFile => "invalidSettingsFile",
             Self::Cancelled => "cancelled",
             Self::Spawn(_) => "spawn",
             Self::Io(err) | Self::Core(selene_core::Error::Io { source: err, .. }) => io_kind(err),

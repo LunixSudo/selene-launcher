@@ -37,6 +37,7 @@ export const pl: Messages = {
     playTime: "Czas gry: {time}",
     hours: "{hours} godz. {minutes} min",
     minutes: "{minutes} min",
+    totalPlayTime: "Łącznie w grze {time}, najwięcej w „{name}”",
     search: "Szukaj instancji",
     sorts: {
       lastPlayed: "Ostatnie",
@@ -295,6 +296,11 @@ export const pl: Messages = {
     gameLanguageSystem: "Jak w systemie",
     dataFolder: "Folder launchera",
     dataFolderHint: "Tu są instancje, wersje gry i Java.",
+    transfer: "Przenoszenie ustawień",
+    transferHint:
+      "Wygląd, zestawy i opcje launchera w jednym pliku, np. na nowy komputer. Konta nie są w nim zapisywane.",
+    exportSettings: "Zapisz do pliku",
+    importSettings: "Wczytaj z pliku",
     problem: "Zgłoś problem",
     problemHint: "Zgłoszenie błędu na GitHubie. Log launchera pomaga szybciej znaleźć przyczynę.",
     openLogs: "Folder logu",
@@ -654,6 +660,7 @@ export const pl: Messages = {
     unsupportedLoader: "Ten loader modów nie jest obsługiwany.",
     loaderInstaller: "Nie udało się zainstalować loadera modów. Szczegóły są w zakładce Dziennik.",
     invalidSkin: "To nie jest skin Minecrafta: musi to być PNG 64×64 lub 64×32.",
+    invalidSettingsFile: "To nie jest plik ustawień Selene Launcher.",
     noLoader: "Ta instancja nie ma loadera modów.",
     noWorld:
       "Ta instancja nie ma jeszcze światów. Utwórz świat w grze, a potem dodaj do niego paczkę danych.",

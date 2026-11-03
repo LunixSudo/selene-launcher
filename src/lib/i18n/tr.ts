@@ -37,6 +37,7 @@ export const tr: Messages = {
     playTime: "{time} oynandı",
     hours: "{hours} sa {minutes} dk",
     minutes: "{minutes} dk",
+    totalPlayTime: "Toplam {time} oynandı, en çok {name}",
     search: "Profillerde ara",
     sorts: {
       lastPlayed: "Son oynanan",
@@ -296,6 +297,11 @@ export const tr: Messages = {
     gameLanguageSystem: "Sistemle aynı",
     dataFolder: "Başlatıcı klasörü",
     dataFolderHint: "Profiller, oyun sürümleri ve Java burada durur.",
+    transfer: "Ayarları taşı",
+    transferHint:
+      "Görünüm, hazır ayarlar ve başlatıcı seçenekleri tek dosyada, örneğin yeni bir bilgisayar için. Hesaplar dahil edilmez.",
+    exportSettings: "Dosyaya kaydet",
+    importSettings: "Dosyadan yükle",
     problem: "Sorun bildir",
     problemHint:
       "GitHub'da bir hata raporu. Başlatıcı günlüğü nedeni daha hızlı bulmaya yardım eder.",
@@ -660,6 +666,7 @@ export const tr: Messages = {
     unsupportedLoader: "Bu mod yükleyici desteklenmiyor.",
     loaderInstaller: "Mod yükleyici kurulamadı. Ayrıntılar Günlük sekmesinde.",
     invalidSkin: "Bu bir Minecraft skini değil: 64×64 ya da 64×32 bir PNG olmalı.",
+    invalidSettingsFile: "Bu bir Selene Launcher ayar dosyası değil.",
     noLoader: "Bu profilde mod yükleyici yok.",
     noWorld: "Bu profilde henüz dünya yok. Oyunda bir dünya oluştur, sonra veri paketini ona ekle.",
     noCompatibleVersion: "Bu modun bu profil için sürümü yok.",

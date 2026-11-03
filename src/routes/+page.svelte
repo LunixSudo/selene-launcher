@@ -9,6 +9,7 @@
   import InstanceCard from "#lib/components/InstanceCard.svelte";
   import Select from "#lib/components/Select.svelte";
   import ShareDialog from "#lib/components/ShareDialog.svelte";
+  import { playTime } from "#lib/format.ts";
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
   import { scrollFade } from "#lib/scroll-fade.ts";
@@ -103,6 +104,18 @@
     return matches.sort(compare(settings.sort));
   });
 
+  const played = $derived.by(() => {
+    let total = 0;
+    let most: Instance | null = null;
+    for (const instance of library.instances) {
+      total += instance.playSeconds;
+      if (!most || instance.playSeconds > most.playSeconds) {
+        most = instance;
+      }
+    }
+    return most && total >= 60 ? { time: playTime(total), name: most.name } : null;
+  });
+
   const groups = $derived.by(() => {
     const byName = new Map<string | null, Instance[]>();
     for (const instance of visible) {
@@ -163,7 +176,12 @@
 
 <section class="page">
   <header>
-    <h1 class="page-title">{t("instances.title")}</h1>
+    <div class="heading">
+      <h1 class="page-title">{t("instances.title")}</h1>
+      {#if played}
+        <p class="played">{t("instances.totalPlayTime", played)}</p>
+      {/if}
+    </div>
     <div class="actions">
       <a class="create" href="/modpacks">
         <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -275,12 +293,27 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
     padding-top: 8px;
   }
 
   .actions {
     display: flex;
+    flex: none;
     gap: 8px;
+  }
+
+  .heading {
+    min-width: 0;
+  }
+
+  .played {
+    margin: 2px 0 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .status {

@@ -123,6 +123,8 @@ pub fn run() {
             commands::optifine::open_optifine,
             commands::packs::import_pack,
             commands::packs::export_pack,
+            commands::transfer::export_settings,
+            commands::transfer::import_settings,
             commands::update::check_update,
             commands::update::install_update,
             commands::update::can_uninstall,

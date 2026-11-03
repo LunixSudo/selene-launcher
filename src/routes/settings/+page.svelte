@@ -7,6 +7,7 @@
 
 <script lang="ts">
   import { getVersion } from "@tauri-apps/api/app";
+  import { open, save } from "@tauri-apps/plugin-dialog";
   import { openUrl } from "@tauri-apps/plugin-opener";
   import { api, type GameWindow, type LauncherConfig } from "#lib/api.ts";
   import BackdropPicker from "#lib/components/BackdropPicker.svelte";
@@ -25,6 +26,7 @@
     AFTER_LAUNCH,
     BACKDROPS,
     FONTS,
+    replaceSettings,
     STYLES,
     settings,
     THEMES,
@@ -132,6 +134,36 @@
       .setConfig(config)
       .then(() => (saveError = null))
       .catch((err) => (saveError = describeError(err)));
+  }
+
+  const SETTINGS_FILE_FILTER = { name: "Selene Launcher", extensions: ["json"] };
+
+  async function exportSettings() {
+    const path = await save({
+      defaultPath: "selene-launcher-settings.json",
+      filters: [SETTINGS_FILE_FILTER],
+    });
+    if (path) {
+      await api
+        .exportSettings(path, $state.snapshot(settings))
+        .then(() => (saveError = null))
+        .catch((err) => (saveError = describeError(err)));
+    }
+  }
+
+  async function importSettings() {
+    const path = await open({ filters: [SETTINGS_FILE_FILTER] });
+    if (!path) {
+      return;
+    }
+    try {
+      const imported = await api.importSettings(path);
+      replaceSettings(imported.interface);
+      config = imported.launcher;
+      saveError = null;
+    } catch (err) {
+      saveError = describeError(err);
+    }
   }
 
   const themes = $derived(THEMES.map((value) => ({ value, label: t(`settings.themes.${value}`) })));
@@ -450,6 +482,20 @@
           <button type="button" class="button" onclick={() => api.openDataFolder()}>
             {t("instances.openFolder")}
           </button>
+        </div>
+        <div class="row">
+          <div>
+            <h3>{t("settings.transfer")}</h3>
+            <p>{t("settings.transferHint")}</p>
+          </div>
+          <div class="buttons">
+            <button type="button" class="button" onclick={exportSettings}>
+              {t("settings.exportSettings")}
+            </button>
+            <button type="button" class="button" onclick={importSettings}>
+              {t("settings.importSettings")}
+            </button>
+          </div>
         </div>
         <div class="row">
           <div>

@@ -174,8 +174,8 @@ All notable changes to this project are documented here. The format follows
   turns animations off.
 - The game console stays light with thousands of lines.
 - New instances start the game in fullscreen.
-- Automatic memory gives more: 3 GB for vanilla up to 10 GB for big packs, at most 60% of
-  the RAM and always 2 GB left for the system.
+- Automatic memory gives more: 3 GB for vanilla up to 10 GB for big packs, at most half of
+  the RAM (4 GB on an 8 GB PC) and always 2 GB left for the system.
 - Live backgrounds draw at most 30 frames a second, fewer when the PC falls behind, and every
   endless animation stops while the launcher window is in the background.
 - "Prettier" now picks Mica and the northern lights.

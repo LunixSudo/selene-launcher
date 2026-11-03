@@ -37,6 +37,7 @@ export const en: Messages = {
     playTime: "{time} played",
     hours: "{hours} h {minutes} min",
     minutes: "{minutes} min",
+    totalPlayTime: "{time} played in all, most of it in {name}",
     search: "Search instances",
     sorts: {
       lastPlayed: "Recent",
@@ -293,6 +294,11 @@ export const en: Messages = {
     gameLanguageSystem: "Same as the system",
     dataFolder: "Launcher folder",
     dataFolderHint: "Instances, game versions and Java live here.",
+    transfer: "Move settings",
+    transferHint:
+      "Look, presets and launcher options in one file, for a new PC for example. Accounts stay out of it.",
+    exportSettings: "Save to file",
+    importSettings: "Load from file",
     problem: "Report a problem",
     problemHint: "A bug report on GitHub. The launcher log helps find the cause sooner.",
     openLogs: "Log folder",
@@ -650,6 +656,7 @@ export const en: Messages = {
     unsupportedLoader: "This mod loader is not supported.",
     loaderInstaller: "Could not install the mod loader. The Logs tab has the details.",
     invalidSkin: "Not a Minecraft skin: it has to be a 64×64 or 64×32 PNG.",
+    invalidSettingsFile: "This is not a Selene Launcher settings file.",
     noLoader: "This instance has no mod loader.",
     noWorld:
       "This instance has no worlds yet. Create one in the game, then add the data pack to it.",

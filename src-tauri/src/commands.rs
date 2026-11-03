@@ -11,6 +11,7 @@ pub mod saves;
 pub mod shortcut;
 pub mod skins;
 pub mod support;
+pub mod transfer;
 pub mod update;
 
 use std::collections::HashMap;

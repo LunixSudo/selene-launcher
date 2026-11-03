@@ -37,6 +37,7 @@ export const ptBR: Messages = {
     playTime: "{time} jogadas",
     hours: "{hours} h {minutes} min",
     minutes: "{minutes} min",
+    totalPlayTime: "{time} jogadas no total, a maior parte em {name}",
     search: "Buscar instâncias",
     sorts: {
       lastPlayed: "Recentes",
@@ -298,6 +299,11 @@ export const ptBR: Messages = {
     gameLanguageSystem: "Igual ao sistema",
     dataFolder: "Pasta do launcher",
     dataFolderHint: "Aqui ficam as instâncias, as versões do jogo e o Java.",
+    transfer: "Transferir configurações",
+    transferHint:
+      "Visual, predefinições e opções do launcher em um arquivo, por exemplo para um PC novo. As contas ficam de fora.",
+    exportSettings: "Salvar em arquivo",
+    importSettings: "Carregar de arquivo",
     problem: "Relatar um problema",
     problemHint:
       "Um relatório de erro no GitHub. O log do launcher ajuda a achar a causa mais rápido.",
@@ -659,6 +665,7 @@ export const ptBR: Messages = {
     loaderInstaller:
       "Não foi possível instalar o carregador de mods. Os detalhes estão na aba Registro.",
     invalidSkin: "Não é uma skin de Minecraft: precisa ser um PNG de 64×64 ou 64×32.",
+    invalidSettingsFile: "Este não é um arquivo de configurações do Selene Launcher.",
     noLoader: "Esta instância não tem carregador de mods.",
     noWorld:
       "Esta instância ainda não tem mundos. Crie um no jogo e depois adicione o pacote de dados a ele.",

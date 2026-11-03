@@ -114,12 +114,22 @@ export const BEAUTIFUL: Partial<Look> = {
 export const settings = $state<Settings>(load());
 
 function load(): Settings {
-  let saved: Partial<Settings> = {};
   try {
-    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    return checked(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}"));
   } catch {
-    // Start from the defaults.
+    return checked({});
   }
+}
+
+/** Takes settings saved elsewhere, such as in a settings file, keeping only valid values. */
+export function replaceSettings(saved: unknown) {
+  Object.assign(settings, checked(saved));
+}
+
+/** Every value checked against what it may be, with the default in place of anything else. */
+function checked(value: unknown): Settings {
+  const saved: Partial<Settings> =
+    typeof value === "object" && value !== null ? (value as Partial<Settings>) : {};
   const oneOf = <T>(value: unknown, allowed: readonly T[], fallback: T): T =>
     allowed.includes(value as T) ? (value as T) : fallback;
   const checkLook = (look: Partial<Look>): Look => ({

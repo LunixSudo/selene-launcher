@@ -37,6 +37,7 @@ export const uk: Messages = {
     playTime: "У грі {time}",
     hours: "{hours} год {minutes} хв",
     minutes: "{minutes} хв",
+    totalPlayTime: "Усього в грі {time}, найбільше в «{name}»",
     search: "Пошук збірок",
     sorts: {
       lastPlayed: "Нещодавні",
@@ -292,6 +293,11 @@ export const uk: Messages = {
     gameLanguageSystem: "Як у системі",
     dataFolder: "Папка лаунчера",
     dataFolderHint: "Тут лежать збірки, версії гри та Java.",
+    transfer: "Перенесення налаштувань",
+    transferHint:
+      "Оформлення, пресети й параметри лаунчера одним файлом, наприклад для нового ПК. Акаунти до нього не потрапляють.",
+    exportSettings: "Зберегти у файл",
+    importSettings: "Завантажити з файлу",
     problem: "Повідомити про проблему",
     problemHint: "Звіт про помилку на GitHub. Лог лаунчера допоможе швидше знайти причину.",
     openLogs: "Тека з логом",
@@ -649,6 +655,7 @@ export const uk: Messages = {
     unsupportedLoader: "Цей завантажувач модів не підтримується.",
     loaderInstaller: "Не вдалося встановити завантажувач модів. Подробиці — на вкладці «Журнал».",
     invalidSkin: "Це не скін Minecraft: потрібен PNG 64×64 або 64×32.",
+    invalidSettingsFile: "Це не файл налаштувань Selene Launcher.",
     noLoader: "У цієї збірки немає завантажувача модів.",
     noWorld: "У цій збірці ще немає світів. Створіть світ у грі, а потім додайте до нього датапак.",
     noCompatibleVersion: "У цього мода немає версії для цієї збірки.",
