@@ -54,16 +54,19 @@ pub fn set_in_game(in_game: bool) {
 }
 
 /// Downloads that idle work makes way for: any instance's game or add-ons.
-static FOREGROUND: AtomicUsize = AtomicUsize::new(0);
-static FOREGROUND_DONE: Notify = Notify::const_new();
+static BUSY: Activity = Activity::new();
+/// Downloads the player started and is waiting on, like a modpack, an add-on or a start.
+/// Instances getting ready in the background make way for them.
+static ASKED: Activity = Activity::new();
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Priority {
     /// Work nobody asked for, like fetching Java ahead of time. Pauses between files while
     /// anything else downloads.
     Idle,
-    /// An instance getting ready in the background. Never waits for another instance, but
-    /// takes few connections while a game runs.
+    /// An instance getting ready in the background. Never waits for another instance doing the
+    /// same, pauses between files while the player waits on a download, and takes few
+    /// connections while a game runs.
     Alongside,
 }
 
@@ -85,29 +88,41 @@ fn priority() -> Option<Priority> {
     PRIORITY.try_with(|priority| *priority).ok()
 }
 
-async fn wait_for_foreground() {
-    loop {
-        let done = FOREGROUND_DONE.notified();
-        if FOREGROUND.load(Ordering::Acquire) == 0 {
-            return;
+struct Activity {
+    running: AtomicUsize,
+    done: Notify,
+}
+
+impl Activity {
+    const fn new() -> Self {
+        Self {
+            running: AtomicUsize::new(0),
+            done: Notify::const_new(),
         }
-        done.await;
+    }
+
+    fn start(&'static self) -> ActivityGuard {
+        self.running.fetch_add(1, Ordering::AcqRel);
+        ActivityGuard(self)
+    }
+
+    async fn wait_until_done(&self) {
+        loop {
+            let done = self.done.notified();
+            if self.running.load(Ordering::Acquire) == 0 {
+                return;
+            }
+            done.await;
+        }
     }
 }
 
-struct Foreground;
+struct ActivityGuard(&'static Activity);
 
-impl Foreground {
-    fn start() -> Self {
-        FOREGROUND.fetch_add(1, Ordering::AcqRel);
-        Self
-    }
-}
-
-impl Drop for Foreground {
+impl Drop for ActivityGuard {
     fn drop(&mut self) {
-        if FOREGROUND.fetch_sub(1, Ordering::AcqRel) == 1 {
-            FOREGROUND_DONE.notify_waiters();
+        if self.0.running.fetch_sub(1, Ordering::AcqRel) == 1 {
+            self.0.done.notify_waiters();
         }
     }
 }
@@ -193,8 +208,8 @@ where
     let bytes_total = downloads.iter().map(|download| download.size).sum();
     let files_total = downloads.len();
     let priority = priority();
-    let background = priority == Some(Priority::Idle);
-    let _foreground = (!background).then(Foreground::start);
+    let _busy = (priority != Some(Priority::Idle)).then(|| BUSY.start());
+    let _asked = priority.is_none().then(|| ASKED.start());
 
     // Files already in place are counted first, so a resumed download starts from where the
     // last one stopped instead of creeping back up between the files it still has to fetch.
@@ -225,8 +240,10 @@ where
 
     stream::iter(missing)
         .map(|(download, _)| async move {
-            if background {
-                wait_for_foreground().await;
+            match priority {
+                Some(Priority::Idle) => BUSY.wait_until_done().await,
+                Some(Priority::Alongside) => ASKED.wait_until_done().await,
+                None => {}
             }
             fetch_with_retry(client, &download).await?;
             let done = bytes_done.fetch_add(download.size, Ordering::Relaxed) + download.size;
