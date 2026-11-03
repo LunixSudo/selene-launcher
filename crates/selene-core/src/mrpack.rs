@@ -208,18 +208,23 @@ pub async fn remove_dropped(game_dir: &Path, old: &[String], new: &[String]) -> 
     Ok(())
 }
 
-/// Keeps add-ons the player switched off switched off after the pack puts them back.
-pub async fn keep_switched_off(game_dir: &Path, addons: &[String]) -> Result<()> {
-    for path in addons {
+/// Keeps add-ons the player switched off switched off after the pack puts them back. Only an
+/// add-on the old version already had can have been switched off by the player: a switched-off
+/// copy of one the pack brings for the first time is a leftover, and the pack's file wins.
+pub async fn keep_switched_off(game_dir: &Path, old: &[String], new: &[String]) -> Result<()> {
+    for path in new {
         let Ok(relative) = safe_relative_path(path) else {
             continue;
         };
         let file = game_dir.join(relative);
-        if fs::try_exists(disabled(&file)).await.unwrap_or(false) {
-            fs::remove_file(&file)
-                .await
-                .map_err(|err| Error::io(&file, err))?;
+        let off = disabled(&file);
+        if !fs::try_exists(&off).await.unwrap_or(false) {
+            continue;
         }
+        let stale = if old.contains(path) { file } else { off };
+        fs::remove_file(&stale)
+            .await
+            .map_err(|err| Error::io(&stale, err))?;
     }
     Ok(())
 }
@@ -497,6 +502,28 @@ mod tests {
             .dependencies
             .insert("liteloader".into(), "1.12.2".into());
         assert!(matches!(index.loader(), Err(Error::UnsupportedLoader(_))));
+    }
+
+    #[tokio::test]
+    async fn switches_on_add_ons_new_to_the_pack() {
+        let dir = tempfile::tempdir().unwrap();
+        let mods = dir.path().join("mods");
+        std::fs::create_dir_all(&mods).unwrap();
+        for name in [
+            "kept.jar",
+            "kept.jar.disabled",
+            "new.jar",
+            "new.jar.disabled",
+        ] {
+            std::fs::write(mods.join(name), name).unwrap();
+        }
+        let old = ["mods/kept.jar".to_owned()];
+        let new = ["mods/kept.jar".to_owned(), "mods/new.jar".to_owned()];
+        keep_switched_off(dir.path(), &old, &new).await.unwrap();
+        assert!(!mods.join("kept.jar").exists());
+        assert!(mods.join("kept.jar.disabled").exists());
+        assert!(mods.join("new.jar").exists());
+        assert!(!mods.join("new.jar.disabled").exists());
     }
 
     #[tokio::test]

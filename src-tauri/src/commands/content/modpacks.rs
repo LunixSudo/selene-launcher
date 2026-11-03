@@ -353,7 +353,7 @@ pub async fn update_modpack(
             .await;
         remove_pack_file(&path).await;
         let (addons, manual) = installed?;
-        mrpack::keep_switched_off(&game_dir, &addons).await?;
+        mrpack::keep_switched_off(&game_dir, &origin.addons, &addons).await?;
         mrpack::remove_dropped(&game_dir, &origin.addons, &addons).await?;
         read.game_version()?.clone_into(&mut instance.version);
         instance.loader = read.loader()?;
