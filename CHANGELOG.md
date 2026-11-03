@@ -209,6 +209,24 @@ All notable changes to this project are documented here. The format follows
 - After a pack update the player's own mods move along only when the game version or loader
   changed, and the update says so when they could not be moved.
 - A double click on "Install OptiFine" opens one window.
+- "Install OptiFine" no longer blinks when the mods list reloads, and hides once the newest
+  build for the game version is in the mods folder.
+- The Play button no longer shows 0% while the game starts after a finished download, and
+  progress labels stay on one line.
+- A second click on a mod's three-dots button closes its menu.
+- Short words at the end of hints no longer drop onto a line of their own.
+- The custom game window width and height fields no longer overlap.
+- Hovering an instance card no longer darkens the card next to it.
+- The selected instance tab is light in the dark theme instead of nearly black.
+- Mods built for several loaders no longer ask for Fabric API on Forge and NeoForge.
+- A failed mod update no longer deletes a file of the same name that was there before.
+- Modpacks that name an old Forge build without its game version suffix, like
+  11.15.1.2318 for 1.8.9, install instead of failing with a missing installer.
+- Forge and NeoForge fetch the libraries of other projects, like ASM, from Maven Central
+  when the loader's own Maven is slow or unreachable.
+- A Modrinth pack with a file the format does not let the launcher download installs the
+  rest and lists that file to get by hand, instead of failing; CurseForge's file hosts are
+  allowed too.
 - Picking ZGC or another collector by hand no longer stops the game from starting next to
   the built-in G1 arguments.
 - The third-party licenses page shows the list instead of saying it is missing, and Back

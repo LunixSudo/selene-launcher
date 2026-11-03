@@ -85,9 +85,13 @@ impl Pack {
     ) -> CommandResult<(Vec<String>, Vec<ManualDownload>)> {
         match self {
             Self::Modrinth(index) => {
-                let addons =
+                let (addons, skipped) =
                     mrpack::install(&launcher.client, path, index, game_dir, on_progress).await?;
-                Ok((addons, Vec::new()))
+                let manual = skipped
+                    .iter()
+                    .map(|path| ManualDownload::unlinked(path))
+                    .collect();
+                Ok((addons, manual))
             }
             Self::Curseforge(manifest) => {
                 let curseforge = launcher

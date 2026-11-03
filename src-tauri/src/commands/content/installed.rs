@@ -122,13 +122,16 @@ pub(super) async fn list_installed(
         .collect();
     let curseforge_files = curseforge_projects(launcher, &game_dir, kind, &unknown).await;
 
+    let loader = instance.loader.as_ref().map(|loader| loader.loader);
     let satisfied = |project_id: &str| {
+        let fabric_api = project_id == FABRIC_API || project_id == QUILTED_FABRIC_API;
         installed_ids.contains(project_id)
+            // Mods built for several loaders list Fabric API for their Fabric side only.
+            || (fabric_api && matches!(loader, Some(Loader::Forge | Loader::NeoForge)))
             || (project_id == FABRIC_API
-                && instance.loader.as_ref().map(|loader| loader.loader) == Some(Loader::Quilt)
+                && loader == Some(Loader::Quilt)
                 && installed_ids.contains(QUILTED_FABRIC_API))
     };
-    let loader = instance.loader.as_ref().map(|loader| loader.loader);
     let target = Target::new(kind, &instance.version, loader);
     let fits = |version: &Version| {
         (kind != ContentKind::Mod || loader.is_some()) && target.accepts(version)

@@ -42,8 +42,9 @@
 
 :root[data-motion="on"] .card:hover {
   top: -6px;
+  /* Pulled in at the sides, so it does not fall over the neighbouring card. */
   box-shadow:
-    0 22px 50px rgb(0 0 0 / 0.26),
+    0 22px 32px -16px rgb(0 0 0 / 0.34),
     0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 

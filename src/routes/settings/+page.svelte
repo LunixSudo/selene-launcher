@@ -651,6 +651,12 @@
     width: 120px;
   }
 
+  /* A number field is wider than its label by default and would run into the next one. */
+  .size input {
+    width: 100%;
+    min-width: 0;
+  }
+
   .times {
     padding-bottom: 8px;
     color: var(--text-muted);

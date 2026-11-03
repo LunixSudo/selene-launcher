@@ -242,7 +242,9 @@
 
   .actions {
     display: flex;
+    flex: none;
     gap: 8px;
+    white-space: nowrap;
   }
 
   .share {
@@ -338,7 +340,7 @@
   }
 
   .tabs button[aria-selected="true"] {
-    background: var(--surface-solid);
+    background: var(--segment);
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
     font-weight: 600;
   }

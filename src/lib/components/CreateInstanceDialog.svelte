@@ -295,7 +295,7 @@
   }
 
   .segmented label:has(input:checked) {
-    background: var(--surface-solid);
+    background: var(--segment);
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
     font-weight: 600;
   }

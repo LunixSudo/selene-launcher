@@ -110,6 +110,8 @@ export const ru = {
     updating: "Обновление…",
     source: "Источник",
     openPage: "На сайте",
+    manualPackDownload:
+      "Эти файлы сборки нельзя скачать автоматически. Скачайте их вручную и положите в папку сборки по указанному пути:",
     manualDownload:
       "Автор разрешает скачивать только с сайта CurseForge. Скачайте вручную и положите в папку mods:",
     add: "Добавить",
@@ -121,11 +123,11 @@ export const ru = {
   },
   launch: {
     importing: "Импорт сборки…",
-    importingCount: "Импорт сборки {done} из {total}",
+    importingCount: "Импорт {done}/{total}",
     installing: "Установка дополнений…",
-    installingCount: "Установка дополнений {done} из {total}",
+    installingCount: "Установка {done}/{total}",
     updating: "Обновление дополнений…",
-    updatingCount: "Обновление дополнений {done} из {total}",
+    updatingCount: "Обновление {done}/{total}",
     mods: "Обновление модов…",
     files: "Загрузка игры {percent}%",
     java: "Загрузка Java {percent}%",

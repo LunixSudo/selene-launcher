@@ -115,6 +115,8 @@ export const es: Messages = {
     updating: "Actualizando…",
     source: "Origen",
     openPage: "Sitio web",
+    manualPackDownload:
+      "Estos archivos del paquete no se pueden descargar automáticamente. Descárgalos tú y colócalos en la carpeta de la instancia, en la ruta indicada:",
     manualDownload:
       "El autor solo permite descargarlo desde la web de CurseForge. Descárgalo y ponlo en la carpeta mods:",
     add: "Añadir",
@@ -126,11 +128,11 @@ export const es: Messages = {
   },
   launch: {
     importing: "Importando…",
-    importingCount: "Importando {done} de {total}",
+    importingCount: "Importando {done}/{total}",
     installing: "Instalando complementos…",
-    installingCount: "Instalando complementos {done} de {total}",
+    installingCount: "Instalando {done}/{total}",
     updating: "Actualizando complementos…",
-    updatingCount: "Actualizando complementos {done} de {total}",
+    updatingCount: "Actualizando {done}/{total}",
     mods: "Actualizando mods…",
     files: "Descargando el juego {percent} %",
     java: "Descargando Java {percent} %",

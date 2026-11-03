@@ -6,6 +6,24 @@
     danger?: boolean;
     disabled?: boolean;
   }
+
+  const TOGGLE_WINDOW_MS = 500;
+
+  let closedBy: { target: Node; at: number } | null = null;
+
+  /**
+   * Whether the menu was just closed by pressing `trigger`. The press closes the menu before the
+   * click arrives, so the trigger checks this to close it instead of opening it again.
+   */
+  export function closedJustNowBy(trigger: Element): boolean {
+    const last = closedBy;
+    closedBy = null;
+    return (
+      last !== null &&
+      performance.now() - last.at < TOGGLE_WINDOW_MS &&
+      trigger.contains(last.target)
+    );
+  }
 </script>
 
 <script lang="ts">
@@ -33,9 +51,12 @@
     menu.querySelector("button")?.focus();
 
     const close = (event: Event) => {
-      if (!(event.target instanceof Node && menu?.contains(event.target))) {
-        position = null;
+      if (event.target instanceof Node && menu?.contains(event.target)) {
+        return;
       }
+      closedBy =
+        event.target instanceof Node ? { target: event.target, at: performance.now() } : null;
+      position = null;
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {

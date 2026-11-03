@@ -141,9 +141,12 @@ export function activity(id: string): { label: string; percent: number } | null 
   }
   const launch = library.launches[id];
   if (launch?.status === "preparing") {
-    const label = launch.stage
-      ? t(`launch.${launch.stage}`, { percent: launch.percent })
-      : t("launch.starting");
+    // A stage that has not moved yet is usually checking files already in place, so a bare
+    // 0% would look stuck.
+    const label =
+      launch.stage && launch.percent > 0
+        ? t(`launch.${launch.stage}`, { percent: launch.percent })
+        : t(launch.stage === "mods" ? "launch.mods" : "launch.starting");
     return { label, percent: launch.percent };
   }
   return null;

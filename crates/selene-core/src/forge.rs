@@ -311,6 +311,49 @@ fn has_installer(game_version: &str) -> bool {
     }
 }
 
+/// Some old Forge builds carry the game version at the end too, like `11.15.1.2318-1.8.9`,
+/// which modpacks leave out. The full name is looked up, since the installer is filed under it.
+async fn with_branch(client: &Client, loader: &LoaderVersion, game_version: &str) -> LoaderVersion {
+    let suffix = format!("-{game_version}");
+    if loader.loader != Loader::Forge || loader.version.ends_with(&suffix) {
+        return loader.clone();
+    }
+    let full = format!("{game_version}-{}{suffix}", loader.version);
+    let listed = http::get_json::<HashMap<String, Vec<String>>>(client, FORGE_METADATA_URL)
+        .await
+        .ok()
+        .and_then(|mut metadata| metadata.remove(game_version))
+        .is_some_and(|builds| builds.contains(&full));
+    if listed {
+        LoaderVersion {
+            loader: Loader::Forge,
+            version: format!("{}{suffix}", loader.version),
+        }
+    } else {
+        loader.clone()
+    }
+}
+
+/// Libraries of other projects, like ASM, are on Maven Central as well, which is often
+/// reachable when the loader's own Maven is not.
+fn on_central(url: &str) -> Option<String> {
+    const LOADER_GROUPS: [&str; 5] = [
+        "net/neoforged/",
+        "net/minecraftforge/",
+        "net/minecraft/",
+        "cpw/",
+        "de/oceanlabs/",
+    ];
+    let path = [
+        "https://maven.neoforged.net/releases/",
+        "https://maven.minecraftforge.net/",
+    ]
+    .iter()
+    .find_map(|maven| url.strip_prefix(maven))?;
+    (!LOADER_GROUPS.iter().any(|group| path.starts_with(group)))
+        .then(|| format!("https://repo1.maven.org/maven2/{path}"))
+}
+
 fn installer_url(loader: &LoaderVersion, game_version: &str) -> String {
     let version = &loader.version;
     match loader.loader {
@@ -353,6 +396,17 @@ where
     if let Some(installed) = read_installed(dirs, &id).await {
         return Ok(installed.into());
     }
+    let branched = LoaderVersion {
+        loader: loader.loader,
+        version: format!("{}-{game_version}", loader.version),
+    };
+    if loader.loader == Loader::Forge
+        && let Some(installed) = read_installed(dirs, &version_id(&branched, game_version)).await
+    {
+        return Ok(installed.into());
+    }
+    let loader = &with_branch(client, loader, game_version).await;
+    let id = version_id(loader, game_version);
     let _guard = INSTALLING.lock().await;
     if let Some(installed) = read_installed(dirs, &id).await {
         return Ok(installed.into());
@@ -405,6 +459,16 @@ where
     // installer still tries itself, and its error is the one that tells what went wrong.
     let env = Environment::current(Features::default());
     let libraries = version::library_downloads(&profile.libraries, &env, &dirs.libraries());
+    let central: Vec<Download> = libraries
+        .iter()
+        .filter_map(|library| {
+            Some(Download {
+                url: on_central(&library.url)?,
+                ..library.clone()
+            })
+        })
+        .collect();
+    let _ = download::download_all(client, central, 8, |_| {}).await;
     if let Err(err) = download::download_all(client, libraries, 8, |_| {}).await {
         log::warn!("prefetching {id} libraries failed, the installer will try: {err}");
     }
@@ -806,5 +870,22 @@ mod tests {
             "https://maven.neoforged.net/releases/net/neoforged/forge/1.20.1-47.1.106/forge-1.20.1-47.1.106-installer.jar"
         );
         assert_eq!(version_id(&old_neoforge, "1.20.1"), "1.20.1-forge-47.1.106");
+    }
+
+    #[test]
+    fn sends_other_projects_to_central() {
+        assert_eq!(
+            on_central("https://maven.neoforged.net/releases/org/ow2/asm/asm/9.8/asm-9.8.jar")
+                .as_deref(),
+            Some("https://repo1.maven.org/maven2/org/ow2/asm/asm/9.8/asm-9.8.jar")
+        );
+        assert_eq!(
+            on_central("https://maven.neoforged.net/releases/net/neoforged/fancymodloader/a.jar"),
+            None
+        );
+        assert_eq!(
+            on_central("https://libraries.minecraft.net/org/ow2/asm/a.jar"),
+            None
+        );
     }
 }

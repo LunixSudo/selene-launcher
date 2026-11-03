@@ -12,10 +12,9 @@
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
   import { notify } from "#lib/notify.ts";
-  import { hasOptifineBuild } from "#lib/optifine.ts";
   import { library } from "#lib/state/instances.svelte.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
-  import ContextMenu, { type MenuItem } from "./ContextMenu.svelte";
+  import ContextMenu, { closedJustNowBy, type MenuItem } from "./ContextMenu.svelte";
   import ProjectDialog from "./ProjectDialog.svelte";
 
   let {
@@ -125,17 +124,37 @@
   }
 
   const instance = $derived(library.instances.find((entry) => entry.id === instanceId));
-  let optifineBuild = $state(false);
+  let optifineOffered = $state(false);
   let clashing = $state(false);
+  let optifineFor: string | null = null;
 
+  const optifineTarget = $derived(
+    kind === "mod" && instance?.loader?.loader === "forge"
+      ? `${instanceId}|${instance.version}`
+      : null,
+  );
+  const modNames = $derived((files ?? []).map((file) => file.fileName).join("|"));
+
+  // Asked again whenever the mods change, but only hidden at once for another instance or
+  // version, so the button does not blink each time the list reloads.
   $effect(() => {
-    const version = instance?.version;
-    optifineBuild = false;
-    if (version && instance?.loader?.loader === "forge") {
-      void hasOptifineBuild(version).then((found) => {
-        optifineBuild = found && instance?.version === version;
-      });
+    const target = optifineTarget;
+    void modNames;
+    if (target !== optifineFor) {
+      optifineFor = target;
+      optifineOffered = false;
     }
+    if (!target) {
+      return;
+    }
+    void api
+      .optifineOffered(instanceId)
+      .catch(() => false)
+      .then((offered) => {
+        if (optifineFor === target) {
+          optifineOffered = offered;
+        }
+      });
   });
 
   function installOptifine() {
@@ -225,7 +244,11 @@
   }
 
   function openMenu(file: InstalledFile, event: MouseEvent) {
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const trigger = event.currentTarget as HTMLElement;
+    if (closedJustNowBy(trigger)) {
+      return;
+    }
+    const rect = trigger.getBoundingClientRect();
     menuFile = file;
     menuAt = { x: rect.left, y: rect.bottom + 4 };
   }
@@ -259,7 +282,7 @@
 </script>
 
 <div class="toolbar">
-  {#if kind === "mod" && optifineBuild}
+  {#if optifineTarget && (optifineOffered || optifineStatus)}
     <button type="button" class="pill-button" onclick={installOptifine}>
       {optifineStatus ?? t("content.optifine")}
     </button>

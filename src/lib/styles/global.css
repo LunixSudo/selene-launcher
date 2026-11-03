@@ -12,6 +12,7 @@
   --surface-solid-hover: #e8e8ef;
   --background: #eeeef3;
   --field: rgb(0 0 0 / 0.04);
+  --segment: #ffffff;
   --border: rgb(0 0 0 / 0.08);
   --accent: #6b5bff;
   --accent-text: #ffffff;
@@ -36,6 +37,7 @@
     --surface-solid-hover: #383843;
     --background: #1b1b21;
     --field: rgb(255 255 255 / 0.06);
+    --segment: rgb(255 255 255 / 0.16);
     --border: rgb(255 255 255 / 0.08);
     color-scheme: dark;
   }
@@ -50,6 +52,7 @@
   --surface-solid-hover: #383843;
   --background: #1b1b21;
   --field: rgb(255 255 255 / 0.06);
+  --segment: rgb(255 255 255 / 0.16);
   --border: rgb(255 255 255 / 0.08);
   color-scheme: dark;
 }
@@ -126,6 +129,7 @@ body {
   font-size: 14px;
   font-weight: var(--body-weight);
   -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
   user-select: none;
 }
 

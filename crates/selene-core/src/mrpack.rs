@@ -27,6 +27,9 @@ const ALLOWED_HOSTS: &[&str] = &[
     "github.com",
     "raw.githubusercontent.com",
     "gitlab.com",
+    // CurseForge's own file hosts, which packs converted from CurseForge often link.
+    "edge.forgecdn.net",
+    "mediafilez.forgecdn.net",
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -123,39 +126,34 @@ pub fn read_index(pack: &Path) -> Result<PackIndex> {
 }
 
 /// Downloads the pack's files and unpacks its overrides into `game_dir`. Returns the add-ons
-/// it put there, see [`addon_path`].
+/// it put there, see [`addon_path`], and the files it could not fetch because none of their
+/// links point to a host the format allows; those are left for the player to get.
 pub async fn install(
     client: &Client,
     pack: &Path,
     index: &PackIndex,
     game_dir: &Path,
     on_progress: impl Fn(Progress) + Sync,
-) -> Result<Vec<String>> {
-    let downloads = index
-        .files
-        .iter()
-        .filter(|file| {
-            file.env
-                .as_ref()
-                .is_none_or(|env| env.client != "unsupported")
-        })
-        .map(|file| {
-            // The format allows only these hosts, so a pack cannot send the launcher anywhere.
-            let url = file
-                .downloads
-                .iter()
-                .find(|url| is_allowed_host(url))
-                .ok_or_else(|| {
-                    Error::InvalidPack(format!("{} has no allowed download", file.path))
-                })?;
-            Ok(Download {
-                url: url.clone(),
-                path: game_dir.join(safe_relative_path(&file.path)?),
-                sha1: file.hashes.sha1.clone(),
-                size: file.file_size,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
+) -> Result<(Vec<String>, Vec<String>)> {
+    let mut downloads = Vec::new();
+    let mut skipped = Vec::new();
+    for file in index.files.iter().filter(|file| {
+        file.env
+            .as_ref()
+            .is_none_or(|env| env.client != "unsupported")
+    }) {
+        // Only these hosts, so a pack cannot send the launcher anywhere.
+        let Some(url) = file.downloads.iter().find(|url| is_allowed_host(url)) else {
+            skipped.push(file.path.clone());
+            continue;
+        };
+        downloads.push(Download {
+            url: url.clone(),
+            path: game_dir.join(safe_relative_path(&file.path)?),
+            sha1: file.hashes.sha1.clone(),
+            size: file.file_size,
+        });
+    }
     let mut addons: Vec<String> = downloads
         .iter()
         .filter_map(|download| addon_path(download.path.strip_prefix(game_dir).ok()?))
@@ -172,7 +170,7 @@ pub async fn install(
     addons.extend(unpacked.iter().filter_map(|path| addon_path(path)));
     addons.sort();
     addons.dedup();
-    Ok(addons)
+    Ok((addons, skipped))
 }
 
 /// A file in one of the add-on folders, as `mods/name.jar`. Configs and the like are not
@@ -462,9 +460,8 @@ mod tests {
     #[test]
     fn only_allowed_hosts_are_linked() {
         assert!(is_allowed_host("https://cdn.modrinth.com/data/a/b.jar"));
-        assert!(!is_allowed_host(
-            "https://edge.forgecdn.net/files/1/2/a.jar"
-        ));
+        assert!(is_allowed_host("https://edge.forgecdn.net/files/1/2/a.jar"));
+        assert!(!is_allowed_host("https://example.com/a.jar"));
         assert!(!is_allowed_host("http://cdn.modrinth.com/data/a/b.jar"));
     }
 

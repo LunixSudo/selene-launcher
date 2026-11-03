@@ -114,6 +114,8 @@ export const pl: Messages = {
     updating: "Aktualizowanie…",
     source: "Źródło",
     openPage: "Strona",
+    manualPackDownload:
+      "Tych plików paczki nie da się pobrać automatycznie. Pobierz je samodzielnie i umieść w folderze instancji pod podaną ścieżką:",
     manualDownload:
       "Autor pozwala pobierać tylko ze strony CurseForge. Pobierz plik i umieść go w folderze mods:",
     add: "Dodaj",
@@ -125,11 +127,11 @@ export const pl: Messages = {
   },
   launch: {
     importing: "Importowanie…",
-    importingCount: "Importowanie {done} z {total}",
+    importingCount: "Importowanie {done}/{total}",
     installing: "Instalowanie dodatków…",
-    installingCount: "Instalowanie dodatków {done} z {total}",
+    installingCount: "Instalowanie {done}/{total}",
     updating: "Aktualizowanie dodatków…",
-    updatingCount: "Aktualizowanie dodatków {done} z {total}",
+    updatingCount: "Aktualizowanie {done}/{total}",
     mods: "Aktualizowanie modów…",
     files: "Pobieranie gry {percent}%",
     java: "Pobieranie Javy {percent}%",

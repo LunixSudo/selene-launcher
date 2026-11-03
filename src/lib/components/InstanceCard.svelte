@@ -123,7 +123,7 @@
 
   .card:hover {
     top: -2px;
-    box-shadow: 0 10px 24px rgb(0 0 0 / 0.16);
+    box-shadow: 0 10px 20px -8px rgb(0 0 0 / 0.2);
   }
 
   .cover {
@@ -275,6 +275,13 @@
   .play span,
   .play svg {
     position: relative;
+  }
+
+  .play span {
+    overflow: hidden;
+    min-width: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .play svg {

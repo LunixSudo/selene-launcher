@@ -116,6 +116,8 @@ export const de: Messages = {
     updating: "Wird aktualisiert…",
     source: "Quelle",
     openPage: "Website",
+    manualPackDownload:
+      "Diese Dateien des Pakets lassen sich nicht automatisch laden. Lade sie selbst herunter und lege sie unter dem angegebenen Pfad in den Instanzordner:",
     manualDownload:
       "Der Autor erlaubt Downloads nur über die CurseForge-Website. Lade die Datei herunter und lege sie in den Ordner mods:",
     add: "Hinzufügen",
@@ -127,11 +129,11 @@ export const de: Messages = {
   },
   launch: {
     importing: "Wird importiert…",
-    importingCount: "Wird importiert: {done} von {total}",
+    importingCount: "Import {done}/{total}",
     installing: "Erweiterungen werden installiert…",
-    installingCount: "Erweiterungen werden installiert: {done} von {total}",
+    installingCount: "Installation {done}/{total}",
     updating: "Erweiterungen werden aktualisiert…",
-    updatingCount: "Erweiterungen werden aktualisiert: {done} von {total}",
+    updatingCount: "Aktualisierung {done}/{total}",
     mods: "Mods werden aktualisiert…",
     files: "Spiel wird geladen {percent} %",
     java: "Java wird geladen {percent} %",

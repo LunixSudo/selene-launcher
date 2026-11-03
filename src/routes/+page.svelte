@@ -189,7 +189,7 @@
 
   {#if library.importManual.length > 0}
     <div class="notice" role="alert">
-      <p>{t("instance.manualDownload")}</p>
+      <p>{t("instance.manualPackDownload")}</p>
       {#each library.importManual as download (download.url)}
         <button type="button" class="link" onclick={() => openUrl(download.url)}>
           {download.title}

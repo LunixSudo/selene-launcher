@@ -175,6 +175,20 @@ pub struct ManualDownload {
     url: String,
 }
 
+impl ManualDownload {
+    /// A pack file with no link the launcher may follow, found by searching Modrinth for it.
+    pub(crate) fn unlinked(path: &str) -> Self {
+        let name = path.rsplit('/').next().unwrap_or(path);
+        let query = name.split_once(".jar").map_or(name, |(stem, _)| stem);
+        let url = tauri::Url::parse_with_params("https://modrinth.com/mods", [("q", query)])
+            .map_or_else(|_| "https://modrinth.com/mods".to_owned(), String::from);
+        Self {
+            title: path.to_owned(),
+            url,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentUpdate {

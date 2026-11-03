@@ -115,6 +115,8 @@ export const tr: Messages = {
     updating: "Güncelleniyor…",
     source: "Kaynak",
     openPage: "Web sitesi",
+    manualPackDownload:
+      "Paketin bu dosyaları otomatik olarak indirilemiyor. Kendiniz indirip gösterilen yolda örnek klasörüne koyun:",
     manualDownload:
       "Yazar yalnızca CurseForge sitesinden indirmeye izin veriyor. Dosyayı indirip mods klasörüne koy:",
     add: "Ekle",
@@ -128,9 +130,9 @@ export const tr: Messages = {
     importing: "İçe aktarılıyor…",
     importingCount: "İçe aktarılıyor {done}/{total}",
     installing: "Eklentiler kuruluyor…",
-    installingCount: "Eklentiler kuruluyor {done}/{total}",
+    installingCount: "Kuruluyor {done}/{total}",
     updating: "Eklentiler güncelleniyor…",
-    updatingCount: "Eklentiler güncelleniyor {done}/{total}",
+    updatingCount: "Güncelleniyor {done}/{total}",
     mods: "Modlar güncelleniyor…",
     files: "Oyun indiriliyor %{percent}",
     java: "Java indiriliyor %{percent}",

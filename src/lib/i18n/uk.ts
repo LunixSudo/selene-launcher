@@ -113,6 +113,8 @@ export const uk: Messages = {
     updating: "Оновлення…",
     source: "Джерело",
     openPage: "Сайт",
+    manualPackDownload:
+      "Ці файли збірки не можна завантажити автоматично. Завантажте їх вручну й покладіть у папку збірки за вказаним шляхом:",
     manualDownload:
       "Автор дозволяє завантажувати лише із сайту CurseForge. Завантажте файл і покладіть його в папку mods:",
     add: "Додати",
@@ -124,11 +126,11 @@ export const uk: Messages = {
   },
   launch: {
     importing: "Імпорт…",
-    importingCount: "Імпорт {done} з {total}",
+    importingCount: "Імпорт {done}/{total}",
     installing: "Встановлення доповнень…",
-    installingCount: "Встановлення доповнень {done} з {total}",
+    installingCount: "Встановлення {done}/{total}",
     updating: "Оновлення доповнень…",
-    updatingCount: "Оновлення доповнень {done} з {total}",
+    updatingCount: "Оновлення {done}/{total}",
     mods: "Оновлення модів…",
     files: "Завантаження гри {percent}%",
     java: "Завантаження Java {percent}%",

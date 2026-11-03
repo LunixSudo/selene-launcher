@@ -115,6 +115,8 @@ export const ptBR: Messages = {
     updating: "Atualizando…",
     source: "Origem",
     openPage: "Site",
+    manualPackDownload:
+      "Estes arquivos do pacote não podem ser baixados automaticamente. Baixe-os você mesmo e coloque-os na pasta da instância, no caminho indicado:",
     manualDownload:
       "O autor só permite downloads pelo site do CurseForge. Baixe o arquivo e coloque-o na pasta mods:",
     add: "Adicionar",
@@ -126,11 +128,11 @@ export const ptBR: Messages = {
   },
   launch: {
     importing: "Importando…",
-    importingCount: "Importando {done} de {total}",
+    importingCount: "Importando {done}/{total}",
     installing: "Instalando complementos…",
-    installingCount: "Instalando complementos {done} de {total}",
+    installingCount: "Instalando {done}/{total}",
     updating: "Atualizando complementos…",
-    updatingCount: "Atualizando complementos {done} de {total}",
+    updatingCount: "Atualizando {done}/{total}",
     mods: "Atualizando mods…",
     files: "Baixando o jogo {percent}%",
     java: "Baixando o Java {percent}%",

@@ -113,6 +113,8 @@ export const en: Messages = {
     updating: "Updating…",
     source: "Source",
     openPage: "Website",
+    manualPackDownload:
+      "These pack files cannot be downloaded automatically. Download them yourself and put them in the instance folder at the path shown:",
     manualDownload:
       "The author only allows downloads from the CurseForge website. Download it and put it in the mods folder:",
     add: "Add",
@@ -124,11 +126,11 @@ export const en: Messages = {
   },
   launch: {
     importing: "Importing…",
-    importingCount: "Importing {done} of {total}",
+    importingCount: "Importing {done}/{total}",
     installing: "Installing add-ons…",
-    installingCount: "Installing add-ons {done} of {total}",
+    installingCount: "Installing {done}/{total}",
     updating: "Updating add-ons…",
-    updatingCount: "Updating add-ons {done} of {total}",
+    updatingCount: "Updating {done}/{total}",
     mods: "Updating mods…",
     files: "Downloading game {percent}%",
     java: "Downloading Java {percent}%",

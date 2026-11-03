@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, OnceLock, PoisonError};
 use std::time::SystemTime;
@@ -339,9 +339,20 @@ pub async fn replace_all(
     on_progress: impl Fn(Progress) + Sync,
 ) -> Result<()> {
     let updates: Vec<RemoteFile> = swaps.iter().map(|(_, update)| update.clone()).collect();
+    let dir = kind.dir(game_dir);
+    let mut existing = HashSet::new();
+    for update in &updates {
+        if fs::try_exists(dir.join(&update.file_name))
+            .await
+            .unwrap_or(false)
+        {
+            existing.insert(update.file_name.clone());
+        }
+    }
     if let Err(err) = install(client, game_dir, kind, &updates, on_progress).await {
+        // Only what this download brought goes; a file already there may be another add-on's.
         for (old, update) in swaps {
-            if !same_file(old, update) {
+            if !same_file(old, update) && !existing.contains(&update.file_name) {
                 let _ = remove(game_dir, kind, &update.file_name).await;
             }
         }

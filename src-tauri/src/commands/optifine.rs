@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use selene_core::download::{self, Download};
+use selene_core::loader::Loader;
+use selene_core::mods::DISABLED_SUFFIX;
 use tauri::webview::DownloadEvent;
 use tauri::{AppHandle, Emitter, Manager, State, Url, WebviewUrl, WebviewWindowBuilder};
 
@@ -22,10 +24,43 @@ static PAGE: tokio::sync::Mutex<Option<(Instant, String)>> = tokio::sync::Mutex:
 /// One window at a time: a double click must not try to open a second one with the same name.
 static OPENING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
-/// Game versions with an `OptiFine` build, as listed on its downloads page.
+/// Whether to offer `OptiFine` for the instance: a Forge instance whose game version has a
+/// build that is not in its mods folder yet.
 #[tauri::command]
-pub async fn optifine_versions(launcher: State<'_, Launcher>) -> CommandResult<Vec<String>> {
-    Ok(listed_versions(&downloads_page(&launcher).await?))
+pub async fn optifine_offered(
+    launcher: State<'_, Launcher>,
+    instance_id: String,
+) -> CommandResult<bool> {
+    let instance = launcher
+        .instances
+        .get(&instance_id)
+        .await
+        .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
+    if instance.loader.as_ref().map(|loader| loader.loader) != Some(Loader::Forge) {
+        return Ok(false);
+    }
+    let Some(newest) = newest_build(&downloads_page(&launcher).await?, &instance.version) else {
+        return Ok(false);
+    };
+    let mods = launcher.instances.game_dir(&instance_id).join("mods");
+    let mut entries = match tokio::fs::read_dir(&mods).await {
+        Ok(entries) => entries,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(true),
+        Err(err) => return Err(err.into()),
+    };
+    let wanted = newest.trim_start_matches("preview_");
+    while let Some(entry) = entries.next_entry().await? {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        let name = name.trim_end_matches(DISABLED_SUFFIX);
+        if name
+            .trim_start_matches("preview_")
+            .eq_ignore_ascii_case(wanted)
+        {
+            return Ok(false);
+        }
+    }
+    Ok(true)
 }
 
 async fn downloads_page(launcher: &Launcher) -> CommandResult<String> {
@@ -65,14 +100,6 @@ fn newest_build(page: &str, version: &str) -> Option<String> {
         .find(|file| !file.starts_with("preview_"))
         .or_else(|| files.first())
         .map(|file| (*file).to_owned())
-}
-
-fn listed_versions(page: &str) -> Vec<String> {
-    page.split("<h2>Minecraft ")
-        .skip(1)
-        .filter_map(|rest| rest.split_once("</h2>"))
-        .map(|(version, _)| version.trim().to_owned())
-        .collect()
 }
 
 #[tauri::command]
@@ -240,12 +267,6 @@ mod tests {
         assert!(!is_site("notoptifine.net"));
         assert!(!is_site("optifine.net.example.com"));
         assert!(!is_site("adfoc.us"));
-    }
-
-    #[test]
-    fn reads_listed_versions() {
-        let page = "<h2>Minecraft 26.1.2</h2><p>x</p>\n<h2>Minecraft 1.8.9</h2><h2>Other</h2>";
-        assert_eq!(listed_versions(page), ["26.1.2", "1.8.9"]);
     }
 
     #[test]
