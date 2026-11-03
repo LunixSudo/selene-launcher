@@ -127,7 +127,7 @@ pub fn run() {
             commands::support::log_ui_error,
             commands::support::open_logs_folder,
             commands::support::report_problem,
-            commands::optifine::optifine_offered,
+            commands::optifine::optifine_state,
             commands::optifine::open_optifine,
             commands::packs::import_pack,
             commands::packs::export_pack,

@@ -6,6 +6,7 @@
     type ContentKind,
     type ContentUpdate,
     type InstalledFile,
+    type OptifineState,
     type ProjectRef,
   } from "#lib/api.ts";
   import { describeError } from "#lib/errors.ts";
@@ -74,26 +75,24 @@
       void load();
     }
   });
-  let optifineStatus = $state<string | null>(null);
+  let optifineFailed = $state(false);
 
   let optifineTimer: ReturnType<typeof setTimeout> | undefined;
 
-  /** Shows the result on the button itself for a few seconds, where the eye already is. */
-  function showOptifineResult(text: string) {
-    clearTimeout(optifineTimer);
-    optifineStatus = text;
-    optifineTimer = setTimeout(() => (optifineStatus = null), RESULT_SHOWN_MS);
-  }
-
   const unlistenOptifine = listen<string>("optifine-installed", (event) => {
     if (event.payload === instanceId) {
-      showOptifineResult(t("content.optifineAdded"));
+      clearTimeout(optifineTimer);
+      optifineFailed = false;
+      optifine = "installed";
       void load();
     }
   });
+  /** Shown on the button itself for a few seconds, where the eye already is. */
   const unlistenOptifineFailed = listen<string>("optifine-failed", (event) => {
     if (event.payload === instanceId) {
-      showOptifineResult(t("content.optifineFailed"));
+      clearTimeout(optifineTimer);
+      optifineFailed = true;
+      optifineTimer = setTimeout(() => (optifineFailed = false), RESULT_SHOWN_MS);
     }
   });
 
@@ -141,7 +140,7 @@
   }
 
   const instance = $derived(library.instances.find((entry) => entry.id === instanceId));
-  let optifineOffered = $state(false);
+  let optifine = $state<OptifineState>("unavailable");
   let clashing = $state(false);
   let optifineFor: string | null = null;
 
@@ -159,17 +158,17 @@
     void modNames;
     if (target !== optifineFor) {
       optifineFor = target;
-      optifineOffered = false;
+      optifine = "unavailable";
     }
     if (!target) {
       return;
     }
     void api
-      .optifineOffered(instanceId)
-      .catch(() => false)
-      .then((offered) => {
+      .optifineState(instanceId)
+      .catch((): OptifineState => "unavailable")
+      .then((state) => {
         if (optifineFor === target) {
-          optifineOffered = offered;
+          optifine = state;
         }
       });
   });
@@ -299,9 +298,11 @@
 </script>
 
 <div class="toolbar">
-  {#if optifineTarget && (optifineOffered || optifineStatus)}
+  {#if optifineTarget && optifine === "installed"}
+    <span class="muted">{t("content.optifineAdded")}</span>
+  {:else if optifineTarget && optifine === "available"}
     <button type="button" class="pill-button" onclick={installOptifine}>
-      {optifineStatus ?? t("content.optifine")}
+      {optifineFailed ? t("content.optifineFailed") : t("content.optifine")}
     </button>
   {/if}
   {#if missing.length > 0}

@@ -10,6 +10,8 @@ export interface VersionSummary {
 
 export type Loader = "fabric" | "quilt" | "forge" | "neoforge";
 
+export type OptifineState = "available" | "installed" | "unavailable";
+
 export interface LoaderVersion {
   loader: Loader;
   version: string;
@@ -510,7 +512,7 @@ export const api = {
   watchContent: (instanceId: string, kind: ContentKind, world: string | null) =>
     invoke<void>("watch_content", { instanceId, kind, world }),
   unwatchContent: () => invoke<void>("unwatch_content"),
-  optifineOffered: (instanceId: string) => invoke<boolean>("optifine_offered", { instanceId }),
+  optifineState: (instanceId: string) => invoke<OptifineState>("optifine_state", { instanceId }),
   openOptifine: (instanceId: string) => invoke<void>("open_optifine", { instanceId }),
   removeContent: (instanceId: string, kind: ContentKind, world: string | null, fileName: string) =>
     invoke<void>("remove_content", { instanceId, kind, world, fileName }),

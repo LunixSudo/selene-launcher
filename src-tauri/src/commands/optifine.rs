@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use selene_core::download::{self, Download};
 use selene_core::loader::Loader;
 use selene_core::mods::DISABLED_SUFFIX;
+use serde::Serialize;
 use tauri::webview::{DownloadEvent, PageLoadEvent};
 use tauri::{AppHandle, Emitter, Manager, State, Url, WebviewUrl, WebviewWindowBuilder};
 
@@ -26,43 +27,49 @@ static PAGE: tokio::sync::Mutex<Option<(Instant, String)>> = tokio::sync::Mutex:
 /// One window at a time: a double click must not try to open a second one with the same name.
 static OPENING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
-/// Whether to offer `OptiFine` for the instance: a Forge instance whose game version has a
-/// build that is not in its mods folder yet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OptifineState {
+    /// A Forge instance whose game version has a build.
+    Available,
+    /// Some `OptiFine` jar is in the mods folder already, switched on or off.
+    Installed,
+    Unavailable,
+}
+
 #[tauri::command]
-pub async fn optifine_offered(
+pub async fn optifine_state(
     launcher: State<'_, Launcher>,
     instance_id: String,
-) -> CommandResult<bool> {
+) -> CommandResult<OptifineState> {
     let instance = launcher
         .instances
         .get(&instance_id)
         .await
         .ok_or_else(|| CommandError::UnknownInstance(instance_id.clone()))?;
     if instance.loader.as_ref().map(|loader| loader.loader) != Some(Loader::Forge) {
-        return Ok(false);
+        return Ok(OptifineState::Unavailable);
     }
-    let Some(newest) = newest_build(&downloads_page(&launcher).await?, &instance.version) else {
-        return Ok(false);
-    };
     let mods = launcher.instances.game_dir(&instance_id).join("mods");
-    let mut entries = match tokio::fs::read_dir(&mods).await {
-        Ok(entries) => entries,
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(true),
-        Err(err) => return Err(err.into()),
-    };
-    let wanted = newest.trim_start_matches("preview_");
-    while let Some(entry) = entries.next_entry().await? {
-        let name = entry.file_name();
-        let name = name.to_string_lossy();
-        let name = name.trim_end_matches(DISABLED_SUFFIX);
-        if name
-            .trim_start_matches("preview_")
-            .eq_ignore_ascii_case(wanted)
-        {
-            return Ok(false);
+    match tokio::fs::read_dir(&mods).await {
+        Ok(mut entries) => {
+            while let Some(entry) = entries.next_entry().await? {
+                let name = entry.file_name();
+                let name = name.to_string_lossy();
+                if is_optifine_jar(name.trim_end_matches(DISABLED_SUFFIX)) {
+                    return Ok(OptifineState::Installed);
+                }
+            }
         }
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+        Err(err) => return Err(err.into()),
     }
-    Ok(true)
+    let page = downloads_page(&launcher).await?;
+    Ok(if newest_build(&page, &instance.version).is_some() {
+        OptifineState::Available
+    } else {
+        OptifineState::Unavailable
+    })
 }
 
 async fn downloads_page(launcher: &Launcher) -> CommandResult<String> {
