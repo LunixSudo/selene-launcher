@@ -131,29 +131,41 @@ pub async fn list(game_dir: &Path, kind: ContentKind) -> Result<Vec<ModFile>> {
         }
     }
 
-    let mut mods: Vec<ModFile> = stream::iter(found)
+    let listed: Vec<Option<ModFile>> = stream::iter(found)
         .map(|(path, file_name, enabled)| async move {
-            let metadata = fs::metadata(&path)
-                .await
-                .map_err(|err| Error::io(&path, err))?;
-            let sha1 = cached_sha1(&path, &metadata).await?;
+            let read = async {
+                let metadata = fs::metadata(&path)
+                    .await
+                    .map_err(|err| Error::io(&path, err))?;
+                let sha1 = cached_sha1(&path, &metadata).await?;
+                Ok::<_, Error>((metadata, sha1))
+            };
+            let (metadata, sha1) = match read.await {
+                Ok(read) => read,
+                // Renamed or removed while the folder was read, as during an update.
+                Err(Error::Io { source, .. }) if source.kind() == std::io::ErrorKind::NotFound => {
+                    return Ok(None);
+                }
+                Err(err) => return Err(err),
+            };
             let mod_ids = if kind == ContentKind::Mod {
                 cached_mod_ids(&path, &sha1).await
             } else {
                 Vec::new()
             };
-            Ok::<_, Error>(ModFile {
+            Ok(Some(ModFile {
                 sha1,
                 file_name,
                 enabled,
                 size: metadata.len(),
                 mod_ids,
                 modified: metadata.modified().ok(),
-            })
+            }))
         })
         .buffer_unordered(HASH_CONCURRENCY)
         .try_collect()
         .await?;
+    let mut mods: Vec<ModFile> = listed.into_iter().flatten().collect();
     mods.sort_by(|a, b| a.file_name.cmp(&b.file_name));
     Ok(mods)
 }
@@ -358,11 +370,23 @@ pub async fn replace_all(
         }
         return Err(err);
     }
+    let new_names: HashSet<&str> = updates
+        .iter()
+        .map(|update| update.file_name.as_str())
+        .collect();
     for (old, update) in swaps {
-        if !same_file(old, update) {
-            remove(game_dir, kind, &old.file_name).await?;
+        // Another swap may have just put a file under this name.
+        if !same_file(old, update) && !new_names.contains(old.file_name.as_str()) {
+            match remove(game_dir, kind, &old.file_name).await {
+                Err(Error::Io { source, .. }) if source.kind() == std::io::ErrorKind::NotFound => {}
+                result => result?,
+            }
         }
-        if !old.enabled {
+        // Two copies of one mod update to the same file, which stays on if either was on.
+        let switched_on = swaps
+            .iter()
+            .any(|(other, next)| other.enabled && next.file_name == update.file_name);
+        if !switched_on {
             set_enabled(game_dir, kind, &update.file_name, false).await?;
         }
     }

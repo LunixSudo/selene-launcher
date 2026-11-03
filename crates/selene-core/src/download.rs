@@ -9,14 +9,14 @@ use reqwest::header::CONTENT_TYPE;
 use reqwest::{Client, StatusCode};
 use sha1::{Digest, Sha1};
 use tokio::fs::{self, File};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 use tokio::sync::Notify;
 
 use crate::{Error, Result, http};
 
 const MAX_ATTEMPTS: u32 = 3;
 const RETRY_DELAY: Duration = Duration::from_secs(1);
-const READ_BUFFER_SIZE: usize = 64 * 1024;
+const HASH_BUFFER_SIZE: usize = 256 * 1024;
 /// Checking files only reads the disk, so more of them can go at once than downloads.
 const HASH_CONCURRENCY: usize = 16;
 
@@ -275,23 +275,29 @@ pub async fn is_valid(path: &Path, expected_sha1: &str) -> bool {
     }
 }
 
+/// Hashes on a blocking thread with plain reads: through async file reads every chunk would
+/// be its own trip to the blocking pool, which makes checking a big folder much slower.
 pub async fn sha1_file(path: &Path) -> Result<String> {
-    let mut file = File::open(path).await.map_err(|err| Error::io(path, err))?;
-    let mut hasher = Sha1::new();
-    let mut buffer = vec![0; READ_BUFFER_SIZE];
+    let owned = path.to_owned();
+    tokio::task::spawn_blocking(move || {
+        use std::io::Read;
 
-    loop {
-        let read = file
-            .read(&mut buffer)
-            .await
-            .map_err(|err| Error::io(path, err))?;
-        if read == 0 {
-            break;
+        let mut file = std::fs::File::open(&owned).map_err(|err| Error::io(&owned, err))?;
+        let mut hasher = Sha1::new();
+        let mut buffer = vec![0; HASH_BUFFER_SIZE];
+        loop {
+            let read = file
+                .read(&mut buffer)
+                .map_err(|err| Error::io(&owned, err))?;
+            if read == 0 {
+                break;
+            }
+            hasher.update(&buffer[..read]);
         }
-        hasher.update(&buffer[..read]);
-    }
-
-    Ok(hex(&hasher.finalize()))
+        Ok(hex(&hasher.finalize()))
+    })
+    .await
+    .map_err(|err| Error::io(path, std::io::Error::other(err)))?
 }
 
 pub fn sha1_bytes(bytes: &[u8]) -> String {
@@ -445,6 +451,7 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    use tokio::io::AsyncReadExt;
     use tokio::net::TcpListener;
 
     use super::*;

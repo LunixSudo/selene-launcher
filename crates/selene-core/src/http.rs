@@ -238,9 +238,10 @@ pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> 
 const HEDGE_AFTER: Duration = Duration::from_millis(1500);
 
 /// Sends to the sources in order, asking the next one as well whenever the ones asked so far
-/// stay silent for [`HEDGE_AFTER`] or fail. The first good answer wins and the requests still
-/// out are dropped. Fails with the last answer if no source gives a good one; `sources`
-/// must not be empty.
+/// stay silent for [`HEDGE_AFTER`] or fail. A source that failed lately is only asked once
+/// the others have failed, not just for being slow. The first good answer wins and the
+/// requests still out are dropped. Fails with the last answer if no source gives a good one;
+/// `sources` must not be empty.
 async fn race<T, F, Fut>(sources: Vec<(String, T)>, send: F) -> reqwest::Result<Response>
 where
     F: Fn(T) -> Fut,
@@ -250,7 +251,7 @@ where
         let request = send(item);
         async move { (url, request.await) }
     };
-    let mut waiting = sources.into_iter();
+    let mut waiting = sources.into_iter().peekable();
     let mut asked = FuturesUnordered::new();
     let mut last = None;
     loop {
@@ -280,7 +281,7 @@ where
                 }
                 last = Some(response);
             }
-            () = tokio::time::sleep(HEDGE_AFTER), if waiting.len() > 0 => {
+            () = tokio::time::sleep(HEDGE_AFTER), if waiting.peek().is_some_and(|(url, _)| !is_down(url)) => {
                 if let Some(source) = waiting.next() {
                     asked.push(ask(source));
                 }
