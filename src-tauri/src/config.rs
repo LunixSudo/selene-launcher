@@ -89,10 +89,12 @@ impl ConfigFile {
         self.lock().clone()
     }
 
+    /// The lock stays held while the file is written, so two quick changes land in order.
     pub fn set(&self, config: Config) -> selene_core::Result<()> {
+        let mut current = self.lock();
         selene_core::fs::write_atomic_blocking(&self.path, &serde_json::to_vec_pretty(&config)?)?;
         apply(&config);
-        *self.lock() = config;
+        *current = config;
         Ok(())
     }
 
