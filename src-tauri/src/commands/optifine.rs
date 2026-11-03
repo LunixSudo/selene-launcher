@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use selene_core::download::{self, Download};
 use selene_core::loader::Loader;
 use selene_core::mods::DISABLED_SUFFIX;
-use tauri::webview::DownloadEvent;
+use tauri::webview::{DownloadEvent, PageLoadEvent};
 use tauri::{AppHandle, Emitter, Manager, State, Url, WebviewUrl, WebviewWindowBuilder};
 
 use crate::error::{CommandError, CommandResult};
@@ -118,6 +118,8 @@ pub async fn open_optifine(
     let label = format!("optifine-{instance_id}");
     let _opening = OPENING.lock().await;
     if let Some(window) = app.get_webview_window(&label) {
+        // A site that never finished loading still gets its window on the second press.
+        let _ = window.show();
         let _ = window.set_focus();
         return Ok(());
     }
@@ -134,6 +136,14 @@ pub async fn open_optifine(
         .inner_size(1040.0, 760.0)
         .min_inner_size(640.0, 480.0)
         .initialization_script(page_script(&instance.version))
+        // Shown once the page is there, instead of opening as a blank white window first.
+        .visible(false)
+        .on_page_load(|window, payload| {
+            if payload.event() == PageLoadEvent::Finished {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        })
         .on_navigation(|url| url.host_str().is_some_and(is_site))
         .on_download(move |webview, event| {
             // The webview's own download leaves half-written files behind when the site

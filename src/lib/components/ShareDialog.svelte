@@ -1,6 +1,7 @@
 <script lang="ts">
   import { save } from "@tauri-apps/plugin-dialog";
   import { api, type Instance, type PackFormat } from "#lib/api.ts";
+  import { openModal } from "#lib/dialog.ts";
   import { describeError } from "#lib/errors.ts";
   import { type MessageKey, t } from "#lib/i18n/index.svelte.ts";
   import Segmented from "./Segmented.svelte";
@@ -28,7 +29,7 @@
     if (open) {
       status = "idle";
       error = null;
-      dialog.showModal();
+      openModal(dialog);
     } else {
       dialog.close();
     }

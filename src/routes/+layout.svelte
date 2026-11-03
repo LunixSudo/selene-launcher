@@ -6,6 +6,7 @@
   import "@fontsource-variable/unbounded";
   import "#lib/styles/global.css";
   import "#lib/styles/motion.css";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import type { Snippet } from "svelte";
   import { api } from "#lib/api.ts";
   import { coverOf } from "#lib/appearance.ts";
@@ -41,6 +42,16 @@
 
   $effect(() => {
     applySettings();
+  });
+
+  // The window starts hidden and shows once the first frame with the settings applied is
+  // drawn, instead of opening empty and filling in.
+  $effect(() => {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        void getCurrentWindow().show();
+      }),
+    );
   });
 
   // Endless animations stop while the window is in the background, so they cost the game

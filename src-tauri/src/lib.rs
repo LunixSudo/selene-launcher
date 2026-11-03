@@ -182,7 +182,23 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     app.manage(Launcher::new(&data_dir, launch_arg(&args))?);
     app.manage(watch::FolderWatch::default());
+    show_if_still_hidden(app.handle());
     Ok(())
+}
+
+/// The page shows the window once it has drawn; this covers a page that never loads, so the
+/// launcher does not run without a window.
+fn show_if_still_hidden(app: &AppHandle) {
+    const WAIT: std::time::Duration = std::time::Duration::from_secs(5);
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(WAIT);
+        if let Some(window) = app.get_webview_window(MAIN_WINDOW)
+            && !window.is_visible().unwrap_or(true)
+        {
+            let _ = window.show();
+        }
+    });
 }
 
 /// A log of what the launcher did, kept small, for when a download or a start goes wrong.
@@ -257,5 +273,6 @@ pub(crate) fn show_main_window(app: &AppHandle) {
     if let Some(config) = config {
         let _ =
             WebviewWindowBuilder::from_config(app, config).and_then(WebviewWindowBuilder::build);
+        show_if_still_hidden(app);
     }
 }

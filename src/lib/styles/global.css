@@ -528,3 +528,8 @@ textarea:focus-visible {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+dialog.opening,
+dialog.opening::backdrop {
+  opacity: 0;
+}

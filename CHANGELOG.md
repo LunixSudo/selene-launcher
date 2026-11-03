@@ -216,6 +216,11 @@ All notable changes to this project are documented here. The format follows
 - A second click on a mod's three-dots button closes its menu.
 - Short words at the end of hints no longer drop onto a line of their own.
 - A download the launcher starts on its own says "Preparing…" instead of "Starting…".
+- The launcher window stays hidden until its first frame is drawn, instead of opening empty
+  and filling in, and the OptiFine window waits for the site to load instead of showing
+  blank first.
+- Dialogs and their dimmed backdrop fade in together and rise slightly instead of scaling,
+  so the backdrop no longer flashes before the dialog appears.
 - The add-ons list waits for an update to finish before it reloads, instead of jumping with
   every file, and rows added later no longer play the entrance animation.
 - The fade at the edges of scrolling areas grows with the scroll instead of switching on at
