@@ -432,6 +432,10 @@ const ROOMY_JVM_ARGS: &[&str] = &[
     "-XX:G1MixedGCLiveThresholdPercent=90",
 ];
 
+/// Java 19 and newer can keep the classes a game loaded in a file and map them in on the next
+/// start instead of loading each one again. The file is redone whenever the game's files change.
+const CLASS_ARCHIVE_MIN_JAVA: u32 = 19;
+
 const ROOMY_MEMORY_MB: u32 = 6144;
 const ROOMY_CORES: usize = 4;
 
@@ -444,9 +448,33 @@ pub fn tuned_jvm_args(max_memory_mb: u32, cores: usize) -> Vec<String> {
     args.into_iter().map(str::to_owned).collect()
 }
 
+/// Arguments that keep the loaded classes in `archive`, for the Java versions that can.
+pub fn class_archive_args(java_major: u32, archive: &Path) -> Vec<String> {
+    if java_major < CLASS_ARCHIVE_MIN_JAVA {
+        return Vec::new();
+    }
+    vec![
+        "-XX:+AutoCreateSharedArchive".to_owned(),
+        format!("-XX:SharedArchiveFile={}", archive.display()),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn archives_classes_from_java_19() {
+        let archive = Path::new("classes.jsa");
+        assert_eq!(class_archive_args(17, archive), Vec::<String>::new());
+        assert_eq!(
+            class_archive_args(21, archive),
+            [
+                "-XX:+AutoCreateSharedArchive",
+                "-XX:SharedArchiveFile=classes.jsa"
+            ]
+        );
+    }
 
     #[test]
     fn leaves_g1_out_for_another_collector() {

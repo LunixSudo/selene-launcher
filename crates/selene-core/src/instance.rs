@@ -9,6 +9,7 @@ use crate::{Error, Result};
 
 const CONFIG_FILE: &str = "instance.json";
 const GAME_DIR: &str = "minecraft";
+const CLASS_ARCHIVE_FILE: &str = "classes.jsa";
 
 /// A separate game folder with its own version, worlds, mods and settings.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -87,6 +88,12 @@ impl Instances {
 
     pub fn game_dir(&self, id: &str) -> PathBuf {
         self.root.join(id).join(GAME_DIR)
+    }
+
+    /// Where Java keeps the classes the instance's game loaded, outside the game folder so
+    /// copies and exported packs leave it behind.
+    pub fn class_archive(&self, id: &str) -> PathBuf {
+        self.root.join(id).join(CLASS_ARCHIVE_FILE)
     }
 
     /// Whether `id` names an existing instance. Ids come from the UI, so anything that is not a

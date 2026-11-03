@@ -582,7 +582,17 @@ async fn run_game(
         fullscreen: false,
         server,
         extra_jvm_args: if instance.auto_java_args {
-            launch::tuned_jvm_args(max_memory_mb, crate::hardware::cores())
+            let mut args = launch::tuned_jvm_args(max_memory_mb, crate::hardware::cores());
+            // A Java of the player's own may be any version, so only the installed one gets it.
+            if instance.java_path.is_none()
+                && let Some(java) = &installed.version.java_version
+            {
+                args.extend(launch::class_archive_args(
+                    java.major_version,
+                    &launcher.instances.class_archive(&instance.id),
+                ));
+            }
+            args
         } else {
             instance
                 .java_args
@@ -760,6 +770,7 @@ async fn watch_game(
             app.clone(),
             instance_id.clone(),
             token.clone(),
+            started,
             output,
         ))
     };
@@ -911,9 +922,11 @@ async fn forward_log(
     app: AppHandle,
     instance_id: String,
     token: String,
+    started: Instant,
     output: Box<dyn AsyncRead + Send + Unpin>,
 ) {
     let mut reader = BufReader::new(output);
+    let mut loaded = false;
     let mut buffer = Vec::new();
     let mut pending = Vec::new();
     let mut flush = tokio::time::interval(LOG_FLUSH_INTERVAL);
@@ -933,6 +946,14 @@ async fn forward_log(
                         line.replace(&token, "<hidden>")
                     };
                     buffer.clear();
+                    // How long loading takes tells whether changes to the start made it faster.
+                    if !loaded && game_window::is_loaded_marker(&line) {
+                        loaded = true;
+                        log::info!(
+                            "{instance_id} loaded in {:.1} s",
+                            started.elapsed().as_secs_f32()
+                        );
+                    }
                     let number = app.state::<Launcher>().push_log(&instance_id, line.clone());
                     pending.push(LogLine { number, text: line });
                 }

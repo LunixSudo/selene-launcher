@@ -148,7 +148,9 @@ All notable changes to this project are documented here. The format follows
 - A mod that needs another one offers to install it, and the mods tab installs every missing
   one in one go.
 - Switching the garbage collector between G1 and ZGC asks first and says what it risks.
-
+- Total play time on the home screen, with the instance played the most.
+- Saving the launcher's settings to a file and loading them back, for a new PC for example.
+  Accounts stay out of the file.
 
 ### Changed
 
@@ -209,6 +211,8 @@ All notable changes to this project are documented here. The format follows
 - The launcher connects to Discord only while it shows the status there.
 - Saving settings, switching accounts and changing the skin library no longer hold up the
   window for a moment.
+- Games on Java 19 and newer keep the classes they loaded in a file next to the instance and
+  start from it the next time. The launcher log notes how long each game took to load.
 
 ### Fixed
 
