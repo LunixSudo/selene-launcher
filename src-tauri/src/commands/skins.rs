@@ -12,6 +12,8 @@ use crate::error::CommandResult;
 use crate::state::Launcher;
 
 const TEXTURES_URL: &str = "https://textures.minecraft.net/";
+/// A 64x64 picture takes a few kilobytes, so a file far bigger is not read in at all.
+const MAX_SKIN_BYTES: u64 = 1024 * 1024;
 
 /// The skin and capes the active account has on its Minecraft profile.
 #[derive(Debug, Clone, Serialize)]
@@ -86,7 +88,7 @@ pub async fn set_cape(
     remember(&launcher, profile).await
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn saved_skins(launcher: State<'_, Launcher>) -> CommandResult<Vec<LibrarySkin>> {
     launcher
         .skins
@@ -106,6 +108,9 @@ pub async fn add_skin(
         || "Skin".to_owned(),
         |stem| stem.to_string_lossy().into_owned(),
     );
+    if tokio::fs::metadata(&path).await?.len() > MAX_SKIN_BYTES {
+        return Err(selene_core::Error::InvalidSkin.into());
+    }
     let png = tokio::fs::read(&path).await?;
     let skin = launcher.skins.add(&png, &name, variant)?;
     library_skin(&launcher, skin)
@@ -136,7 +141,7 @@ pub async fn save_current_skin(launcher: State<'_, Launcher>) -> CommandResult<L
     library_skin(&launcher, saved)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn set_skin_variant(
     launcher: State<'_, Launcher>,
     id: String,
@@ -145,7 +150,7 @@ pub fn set_skin_variant(
     Ok(launcher.skins.set_variant(&id, variant)?)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn remove_skin(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
     Ok(launcher.skins.remove(&id)?)
 }

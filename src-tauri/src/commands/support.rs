@@ -26,7 +26,7 @@ pub fn log_ui_error(message: String) {
     log::error!("interface: {message}");
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn open_logs_folder(app: AppHandle, launcher: State<'_, Launcher>) -> CommandResult<()> {
     let dir = launcher.data_dir.join("logs");
     std::fs::create_dir_all(&dir)?;

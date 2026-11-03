@@ -170,7 +170,7 @@ pub async fn sign_out(launcher: State<'_, Launcher>, id: String) -> CommandResul
     launcher.accounts.sign_out(&id).await
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn set_active_account(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
     launcher.accounts.set_active(&id)
 }
@@ -354,12 +354,12 @@ pub fn config(launcher: State<'_, Launcher>) -> Config {
     launcher.config.get()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn set_config(launcher: State<'_, Launcher>, config: Config) -> CommandResult<()> {
     Ok(launcher.config.set(config)?)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn open_data_folder(app: AppHandle, launcher: State<'_, Launcher>) -> CommandResult<()> {
     std::fs::create_dir_all(&launcher.data_dir)?;
     saves::open_path(&app, &launcher.data_dir)

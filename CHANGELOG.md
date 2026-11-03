@@ -198,6 +198,17 @@ All notable changes to this project are documented here. The format follows
 - A data pack can only be added once the instance has a world, and the message says so.
 - Downloads are named like `SeleneLauncher-Windows-Setup-0.1.0.exe` and
   `SeleneLauncher-Windows-Portable-0.1.0.zip`; the portable zip also carries the license.
+- Version lists, loader lists and catalog pages arrive compressed: the list of Fabric builds,
+  for one, is 30 times smaller to download.
+- Files are checked on separate threads with a larger buffer, so checking a big instance does
+  not slow down the rest of the launcher.
+- A mirror that just failed is asked only after the others answer badly too.
+- Blur is left out where the faded edge of a scrolling list would hide it anyway, which spares
+  the graphics card on pages with many cards.
+- The 3D skin model stops drawing while the launcher window is in the background.
+- The launcher connects to Discord only while it shows the status there.
+- Saving settings, switching accounts and changing the skin library no longer hold up the
+  window for a moment.
 
 ### Fixed
 
@@ -225,6 +236,10 @@ All notable changes to this project are documented here. The format follows
   every file, and rows added later no longer play the entrance animation.
 - The fade at the edges of scrolling areas grows with the scroll instead of switching on at
   once, and entrance animations only slide, so text no longer snaps sharp at their end.
+- A game whose window has not appeared yet when loading ends still switches to fullscreen
+  once it does.
+- A skin file bigger than any skin can be is refused before it is read.
+- The note that Mojang has not approved the launcher yet is gone, since it has been approved.
 - The custom game window width and height fields no longer overlap.
 - Hovering an instance card no longer darkens the card next to it.
 - The selected instance tab is light in the dark theme instead of nearly black.
