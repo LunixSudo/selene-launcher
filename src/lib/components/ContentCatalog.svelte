@@ -313,7 +313,7 @@
 {#if kinds.length > 1}
   <div class="kinds">
     <Segmented
-      bind:value={chosenKind}
+      bind:value={() => kind, (value) => (chosenKind = value)}
       options={kindOptions}
       name="catalog-kind"
       label={t("instance.catalog")}
