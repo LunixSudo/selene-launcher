@@ -415,3 +415,5 @@ All notable changes to this project are documented here. The format follows
   sign-in tokens out of the Windows credential store.
 - File paths from a download mirror can no longer lead outside the launcher's folders, and a
   damaged asset list from one no longer breaks the download.
+- Play can be pressed while an instance downloads in the background: the start takes the
+  download over at full speed instead of waiting for it.

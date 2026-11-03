@@ -132,18 +132,28 @@ export function isPreparing(id: string): boolean {
   return preparing.has(id);
 }
 
-/** What the instance's Play button says while something downloads, and how far it got. */
-export function activity(id: string): { label: string; percent: number } | null {
+/**
+ * What the instance's Play button says while something downloads, and how far it got. A
+ * download of its own leaves Play pressable, since a start takes it over at full speed.
+ */
+export function activity(
+  id: string,
+): { label: string; percent: number; background: boolean } | null {
   const task = library.tasks[id];
   if (task) {
     const label =
       task.filesTotal > 0
         ? t(`launch.${task.stage}Count`, { done: task.filesDone, total: task.filesTotal })
         : t(`launch.${task.stage}`);
-    return { label, percent: task.percent };
+    return { label, percent: task.percent, background: false };
   }
   const launch = library.launches[id];
   if (launch?.status === "preparing") {
+    if (preparing.has(id) && !starting.has(id)) {
+      const label =
+        launch.percent > 0 ? `${t("instances.play")} · ${launch.percent}%` : t("instances.play");
+      return { label, percent: launch.percent, background: true };
+    }
     // A stage that has not moved yet is usually checking files already in place, so a bare
     // 0% would look stuck. The background download before any start is not a start either.
     let label: string;
@@ -154,7 +164,7 @@ export function activity(id: string): { label: string; percent: number } | null 
     } else {
       label = t(starting.has(id) ? "launch.starting" : "launch.preparing");
     }
-    return { label, percent: launch.percent };
+    return { label, percent: launch.percent, background: false };
   }
   return null;
 }

@@ -103,7 +103,7 @@
           type="button"
           class="play"
           class:running
-          disabled={busy !== null || stopping}
+          disabled={(busy !== null && !busy.background) || stopping}
           style:--progress={busy ? `${busy.percent}%` : "0%"}
           onclick={() => (running ? stop(instance.id) : play(instance.id))}
         >

@@ -83,10 +83,11 @@
     class="play"
     class:running
     style:--progress={busy ? `${busy.percent}%` : "0%"}
-    disabled={busy !== null || (launch?.status === "running" && launch.stopping)}
+    disabled={(busy !== null && !busy.background) ||
+      (launch?.status === "running" && launch.stopping)}
     onclick={() => (running ? stop(instance.id) : play(instance.id))}
   >
-    {#if !busy}
+    {#if !busy || busy.background}
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d={running ? UI_ICONS.stop : UI_ICONS.play} />
       </svg>
