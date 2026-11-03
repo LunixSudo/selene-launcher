@@ -966,9 +966,11 @@
     cursor: pointer;
   }
 
+  /* The hint wraps first: a long one in some languages would otherwise push the buttons
+     onto two lines while there is room for them. */
   .buttons {
     display: flex;
-    flex-wrap: wrap;
+    flex: none;
     gap: 8px;
     justify-content: flex-end;
   }
