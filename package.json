@@ -10,7 +10,7 @@
   "packageManager": "pnpm@10.18.0",
   "scripts": {
     "dev": "vite dev",
-    "build": "node scripts/licenses.mjs && vite build",
+    "build": "node scripts/licenses.mjs && node scripts/privacy.mjs && vite build",
     "licenses": "node scripts/licenses.mjs",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",

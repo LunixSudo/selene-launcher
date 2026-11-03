@@ -213,6 +213,9 @@ All notable changes to this project are documented here. The format follows
   window for a moment.
 - Games on Java 19 and newer keep the classes they loaded in a file next to the instance and
   start from it the next time. The launcher log notes how long each game took to load.
+- The privacy policy starts with a short summary and now also covers the settings file, the
+  classes archive, bug reports, the Discord status, what the game itself sends and how the
+  launcher keeps data safe. The installer takes its text from the policy when it is built.
 
 ### Fixed
 
@@ -408,3 +411,5 @@ All notable changes to this project are documented here. The format follows
   days away.
 - Fullscreen games open as large as the screen and switch to fullscreen from their own
   settings, so Windows no longer flashes a small window first.
+- Uninstalling with "Delete instances, worlds and launcher settings" ticked also takes the
+  sign-in tokens out of the Windows credential store.

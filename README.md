@@ -1,82 +1,125 @@
 <p align="center"><img src="docs/brand/logo.svg" width="160" alt=""></p>
 
-# Selene Launcher
+<h1 align="center">Selene Launcher</h1>
 
-A fast, minimal Minecraft: Java Edition launcher for licensed accounts.
+<p align="center">
+  A fast, good-looking Minecraft: Java Edition launcher for licensed accounts.<br>
+  <a href="README.ru.md">На русском</a>
+</p>
 
-There is no cracked mode. You need a Minecraft: Java Edition license to play.
+<p align="center">
+  <a href="https://github.com/LunixSudo/selene-launcher/actions/workflows/build.yml"><img src="https://github.com/LunixSudo/selene-launcher/actions/workflows/build.yml/badge.svg?branch=dev" alt="Build"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License: GPL-3.0"></a>
+</p>
 
-> Early development. Windows is the primary target for now.
+You need a Minecraft: Java Edition license to play: you sign in with your Microsoft account,
+and there is no cracked mode.
+
+> Early development: there is no release yet. Windows is the main target, Linux builds are new.
+
+## Why Selene
+
+- **Light on old PCs.** Memory, Java and its flags are picked from your RAM, processor and
+  mods, the game starts on the discrete graphics card, and the launcher gets out of the way
+  while you play. The default style has no blur and no endless animations.
+- **Works when sites are down.** If Mojang, a loader site, Modrinth or CurseForge cannot be
+  reached, files come from their official mirrors and then from public ones, still checked
+  against the official checksums.
+- **Mods and modpacks in a click.** Modrinth and CurseForge in one catalog, dependencies added
+  for you, updates that keep the add-ons you put in yourself.
+- **Private.** No servers of its own, no analytics, no ads.
 
 ## Features
 
-- **Accounts.** Sign in with a Microsoft account; game ownership is verified on every login.
-  Several accounts, with the player's head in the title bar. A new account picks its player
-  name right in the launcher, and the name can be changed later, with a check that it is free
-  and Mojang's 30-day limit shown up front.
-- **Game.** Every version from the first alphas to the newest snapshots. Versions, libraries
-  and assets come straight from Mojang, and the right Java
-  runtime is downloaded for each version. Fabric, Quilt, Forge (from 1.7.10) and NeoForge are
-  supported; Forge and NeoForge run their own installer in the background, without any
-  windows, and the old Forge installers that need one are unpacked instead. A new
-  instance downloads all of it right away, so the first start is quick. A source that hangs no
-  longer holds things up: after a second and a half the next one is asked as well. If a site is down,
-  the launcher falls back to the official mirrors of Mojang, Fabric and Forge, and then to
-  [BMCLAPI](https://bmclapidoc.bangbang93.com/), with checksums from the official index. Java
-  falls back to Eclipse Temurin from [Adoptium](https://adoptium.net/) and to
-  [Azul Zulu](https://www.azul.com/downloads/) before BMCLAPI. A
-  download in progress can be cancelled by deleting the instance or changing its version, and
-  a new game starts in the system language or one picked in the settings. An installed
-  game starts without hashing its files again, and without a connection too: an account that
-  has signed in before can play single player offline, as in the official launcher.
-- **Instances.** Search, sorting, groups, icons and covers, copies, desktop shortcuts drawn
-  with the instance's own icon and cover, and
-  moving an instance to another game version with its mods swapped for matching builds, and
-  picking a newer or older mod loader build. Tuned Java arguments are picked for you, or
-  chosen from a searchable list of flags, and Java the launcher installed stays up to date.
-  The game opens in a window while it loads and then goes fullscreen.
-- **Add-ons.** Mods, resource packs, shaders and data packs from Modrinth and CurseForge in
-  one tab. Filter the catalog by several categories at once, remove a project right from its
-  catalog entry, and get required dependencies added for you, even a mod that a resource pack
-  needs. Updates stay on the release channel you
-  installed, only the newest of two copies of one mod stays on, lists follow files copied in
-  by hand, and the launcher warns before you turn on something made for another version.
-  Data packs go into the world you pick. On Forge, OptiFine installs from its official site
-  opened inside the launcher.
-- **Modpacks.** Find modpacks from Modrinth and CurseForge by game version, install the
-  version you pick, and update a pack later without losing the add-ons you put in yourself.
-  Import and export `.mrpack` and CurseForge `.zip` files, or drop them on the window.
-- **Playing.** Worlds (renaming moves the folder too, and backups), servers and screenshots per instance,
-  joining a server in one click, a game console, crash analysis, play time and a Discord status.
-- **Skins.** An animated 3D preview, a library of saved skins, saving the skin you wear now
-  and a row of capes under the character to try on.
-- **Launcher.** Updates from GitHub Releases checked against SHA-256, light and dark themes
-  with Mica and glass styles, optional live backgrounds, animations and click sounds (also
-  per instance), a pixel font in the style of Minecraft, and the interface in Russian and
-  English plus machine translations into Ukrainian, German, Spanish, Brazilian Portuguese,
-  Polish, Turkish and Chinese, picked from the system language. Data lives in `%APPDATA%\SeleneLauncher`,
-  or next to the executable in portable mode: put an empty `portable.txt` beside it.
+**Accounts**
+
+- Microsoft sign-in, with game ownership checked on every login and several accounts at once.
+- A new account picks its player name right in the launcher; the name can be changed later,
+  with a check that it is free and Mojang's 30-day limit shown up front.
+- Single player without a connection for an account that has signed in before.
+
+**Game**
+
+- Every version from the first alphas to the newest snapshots, with the right Java
+  downloaded for each.
+- Fabric, Quilt, Forge (from 1.7.10) and NeoForge. Forge and NeoForge run their own
+  installer in the background, without windows.
+- A new instance downloads everything right away, so the first start is quick, and an
+  installed game starts without checking all its files again.
+- Automatic memory: from 3 GB for vanilla up to 10 GB for big packs, at most half of the RAM.
+  Games on Java 19 and newer keep their loaded classes and start faster the next time.
+- Fallbacks when a site is down: the official mirrors of Mojang, Fabric and Forge, then
+  [BMCLAPI](https://bmclapidoc.bangbang93.com/). Java falls back to Eclipse Temurin from
+  [Adoptium](https://adoptium.net/) and to [Azul Zulu](https://www.azul.com/downloads/).
+
+**Instances**
+
+- Search, sorting, groups, icons and covers, copies and desktop shortcuts drawn with the
+  instance's own icon.
+- Moving an instance to another game version, with its mods swapped for matching builds,
+  and picking a newer or older loader build.
+- Tuned Java arguments, or flags picked from a searchable list.
+- Play time for each instance and in total on the home screen.
+
+**Add-ons and modpacks**
+
+- Mods, resource packs, shaders and data packs from Modrinth and CurseForge in one tab, with
+  several categories at once and required dependencies added for you.
+- Updates on the release channel you installed, a warning before turning on something made
+  for another version, and a mark on two copies of one mod.
+- On Forge, OptiFine installs from its official site opened inside the launcher.
+- Modpacks by game version, in the version you pick, updated later without losing your own
+  add-ons. Import and export `.mrpack` and CurseForge `.zip`, or drop them on the window.
+
+**Playing**
+
+- Worlds with renaming and backups, servers with joining in one click, and screenshots.
+- A game console, crash analysis with advice and a button that stops a hung game.
+- A Discord status that can be turned off.
+
+**Skins**
+
+- An animated 3D preview, a library of saved skins and a row of capes to try on.
+
+**Launcher**
+
+- Light and dark themes, Mica and glass styles, optional live backgrounds, animations and
+  click sounds, a pixel font in the style of Minecraft, and style presets of your own.
+- Russian and English, plus machine translations into Ukrainian, German, Spanish, Brazilian
+  Portuguese, Polish, Turkish and Chinese, picked from the system language.
+- Settings saved to a file and loaded on another PC.
+- Updates from GitHub Releases checked against SHA-256, and "Report a problem" that fills in
+  a bug report for you.
+- Portable mode: an empty `portable.txt` next to the executable keeps all data beside it.
+
+## Requirements
+
+- Windows 10 or 11, 64-bit. The installer adds Microsoft Edge WebView2 if it is missing.
+- Or Linux, 64-bit, with WebKitGTK 4.1.
+- A Microsoft account that owns Minecraft: Java Edition. Java is downloaded by the launcher.
 
 ## Download
 
 Official builds come only from this repository. Copies from other sites are not ours and may
 be changed.
 
-There is no release yet. Until the first one goes to
+Until the first release goes to
 [GitHub Releases](https://github.com/LunixSudo/selene-launcher/releases), test builds are
 attached to runs of the [Build](https://github.com/LunixSudo/selene-launcher/actions/workflows/build.yml)
 workflow: a Windows installer and a portable `.zip`, and for Linux an AppImage and a `.deb`
 package. The Windows installer is not signed yet, so SmartScreen may warn about it. The Linux
-builds are new and not tested much yet; they do not update themselves.
+builds are not tested much yet and do not update themselves.
+
+Data lives in `%APPDATA%\SeleneLauncher` on Windows and `~/.local/share/SeleneLauncher` on
+Linux.
 
 ## Privacy
 
 The launcher has no servers of its own and collects nothing. Your sign-in token is kept in
-the Windows credential store (on Linux, the Secret Service keyring) and is only sent to
-Microsoft and Mojang. See
+the system credential store and is only sent to Microsoft and Mojang. See
 [PRIVACY.md](PRIVACY.md) ([на русском](PRIVACY.ru.md)) for every service the launcher talks
-to and why. The installer shows the policy in the system language before installing, and the launcher
-asks again after an update that changes it.
+to and why. The installer shows the policy in the system language, and the launcher asks
+again after an update that changes it.
 
 ## Building
 
@@ -95,20 +138,26 @@ pnpm tauri build
 ```
 
 The CurseForge catalog needs an API key at build time in the `CURSEFORGE_API_KEY`
-environment variable. Release builds without it only search Modrinth.
+environment variable. Builds without it only search Modrinth.
 
 `pnpm build` also writes `static/third-party-licenses.txt` from `cargo metadata` and the
-installed npm packages; the launcher shows it under Settings → Third-party licenses.
+installed npm packages, which the launcher shows under Settings → Third-party licenses, and
+the installer's copies of the privacy policy in `src-tauri/nsis/privacy`.
 
 ## Project layout
 
 - `crates/selene-core`: everything that does not need a window: Mojang, Microsoft sign-in,
   Modrinth, CurseForge, instances, mods, modpacks and launching the game.
 - `src-tauri`: the desktop app. Tauri commands, the account store, Discord and the
-  installer configuration in `src-tauri/nsis`.
+  installer in `src-tauri/nsis`.
 - `src`: the interface, written in SvelteKit and Svelte 5.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for code style and commit conventions, and
+## Contributing
+
+Bug reports and ideas are welcome under
+[Issues](https://github.com/LunixSudo/selene-launcher/issues); the launcher's "Report a
+problem" fills one in for you. See [CONTRIBUTING.md](CONTRIBUTING.md) for code style and
+commit conventions, [SECURITY.md](SECURITY.md) for reporting a vulnerability and
 [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ## License
