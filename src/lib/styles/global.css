@@ -129,8 +129,11 @@ body {
   font-size: 14px;
   font-weight: var(--body-weight);
   -webkit-font-smoothing: antialiased;
-  text-wrap: pretty;
   user-select: none;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 /* Dragging a link or picture out of the window would drop a web shortcut on the desktop. */

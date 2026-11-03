@@ -8,29 +8,31 @@
   animation: page-in 460ms var(--ease) both;
 }
 
-:root[data-motion="on"] .grid > *,
-:root[data-motion="on"] .rows > *,
+/* Only on the way in: rows added or renamed later, like during an update, stay in place. */
+:root[data-motion="on"] :is(.grid, .rows):not(.settled) > *,
 :root[data-motion="on"] .content > .panel {
   animation: rise 520ms var(--ease) both;
 }
 
-:root[data-motion="on"] :is(.grid, .rows, .content) > :nth-child(2) {
+:root[data-motion="on"] :is(.grid:not(.settled), .rows:not(.settled), .content) > :nth-child(2) {
   animation-delay: 40ms;
 }
 
-:root[data-motion="on"] :is(.grid, .rows, .content) > :nth-child(3) {
+:root[data-motion="on"] :is(.grid:not(.settled), .rows:not(.settled), .content) > :nth-child(3) {
   animation-delay: 80ms;
 }
 
-:root[data-motion="on"] :is(.grid, .rows, .content) > :nth-child(4) {
+:root[data-motion="on"] :is(.grid:not(.settled), .rows:not(.settled), .content) > :nth-child(4) {
   animation-delay: 120ms;
 }
 
-:root[data-motion="on"] :is(.grid, .rows, .content) > :nth-child(5) {
+:root[data-motion="on"] :is(.grid:not(.settled), .rows:not(.settled), .content) > :nth-child(5) {
   animation-delay: 160ms;
 }
 
-:root[data-motion="on"] :is(.grid, .rows, .content) > :nth-child(n + 6) {
+:root[data-motion="on"]
+  :is(.grid:not(.settled), .rows:not(.settled), .content)
+  > :nth-child(n + 6) {
   animation-delay: 200ms;
 }
 
@@ -108,14 +110,14 @@
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
+    transform: translateY(14px);
   }
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.97);
+    transform: translateY(16px);
   }
 }
 

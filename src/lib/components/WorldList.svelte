@@ -6,6 +6,7 @@
   import { relativeTime } from "#lib/format.ts";
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
+  import { settle } from "#lib/settle.ts";
   import { library } from "#lib/state/instances.svelte.ts";
   import { tooltip } from "#lib/tooltip.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
@@ -114,7 +115,7 @@
     <p>{t("worlds.emptyHint")}</p>
   </div>
 {:else if worlds}
-  <ul class="rows">
+  <ul class="rows" {@attach settle}>
     {#each worlds as world (world.folder)}
       <li class="row-item">
         {#if world.icon}

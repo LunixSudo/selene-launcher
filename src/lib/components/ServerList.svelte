@@ -3,6 +3,7 @@
   import { describeError } from "#lib/errors.ts";
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
+  import { settle } from "#lib/settle.ts";
   import { library, play } from "#lib/state/instances.svelte.ts";
   import { tooltip } from "#lib/tooltip.ts";
   import Dialog from "./Dialog.svelte";
@@ -84,7 +85,7 @@
     <p>{t("servers.emptyHint")}</p>
   </div>
 {:else if servers}
-  <ul class="rows">
+  <ul class="rows" {@attach settle}>
     {#each servers as server, index (index)}
       <li class="row-item">
         {#if server.icon}

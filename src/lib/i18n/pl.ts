@@ -137,6 +137,7 @@ export const pl: Messages = {
     java: "Pobieranie Javy {percent}%",
     loader: "Instalowanie loadera modów {percent}%",
     starting: "Uruchamianie…",
+    preparing: "Przygotowywanie…",
   },
   create: {
     title: "Nowa instancja",
@@ -501,8 +502,7 @@ export const pl: Messages = {
       "Gra startuje w oknie i przechodzi na pełny ekran po załadowaniu, więc Windows nie pokazuje „nie odpowiada”.",
     customSizeHint: "Okno gry o wybranym rozmiarze. Wyłącza pełny ekran.",
     autoArgs: "Dobieraj argumenty automatycznie",
-    autoArgsHint:
-      "Oficjalne ustawienia Mojang z bezpiecznymi dodatkami dla pamięci i procesora tego komputera.",
+    autoArgsHint: "Oficjalne ustawienia Mojang z bezpiecznymi dodatkami dla pamięci i procesora.",
     flagSearch: "Szukaj argumentów",
     flagsEmpty: "Nic nie znaleziono",
     javaArgs: "Argumenty Javy",

@@ -215,6 +215,11 @@ All notable changes to this project are documented here. The format follows
   progress labels stay on one line.
 - A second click on a mod's three-dots button closes its menu.
 - Short words at the end of hints no longer drop onto a line of their own.
+- A download the launcher starts on its own says "Preparing…" instead of "Starting…".
+- The add-ons list waits for an update to finish before it reloads, instead of jumping with
+  every file, and rows added later no longer play the entrance animation.
+- The fade at the edges of scrolling areas grows with the scroll instead of switching on at
+  once, and entrance animations only slide, so text no longer snaps sharp at their end.
 - The custom game window width and height fields no longer overlap.
 - Hovering an instance card no longer darkens the card next to it.
 - The selected instance tab is light in the dark theme instead of nearly black.

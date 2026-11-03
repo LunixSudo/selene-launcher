@@ -88,6 +88,9 @@ export function prepare(id: string) {
   preparing.set(id, task);
 }
 
+/** Instances the player pressed Play on, as opposed to downloads of their own. */
+const starting = new Set<string>();
+
 /** Instances whose interrupted modpack install or update is being finished. */
 const finishing = new Set<string>();
 
@@ -142,11 +145,15 @@ export function activity(id: string): { label: string; percent: number } | null 
   const launch = library.launches[id];
   if (launch?.status === "preparing") {
     // A stage that has not moved yet is usually checking files already in place, so a bare
-    // 0% would look stuck.
-    const label =
-      launch.stage && launch.percent > 0
-        ? t(`launch.${launch.stage}`, { percent: launch.percent })
-        : t(launch.stage === "mods" ? "launch.mods" : "launch.starting");
+    // 0% would look stuck. The background download before any start is not a start either.
+    let label: string;
+    if (launch.stage === "mods") {
+      label = t("launch.mods");
+    } else if (launch.stage && launch.percent > 0) {
+      label = t(`launch.${launch.stage}`, { percent: launch.percent });
+    } else {
+      label = t(starting.has(id) ? "launch.starting" : "launch.preparing");
+    }
     return { label, percent: launch.percent };
   }
   return null;
@@ -218,6 +225,7 @@ export async function play(id: string, server: string | null = null) {
   }
   library.launches[id] = { status: "preparing", stage: null, percent: 0 };
   delete library.crashes[id];
+  starting.add(id);
   try {
     await api.launchInstance(id, server);
   } catch (error) {
@@ -229,6 +237,8 @@ export async function play(id: string, server: string | null = null) {
       status: "failed",
       error: isCommandError(error) ? error : UNKNOWN_ERROR,
     };
+  } finally {
+    starting.delete(id);
   }
 }
 

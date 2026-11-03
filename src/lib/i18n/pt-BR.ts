@@ -138,6 +138,7 @@ export const ptBR: Messages = {
     java: "Baixando o Java {percent}%",
     loader: "Instalando o carregador de mods {percent}%",
     starting: "Iniciando…",
+    preparing: "Preparando…",
   },
   create: {
     title: "Nova instância",
@@ -506,7 +507,7 @@ export const ptBR: Messages = {
     customSizeHint: "Janela do jogo no tamanho escolhido. Desliga a tela cheia.",
     autoArgs: "Escolher argumentos automaticamente",
     autoArgsHint:
-      "As configurações oficiais da Mojang com adições seguras para a memória e o processador deste PC.",
+      "As configurações oficiais da Mojang com adições seguras para a memória e o processador.",
     flagSearch: "Buscar argumentos",
     flagsEmpty: "Nada encontrado",
     javaArgs: "Argumentos do Java",

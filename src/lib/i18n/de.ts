@@ -139,6 +139,7 @@ export const de: Messages = {
     java: "Java wird geladen {percent} %",
     loader: "Mod-Loader wird installiert {percent} %",
     starting: "Wird gestartet…",
+    preparing: "Wird vorbereitet…",
   },
   create: {
     title: "Neue Instanz",
@@ -513,7 +514,7 @@ export const de: Messages = {
     customSizeHint: "Spielfenster in der gewählten Größe. Schaltet Vollbild aus.",
     autoArgs: "Argumente automatisch wählen",
     autoArgsHint:
-      "Die offiziellen Einstellungen von Mojang plus sichere Ergänzungen für Speicher und Prozessor dieses PCs.",
+      "Die offiziellen Einstellungen von Mojang plus sichere Ergänzungen für Speicher und Prozessor.",
     flagSearch: "Argumente suchen",
     flagsEmpty: "Nichts gefunden",
     javaArgs: "Java-Argumente",

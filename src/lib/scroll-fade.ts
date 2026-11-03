@@ -9,10 +9,11 @@ const FADE_PX = 28;
 export const scrollFade: Attachment<HTMLElement> = (node) => {
   node.classList.add("scroll-fade");
   const update = () => {
-    const hiddenAbove = node.scrollTop > 0;
-    const hiddenBelow = node.scrollTop + node.clientHeight < node.scrollHeight - 1;
-    node.style.setProperty("--fade-top", `${hiddenAbove ? FADE_PX : 0}px`);
-    node.style.setProperty("--fade-bottom", `${hiddenBelow ? FADE_PX : 0}px`);
+    // Grows with the hidden part instead of switching on, which would make the edge jump.
+    const hiddenAbove = Math.max(node.scrollTop, 0);
+    const hiddenBelow = Math.max(node.scrollHeight - node.clientHeight - node.scrollTop, 0);
+    node.style.setProperty("--fade-top", `${Math.min(hiddenAbove, FADE_PX)}px`);
+    node.style.setProperty("--fade-bottom", `${Math.min(hiddenBelow, FADE_PX)}px`);
   };
 
   const resize = new ResizeObserver(update);

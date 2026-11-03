@@ -131,6 +131,7 @@ export const zhCN: Messages = {
     java: "正在下载 Java {percent}%",
     loader: "正在安装模组加载器 {percent}%",
     starting: "正在启动…",
+    preparing: "正在准备…",
   },
   create: {
     title: "新建实例",
@@ -478,7 +479,7 @@ export const zhCN: Messages = {
     fullscreenHint: "游戏先以窗口启动，加载完成后再切换全屏，这样 Windows 不会提示“未响应”。",
     customSizeHint: "按设定尺寸打开游戏窗口。会关闭全屏。",
     autoArgs: "自动选择参数",
-    autoArgsHint: "Mojang 官方设置，并按本机内存和处理器加入安全的补充参数。",
+    autoArgsHint: "Mojang 官方设置，并按内存和处理器加入安全的补充参数。",
     flagSearch: "搜索参数",
     flagsEmpty: "未找到",
     javaArgs: "Java 参数",

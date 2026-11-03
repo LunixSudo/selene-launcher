@@ -138,6 +138,7 @@ export const tr: Messages = {
     java: "Java indiriliyor %{percent}",
     loader: "Mod yükleyici kuruluyor %{percent}",
     starting: "Başlatılıyor…",
+    preparing: "Hazırlanıyor…",
   },
   create: {
     title: "Yeni profil",
@@ -502,8 +503,7 @@ export const tr: Messages = {
       "Oyun pencerede açılır ve yüklendikten sonra tam ekrana geçer, böylece Windows yanıt vermiyor demez.",
     customSizeHint: "Seçtiğiniz boyutta oyun penceresi. Tam ekranı kapatır.",
     autoArgs: "Argümanları otomatik seç",
-    autoArgsHint:
-      "Mojang'ın resmî ayarları ve bu bilgisayarın belleğine ve işlemcisine göre güvenli eklemeler.",
+    autoArgsHint: "Mojang'ın resmî ayarları ve belleğe ve işlemciye göre güvenli eklemeler.",
     flagSearch: "Argüman ara",
     flagsEmpty: "Hiçbir şey bulunamadı",
     javaArgs: "Java argümanları",

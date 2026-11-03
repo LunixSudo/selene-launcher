@@ -136,6 +136,7 @@ export const en: Messages = {
     java: "Downloading Java {percent}%",
     loader: "Installing the mod loader {percent}%",
     starting: "Starting…",
+    preparing: "Preparing…",
   },
   create: {
     title: "New instance",
@@ -497,8 +498,7 @@ export const en: Messages = {
       "The game starts in a window and goes fullscreen once it has loaded, so Windows won't call it not responding.",
     customSizeHint: "A game window of the size you set. Turns fullscreen off.",
     autoArgs: "Pick arguments automatically",
-    autoArgsHint:
-      "Mojang's official settings plus safe additions for this PC's memory and processor.",
+    autoArgsHint: "Mojang's official settings plus safe additions for the memory and processor.",
     flagSearch: "Search arguments",
     flagsEmpty: "Nothing found",
     javaArgs: "Java arguments",

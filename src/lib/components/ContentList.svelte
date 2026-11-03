@@ -12,6 +12,7 @@
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
   import { notify } from "#lib/notify.ts";
+  import { settle } from "#lib/settle.ts";
   import { library } from "#lib/state/instances.svelte.ts";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ContextMenu, { closedJustNowBy, type MenuItem } from "./ContextMenu.svelte";
@@ -56,7 +57,23 @@
     void api.watchContent(instanceId, kind, world).catch(() => {});
   });
 
-  const unlisten = listen("content-changed", () => void load());
+  // While add-ons download or swap, the folder changes file by file; the list waits for the
+  // end instead of jumping with every file.
+  const busy = $derived(Boolean(library.tasks[instanceId]));
+  let reloadWhenIdle = false;
+  const unlisten = listen("content-changed", () => {
+    if (busy) {
+      reloadWhenIdle = true;
+    } else {
+      void load();
+    }
+  });
+  $effect(() => {
+    if (!busy && reloadWhenIdle) {
+      reloadWhenIdle = false;
+      void load();
+    }
+  });
   let optifineStatus = $state<string | null>(null);
 
   let optifineTimer: ReturnType<typeof setTimeout> | undefined;
@@ -327,7 +344,7 @@
     <p>{t("content.emptyHint")}</p>
   </div>
 {:else if files}
-  <ul class="rows">
+  <ul class="rows" {@attach settle}>
     {#each files as file (file.fileName)}
       {@const update = updates?.find((entry) => entry.fileName === file.fileName)}
       <li class="row-item" class:disabled={!file.enabled}>

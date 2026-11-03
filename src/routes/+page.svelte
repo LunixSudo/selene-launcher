@@ -12,6 +12,7 @@
   import { t } from "#lib/i18n/index.svelte.ts";
   import { UI_ICONS } from "#lib/icons.ts";
   import { scrollFade } from "#lib/scroll-fade.ts";
+  import { settle } from "#lib/settle.ts";
   import { shortcutIcon } from "#lib/shortcut-icon.ts";
   import {
     deleteInstance,
@@ -239,7 +240,7 @@
           </button>
         {/if}
         {#if !collapsed}
-          <div class="grid">
+          <div class="grid" {@attach settle}>
             {#each instances as instance (instance.id)}
               <InstanceCard
                 {instance}

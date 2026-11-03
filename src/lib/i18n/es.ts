@@ -138,6 +138,7 @@ export const es: Messages = {
     java: "Descargando Java {percent} %",
     loader: "Instalando el cargador de mods {percent} %",
     starting: "Iniciando…",
+    preparing: "Preparando…",
   },
   create: {
     title: "Nueva instancia",
@@ -511,7 +512,7 @@ export const es: Messages = {
     customSizeHint: "Ventana del juego con el tamaño que elijas. Desactiva la pantalla completa.",
     autoArgs: "Elegir argumentos automáticamente",
     autoArgsHint:
-      "Los ajustes oficiales de Mojang con añadidos seguros para la memoria y el procesador de este PC.",
+      "Los ajustes oficiales de Mojang con añadidos seguros para la memoria y el procesador.",
     flagSearch: "Buscar argumentos",
     flagsEmpty: "No se encontró nada",
     javaArgs: "Argumentos de Java",
