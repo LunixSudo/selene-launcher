@@ -598,6 +598,9 @@ where
     let mut links = Vec::new();
 
     for (relative, entry) in &manifest.files {
+        if !crate::fs::is_plain_relative(relative) {
+            continue;
+        }
         let path = home.join(relative);
         match entry {
             RuntimeEntry::Directory => {

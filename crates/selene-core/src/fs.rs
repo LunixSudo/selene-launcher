@@ -1,5 +1,5 @@
 use std::io;
-use std::path::Path;
+use std::path::{Component, Path};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
@@ -9,6 +9,16 @@ use crate::{Error, Result};
 /// looks at a freshly written file.
 const RENAME_ATTEMPTS: u32 = 10;
 const RENAME_RETRY_DELAY: Duration = Duration::from_millis(100);
+
+/// Whether `path` stays inside the folder it is joined to: no root, drive, `.` or `..`. Paths
+/// in version files, runtimes and packs can come from a mirror or a stranger.
+pub fn is_plain_relative(path: impl AsRef<Path>) -> bool {
+    let path = path.as_ref();
+    !path.as_os_str().is_empty()
+        && path
+            .components()
+            .all(|part| matches!(part, Component::Normal(_)))
+}
 
 /// Writes `bytes` next to `path` and renames the result over it, so a crash or a full disk
 /// never leaves a half-written settings file behind.
@@ -88,6 +98,17 @@ fn temporary_path(path: &Path) -> std::path::PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keeps_paths_inside_their_folder() {
+        assert!(is_plain_relative("org/ow2/asm/asm.jar"));
+        assert!(!is_plain_relative(""));
+        assert!(!is_plain_relative("../escape.jar"));
+        assert!(!is_plain_relative("lib/../../escape.jar"));
+        assert!(!is_plain_relative("/etc/passwd"));
+        #[cfg(windows)]
+        assert!(!is_plain_relative("C:evil.jar"));
+    }
 
     #[tokio::test]
     async fn replaces_the_file_whole() {

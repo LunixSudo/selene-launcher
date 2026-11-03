@@ -413,3 +413,5 @@ All notable changes to this project are documented here. The format follows
   settings, so Windows no longer flashes a small window first.
 - Uninstalling with "Delete instances, worlds and launcher settings" ticked also takes the
   sign-in tokens out of the Windows credential store.
+- File paths from a download mirror can no longer lead outside the launcher's folders, and a
+  damaged asset list from one no longer breaks the download.

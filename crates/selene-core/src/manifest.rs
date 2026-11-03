@@ -57,12 +57,23 @@ impl VersionKind {
 
 impl VersionManifest {
     pub async fn fetch(client: &Client) -> Result<Self> {
-        http::get_json(client, VERSION_MANIFEST_URL).await
+        http::get_json(client, VERSION_MANIFEST_URL)
+            .await
+            .map(Self::plain)
     }
 
     /// Like [`Self::fetch`], falling back to the copy saved at `path` when offline.
     pub async fn fetch_cached(client: &Client, path: &Path) -> Result<Self> {
-        cache::get_json(client, VERSION_MANIFEST_URL, path).await
+        cache::get_json(client, VERSION_MANIFEST_URL, path)
+            .await
+            .map(Self::plain)
+    }
+
+    /// Version ids name folders, so one from a mirror that would lead out of them is dropped.
+    fn plain(mut self) -> Self {
+        self.versions
+            .retain(|version| crate::fs::is_plain_relative(&version.id));
+        self
     }
 
     pub fn get(&self, id: &str) -> Option<&VersionEntry> {

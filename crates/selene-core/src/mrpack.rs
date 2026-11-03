@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -415,10 +415,7 @@ pub(crate) fn open(pack: &Path) -> Result<ZipArchive<File>> {
 /// Paths in a pack come from strangers: only plain relative paths inside the game folder.
 fn safe_relative_path(path: &str) -> Result<PathBuf> {
     let path = Path::new(path);
-    let plain = path
-        .components()
-        .all(|component| matches!(component, Component::Normal(_)));
-    if plain && !path.as_os_str().is_empty() {
+    if crate::fs::is_plain_relative(path) {
         Ok(path.to_owned())
     } else {
         Err(Error::InvalidPack(format!(

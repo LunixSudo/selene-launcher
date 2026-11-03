@@ -122,6 +122,13 @@ pub struct AssetObject {
     pub size: u64,
 }
 
+impl AssetObject {
+    /// A SHA-1 in hex, which also names the file and the folder of its first two letters.
+    pub fn is_valid(&self) -> bool {
+        self.hash.len() == 40 && self.hash.bytes().all(|byte| byte.is_ascii_hexdigit())
+    }
+}
+
 impl VersionInfo {
     /// Fetches the version JSON and checks it against the hash from the manifest.
     /// Reads the version from `versions_dir` if its checksum still matches the manifest, and
@@ -194,7 +201,7 @@ pub fn library_downloads<'a>(
             let Some(path) = &artifact.path else {
                 continue;
             };
-            if artifact.url.is_empty() {
+            if artifact.url.is_empty() || !crate::fs::is_plain_relative(path) {
                 continue;
             }
             downloads.push(Download {
@@ -236,7 +243,7 @@ impl AssetIndex {
 
         self.objects
             .values()
-            .filter(|object| seen.insert(object.hash.as_str()))
+            .filter(|object| object.is_valid() && seen.insert(object.hash.as_str()))
             .map(|object| {
                 let prefix = &object.hash[..2];
                 Download {
@@ -345,15 +352,21 @@ mod tests {
     fn asset_objects_are_stored_by_hash() {
         let index: AssetIndex = serde_json::from_str(
             r#"{ "objects": {
-                "minecraft/sounds/a.ogg": { "hash": "abcdef0123", "size": 5 },
-                "minecraft/sounds/b.ogg": { "hash": "abcdef0123", "size": 5 }
+                "minecraft/sounds/a.ogg": { "hash": "abcdef0123456789abcdef0123456789abcdef01", "size": 5 },
+                "minecraft/sounds/b.ogg": { "hash": "abcdef0123456789abcdef0123456789abcdef01", "size": 5 }
             } }"#,
         )
         .unwrap();
         let downloads = index.downloads(Path::new("assets"));
 
         assert_eq!(downloads.len(), 1);
-        assert_eq!(downloads[0].url, format!("{ASSETS_BASE_URL}/ab/abcdef0123"));
-        assert_eq!(downloads[0].path, Path::new("assets/objects/ab/abcdef0123"));
+        assert_eq!(
+            downloads[0].url,
+            format!("{ASSETS_BASE_URL}/ab/abcdef0123456789abcdef0123456789abcdef01")
+        );
+        assert_eq!(
+            downloads[0].path,
+            Path::new("assets/objects/ab/abcdef0123456789abcdef0123456789abcdef01")
+        );
     }
 }

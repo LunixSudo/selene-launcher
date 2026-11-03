@@ -1,4 +1,4 @@
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use reqwest::Client;
 
@@ -158,14 +158,10 @@ impl Installed {
 
         let objects = dirs.assets().join("objects");
         for (name, object) in &index.objects {
-            let relative = Path::new(name);
-            if !relative
-                .components()
-                .all(|part| matches!(part, Component::Normal(_)))
-            {
+            if !crate::fs::is_plain_relative(name) || !object.is_valid() {
                 continue;
             }
-            let path = target.join(relative);
+            let path = target.join(name);
             if std::fs::metadata(&path).is_ok_and(|meta| meta.len() == object.size) {
                 continue;
             }
@@ -225,14 +221,16 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let dirs = GameDirs::new(root.path().join("shared"));
         let game_dir = root.path().join("game");
-        let object = dirs.assets().join("objects/ab/abcdef");
+        let object = dirs
+            .assets()
+            .join("objects/ab/abcdef0123456789abcdef0123456789abcdef01");
         std::fs::create_dir_all(object.parent().unwrap()).unwrap();
         std::fs::write(&object, b"ogg").unwrap();
 
         let old = installed(
             r#"{ "map_to_resources": true, "objects": {
-                "sound/step/grass1.ogg": { "hash": "abcdef", "size": 3 },
-                "../escape.ogg": { "hash": "abcdef", "size": 3 }
+                "sound/step/grass1.ogg": { "hash": "abcdef0123456789abcdef0123456789abcdef01", "size": 3 },
+                "../escape.ogg": { "hash": "abcdef0123456789abcdef0123456789abcdef01", "size": 3 }
             } }"#,
         );
         let target = old.game_assets(&dirs, &game_dir).unwrap();
