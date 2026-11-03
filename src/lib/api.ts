@@ -280,7 +280,6 @@ export type ErrorKind =
   | "gameNotOwned"
   | "sessionExpired"
   | "authService"
-  | "appNotApproved"
   | "keyring"
   | "io"
   | "diskFull"

@@ -155,6 +155,7 @@ fn memory_stick(formatted: &[u8], maker: Option<&str>, part: Option<&str>) -> Op
         size => u32::from(size),
     };
     let kind = match formatted.get(0x12) {
+        Some(0x13) => "DDR2",
         Some(0x18) => "DDR3",
         Some(0x1A) => "DDR4",
         Some(0x1D) => "LPDDR3",

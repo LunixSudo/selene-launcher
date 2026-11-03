@@ -28,8 +28,8 @@ const FORGE_PROMOTIONS_URL: &str =
 const NEOFORGE_MAVEN_URL: &str = "https://maven.neoforged.net/releases/net/neoforged/neoforge";
 const NEOFORGE_VERSIONS_URL: &str =
     "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge";
-/// NeoForge for 1.20.1 still carried Forge's name and numbering.
 const NEOFORGE_API_TIMEOUT: Duration = Duration::from_secs(8);
+/// NeoForge for 1.20.1 still carried Forge's name and numbering.
 const NEOFORGE_1_20_1_MAVEN_URL: &str = "https://maven.neoforged.net/releases/net/neoforged/forge";
 const NEOFORGE_1_20_1_VERSIONS_URL: &str =
     "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/forge";

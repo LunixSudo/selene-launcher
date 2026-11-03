@@ -645,8 +645,6 @@ export const pl: Messages = {
     sessionExpired: "Zapisane logowanie wygasło. Zaloguj się ponownie na to konto.",
     authService: "Usługa Minecraft zwróciła błąd. Spróbuj ponownie za chwilę.",
     rateLimited: "Mojang prosi o wolniejsze tempo: odczekaj minutę i spróbuj ponownie.",
-    appNotApproved:
-      "Mojang jeszcze nie zatwierdził Selene Launcher do logowania. Wniosek jest rozpatrywany; logowanie zadziała po zatwierdzeniu.",
     keyring: "Nie udało się zapisać logowania w systemowym magazynie poświadczeń.",
     io: "Nie udało się odczytać ani zapisać plików.",
     diskFull: "Dysk jest pełny. Zwolnij miejsce i spróbuj ponownie.",

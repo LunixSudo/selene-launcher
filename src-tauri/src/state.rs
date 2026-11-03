@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use reqwest::Client;
@@ -222,10 +222,7 @@ impl Launcher {
     }
 
     pub fn take_startup_launch(&self) -> Option<String> {
-        self.startup_launch
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .take()
+        lock(&self.startup_launch).take()
     }
 
     /// Forgets the previous run's output but keeps counting, so line numbers never repeat in
@@ -289,13 +286,11 @@ impl Launcher {
         )
     }
 
-    fn log_map(&self) -> std::sync::MutexGuard<'_, HashMap<String, Log>> {
-        self.logs
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    fn log_map(&self) -> MutexGuard<'_, HashMap<String, Log>> {
+        lock(&self.logs)
     }
 
-    fn running_map(&self) -> std::sync::MutexGuard<'_, HashMap<String, Run>> {
+    fn running_map(&self) -> MutexGuard<'_, HashMap<String, Run>> {
         lock(&self.running)
     }
 }
@@ -313,8 +308,6 @@ fn curseforge(client: &Client) -> Option<CurseForge> {
     (api_key.is_some() || cfg!(debug_assertions)).then(|| CurseForge::new(client.clone(), api_key))
 }
 
-fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
-    mutex
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
+fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }

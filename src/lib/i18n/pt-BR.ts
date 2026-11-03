@@ -649,8 +649,6 @@ export const ptBR: Messages = {
     sessionExpired: "A entrada salva expirou. Entre nesta conta de novo.",
     authService: "O serviço do Minecraft retornou um erro. Tente de novo daqui a pouco.",
     rateLimited: "A Mojang pede calma: espere um minuto e tente de novo.",
-    appNotApproved:
-      "A Mojang ainda não aprovou o Selene Launcher para login. O pedido está em análise; o login funcionará quando for aprovado.",
     keyring: "Não foi possível salvar a entrada no armazenamento de credenciais do sistema.",
     io: "Não foi possível ler ou gravar arquivos.",
     diskFull: "O disco está cheio. Libere espaço e tente de novo.",

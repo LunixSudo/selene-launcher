@@ -618,7 +618,6 @@ export const zhCN: Messages = {
     sessionExpired: "保存的登录已过期。请重新登录此账户。",
     authService: "Minecraft 服务返回了错误。请稍后重试。",
     rateLimited: "Mojang 要求放慢速度：请等待一分钟后重试。",
-    appNotApproved: "Mojang 尚未批准 Selene Launcher 用于登录。申请正在审核中，批准后即可登录。",
     keyring: "无法将登录信息保存到系统凭据存储。",
     io: "无法读取或写入文件。",
     diskFull: "磁盘已满。请释放空间后重试。",

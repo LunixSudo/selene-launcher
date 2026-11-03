@@ -49,9 +49,9 @@ use crate::{game_window, gpu};
 const MIN_HIDDEN_TOKEN_LEN: usize = 8;
 /// A game at start-up prints thousands of lines; the console gets them in batches.
 const LOG_FLUSH_INTERVAL: Duration = Duration::from_millis(100);
-/// How long a game gets to save and quit after Stop before it is killed.
 /// Between them they run on Java 8, 16, 17 and 21.
 const POPULAR_VERSIONS: [&str; 5] = ["1.8.9", "1.12.2", "1.16.5", "1.20.1", "1.21.1"];
+/// How long a game gets to save and quit after Stop before it is killed.
 const CLOSE_TIMEOUT: Duration = Duration::from_secs(20);
 const CLOSE_POLL_INTERVAL: Duration = Duration::from_millis(300);
 const HUNG_AFTER_QUIET: Duration = Duration::from_secs(5);
@@ -592,9 +592,7 @@ async fn run_game(
     };
     log_start(&instance, &options);
     launch::extract_natives(&installed.version, &options)?;
-    let language = launcher
-        .config
-        .get()
+    let language = config
         .game_language
         .or_else(|| sys_locale::get_locale().and_then(|locale| launch::game_language(&locale)));
     if let Some(language) = language {
@@ -710,7 +708,6 @@ async fn install_game(
     .map_err(Into::into)
 }
 
-/// Streams the game's output until it exits or the player stops it, then reports how it went.
 /// Waits for the game to finish loading, then presses F11 for it. Gives up if it never says
 /// so, leaving it in a window rather than switching in the middle of something.
 async fn fullscreen_when_loaded(app: AppHandle, instance_id: String, pid: u32) {
@@ -738,15 +735,17 @@ async fn fullscreen_when_loaded(app: AppHandle, instance_id: String, pid: u32) {
             loaded_at = Some(Instant::now());
         }
         // The menu still builds its textures after the marker; the log goes quiet once done.
+        // A window that is not shown yet is tried again on the next round.
         if let Some(at) = loaded_at
             && (quiet_since.elapsed() >= QUIET || at.elapsed() >= SETTLE_LIMIT)
+            && game_window::press_fullscreen_key(pid)
         {
-            game_window::press_fullscreen_key(pid);
             return;
         }
     }
 }
 
+/// Streams the game's output until it exits or the player stops it, then reports how it went.
 async fn watch_game(
     app: AppHandle,
     instance_id: String,

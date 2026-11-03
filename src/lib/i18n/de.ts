@@ -660,8 +660,6 @@ export const de: Messages = {
       "Die gespeicherte Anmeldung ist abgelaufen. Melde dich erneut bei diesem Konto an.",
     authService: "Der Minecraft-Dienst hat einen Fehler gemeldet. Versuche es gleich noch einmal.",
     rateLimited: "Mojang bittet um eine Pause: Warte eine Minute und versuche es erneut.",
-    appNotApproved:
-      "Mojang hat Selene Launcher noch nicht für die Anmeldung freigegeben. Der Antrag wird geprüft; nach der Freigabe funktioniert die Anmeldung.",
     keyring:
       "Die Anmeldung konnte nicht im Anmeldeinformationsspeicher des Systems gespeichert werden.",
     io: "Dateien konnten nicht gelesen oder geschrieben werden.",

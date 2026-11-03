@@ -46,6 +46,15 @@ impl Discord {
                 if shown {
                     continue;
                 }
+                let Some(presence) = &wanted else {
+                    // With nothing to show, Discord is let go instead of kept connected.
+                    if let Some(mut connected) = client.take() {
+                        let _ = connected.clear_activity();
+                        let _ = connected.close();
+                    }
+                    shown = true;
+                    continue;
+                };
                 if client.is_none() {
                     let mut fresh = DiscordIpcClient::new(CLIENT_ID);
                     if fresh.connect().is_err() {
@@ -56,12 +65,8 @@ impl Discord {
                 let Some(connected) = client.as_mut() else {
                     continue;
                 };
-                let sent = match &wanted {
-                    Some(presence) => connected.set_activity(activity(presence)),
-                    None => connected.clear_activity(),
-                };
                 // Discord was closed in between; reconnect on the next round.
-                shown = sent.is_ok();
+                shown = connected.set_activity(activity(presence)).is_ok();
                 if !shown {
                     client = None;
                 }

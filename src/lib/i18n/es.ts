@@ -656,8 +656,6 @@ export const es: Messages = {
     sessionExpired: "La sesión guardada caducó. Vuelve a iniciar sesión en esta cuenta.",
     authService: "El servicio de Minecraft devolvió un error. Vuelve a intentarlo en un momento.",
     rateLimited: "Mojang pide ir más despacio: espera un minuto y vuelve a intentarlo.",
-    appNotApproved:
-      "Mojang aún no ha aprobado Selene Launcher para iniciar sesión. La solicitud está en revisión; funcionará en cuanto se apruebe.",
     keyring: "No se pudo guardar la sesión en el almacén de credenciales del sistema.",
     io: "No se pudieron leer o escribir archivos.",
     diskFull: "El disco está lleno. Libera espacio y vuelve a intentarlo.",

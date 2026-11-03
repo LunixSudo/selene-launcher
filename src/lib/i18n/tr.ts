@@ -651,8 +651,6 @@ export const tr: Messages = {
     sessionExpired: "Kayıtlı girişin süresi doldu. Bu hesaba tekrar giriş yap.",
     authService: "Minecraft hizmeti bir hata döndürdü. Birazdan tekrar dene.",
     rateLimited: "Mojang biraz yavaşlamanı istiyor: bir dakika bekleyip tekrar dene.",
-    appNotApproved:
-      "Mojang, Selene Launcher'ı giriş için henüz onaylamadı. Başvuru inceleniyor; onaylanınca giriş çalışacak.",
     keyring: "Giriş, sistemin kimlik bilgisi deposuna kaydedilemedi.",
     io: "Dosyalar okunamadı ya da yazılamadı.",
     diskFull: "Disk dolu. Biraz yer açıp tekrar dene.",

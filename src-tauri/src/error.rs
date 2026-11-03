@@ -1,4 +1,3 @@
-use reqwest::StatusCode;
 use selene_core::auth::AuthError;
 use serde::{Serialize, Serializer};
 
@@ -91,11 +90,6 @@ impl CommandError {
                 AuthError::RateLimited => "rateLimited",
                 AuthError::NameTaken => "nameTaken",
                 AuthError::NameNotAllowed => "nameNotAllowed",
-                // Mojang answers 403 until it has approved the app's Azure client ID.
-                AuthError::Service {
-                    service: "Minecraft Services",
-                    status: StatusCode::FORBIDDEN,
-                } => "appNotApproved",
                 AuthError::Service { .. } => "authService",
             },
             Self::Core(_) => "core",

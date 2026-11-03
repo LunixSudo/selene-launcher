@@ -40,11 +40,10 @@ pub async fn update_shortcut(
     icon: Vec<Vec<u8>>,
 ) -> CommandResult<()> {
     let record_path = instance_dir(&launcher, &id)?.join(RECORD_FILE);
-    let Ok(bytes) = tokio::fs::read(&record_path).await else {
+    let Some(link) = recorded_link(&record_path).await else {
         return Ok(());
     };
-    let record: ShortcutRecord = serde_json::from_slice(&bytes).map_err(std::io::Error::from)?;
-    if tokio::fs::remove_file(&record.path).await.is_err() {
+    if tokio::fs::remove_file(&link).await.is_err() {
         let _ = tokio::fs::remove_file(&record_path).await;
         return Ok(());
     }
@@ -53,20 +52,22 @@ pub async fn update_shortcut(
 
 /// Deletes the instance's desktop shortcut, if the launcher made one and it is still there.
 pub async fn remove_shortcut(launcher: &Launcher, id: &str) -> CommandResult<()> {
-    let Ok(bytes) = tokio::fs::read(instance_dir(launcher, id)?.join(RECORD_FILE)).await else {
-        return Ok(());
-    };
-    let Ok(record) = serde_json::from_slice::<ShortcutRecord>(&bytes) else {
-        return Ok(());
-    };
-    if record
+    if let Some(link) = recorded_link(&instance_dir(launcher, id)?.join(RECORD_FILE)).await {
+        let _ = tokio::fs::remove_file(link).await;
+    }
+    Ok(())
+}
+
+/// The shortcut the record points to. Only a `.lnk` file is ever taken from it, since the
+/// file is deleted from there.
+async fn recorded_link(record_path: &Path) -> Option<PathBuf> {
+    let bytes = tokio::fs::read(record_path).await.ok()?;
+    let record: ShortcutRecord = serde_json::from_slice(&bytes).ok()?;
+    record
         .path
         .extension()
         .is_some_and(|ext| ext.eq_ignore_ascii_case("lnk"))
-    {
-        let _ = tokio::fs::remove_file(&record.path).await;
-    }
-    Ok(())
+        .then_some(record.path)
 }
 
 async fn write_instance_shortcut(
