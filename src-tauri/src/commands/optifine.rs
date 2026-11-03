@@ -2,6 +2,8 @@
 //! and the jar the player downloads there goes straight into the instance's mods folder.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use selene_core::download::{self, Download};
@@ -131,6 +133,10 @@ pub async fn open_optifine(
         Err(_) => None,
     }
     .unwrap_or_else(|| DOWNLOADS.parse().expect("the downloads address is valid"));
+    // The navigation that turns into the download also reports a finished load, which would
+    // bring the window back for a moment after it was hidden.
+    let downloading = Arc::new(AtomicBool::new(false));
+    let loaded_downloading = Arc::clone(&downloading);
     WebviewWindowBuilder::new(&app, label, WebviewUrl::External(url))
         .title("OptiFine")
         .inner_size(1040.0, 760.0)
@@ -138,8 +144,10 @@ pub async fn open_optifine(
         .initialization_script(page_script(&instance.version))
         // Shown once the page is there, instead of opening as a blank white window first.
         .visible(false)
-        .on_page_load(|window, payload| {
-            if payload.event() == PageLoadEvent::Finished {
+        .on_page_load(move |window, payload| {
+            if payload.event() == PageLoadEvent::Finished
+                && !loaded_downloading.load(Ordering::Acquire)
+            {
                 let _ = window.show();
                 let _ = window.set_focus();
             }
@@ -151,6 +159,7 @@ pub async fn open_optifine(
             if let DownloadEvent::Requested { url, destination } = event
                 && let Some(name) = jar_name(&url, destination)
             {
+                downloading.store(true, Ordering::Release);
                 let app = webview.app_handle().clone();
                 let window = webview.window();
                 let path = mods.join(name);
