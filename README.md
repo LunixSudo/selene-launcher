@@ -4,7 +4,7 @@
 
 <p align="center">
   A fast, good-looking Minecraft: Java Edition launcher for licensed accounts.<br>
-  <a href="README.ru.md">На русском</a>
+  <a href="https://selene.games">selene.games</a> · <a href="README.ru.md">На русском</a>
 </p>
 
 <p align="center">
@@ -100,8 +100,8 @@ and there is no cracked mode.
 
 ## Download
 
-Official builds come only from this repository. Copies from other sites are not ours and may
-be changed.
+Official builds come only from this repository. The website [selene.games](https://selene.games)
+links to the same files. Copies from other sites are not ours and may be changed.
 
 Until the first release goes to
 [GitHub Releases](https://github.com/LunixSudo/selene-launcher/releases), test builds are

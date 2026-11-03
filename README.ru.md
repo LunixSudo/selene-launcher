@@ -4,7 +4,7 @@
 
 <p align="center">
   Быстрый и красивый лаунчер Minecraft: Java Edition для лицензионных аккаунтов.<br>
-  <a href="README.md">In English</a>
+  <a href="https://selene.games/ru/">selene.games</a> · <a href="README.md">In English</a>
 </p>
 
 <p align="center">
@@ -101,8 +101,8 @@
 
 ## Скачать
 
-Официальные сборки есть только в этом репозитории. Копии с других сайтов не наши и могут быть
-изменены.
+Официальные сборки есть только в этом репозитории. Сайт [selene.games](https://selene.games/ru/)
+ссылается на те же файлы. Копии с других сайтов не наши и могут быть изменены.
 
 Пока первый релиз не вышел на [GitHub Releases](https://github.com/LunixSudo/selene-launcher/releases),
 тестовые сборки прикреплены к запускам процесса
