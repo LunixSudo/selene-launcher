@@ -46,14 +46,16 @@ pub async fn check(client: &Client, current: &str) -> Result<Option<Update>> {
     if !cfg!(windows) {
         return Ok(None);
     }
-    let release: Release = client
+    let response = client
         .get(LATEST_RELEASE_URL)
         .header("Accept", "application/vnd.github+json")
         .send()
-        .await?
-        .error_for_status()?
-        .json()
         .await?;
+    // GitHub answers this way while the repository has no release yet.
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Ok(None);
+    }
+    let release: Release = response.error_for_status()?.json().await?;
     let version = release.tag_name.trim_start_matches('v');
     if !is_newer(version, current) {
         return Ok(None);
