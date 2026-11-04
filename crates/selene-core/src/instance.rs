@@ -233,7 +233,7 @@ impl Instances {
 
 /// Instance ids are folder names made by [`slug`], so a valid one is a single plain component.
 fn is_valid_id(id: &str) -> bool {
-    !id.is_empty() && id != "." && id != ".." && !id.contains(['/', '\\', ':'])
+    crate::fs::is_plain_name(id)
 }
 
 fn checked_id(id: &str) -> Result<&str> {

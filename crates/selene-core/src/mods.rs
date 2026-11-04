@@ -427,8 +427,7 @@ pub async fn remove(game_dir: &Path, kind: ContentKind, file_name: &str) -> Resu
 
 /// File names come from the UI; anything that could leave the content folder is refused.
 fn safe_file_name(file_name: &str) -> Result<&str> {
-    let path = Path::new(file_name);
-    if path.components().count() == 1 && path.file_name().is_some() {
+    if crate::fs::is_plain_name(file_name) {
         Ok(file_name)
     } else {
         Err(Error::io(

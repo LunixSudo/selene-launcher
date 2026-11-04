@@ -20,6 +20,13 @@ pub fn is_plain_relative(path: impl AsRef<Path>) -> bool {
             .all(|part| matches!(part, Component::Normal(_)))
 }
 
+/// Whether `name` is one file or folder name that stays inside the folder it is joined to.
+/// Names come from the window, so besides separators, drives and `..` this also refuses
+/// trailing dots and spaces: Windows drops them, which turns `...` into the folder itself.
+pub fn is_plain_name(name: &str) -> bool {
+    !name.is_empty() && !name.contains(['/', '\\', ':', '\0']) && !name.ends_with(['.', ' '])
+}
+
 /// Writes `bytes` next to `path` and renames the result over it, so a crash or a full disk
 /// never leaves a half-written settings file behind.
 pub async fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
@@ -108,6 +115,17 @@ mod tests {
         assert!(!is_plain_relative("/etc/passwd"));
         #[cfg(windows)]
         assert!(!is_plain_relative("C:evil.jar"));
+    }
+
+    #[test]
+    fn plain_names_stay_in_their_folder() {
+        assert!(is_plain_name("New World"));
+        assert!(is_plain_name("sodium-0.6.jar.disabled"));
+        for name in [
+            "", ".", "..", "...", "world.", "world ", "a/b", "a\\b", "C:x", "a\0b",
+        ] {
+            assert!(!is_plain_name(name), "{name:?}");
+        }
     }
 
     #[tokio::test]
