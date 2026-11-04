@@ -35,8 +35,9 @@ release lands there as a single commit tagged with its version.
   and their `impl` blocks, free functions, then `#[cfg(test)] mod tests` at the bottom.
 - Return errors with `?` instead of panicking. `unwrap` and `expect` are fine in tests and for
   invariants that truly cannot fail.
-- `unsafe` is denied across the workspace. The one exception is `src-tauri/src/backdrop.rs`,
-  which subclasses the window through Win32; every block there has a `SAFETY` comment.
+- `unsafe` is denied across the workspace. The Win32 modules in `src-tauri/src`
+  (`backdrop.rs`, `game_window.rs`, `gpu.rs` and `hardware.rs`) allow it, and every block
+  there has a `SAFETY` comment.
 
 ## TypeScript and Svelte
 
@@ -51,8 +52,9 @@ release lands there as a single commit tagged with its version.
 ## Installer
 
 `src-tauri/nsis/installer.nsi` is Tauri's NSIS template from `@tauri-apps/cli` 2.12.4 with one
-change: the license page shows the privacy policy in the installer's language. The texts live
-in `src-tauri/nsis/privacy/` and must say the same as `PRIVACY.md` and `PRIVACY.ru.md`. When
+change: the license page shows the privacy policy in the installer's language. The texts in
+`src-tauri/nsis/privacy/` are written from `PRIVACY.md` and `PRIVACY.ru.md` by
+`scripts/privacy.mjs` on every `pnpm build`, so they are never edited by hand. When
 upgrading the Tauri CLI, take the new template from `crates/tauri-bundler` and apply the
 change again; do the same for `English.nsh` and `Russian.nsh`.
 

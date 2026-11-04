@@ -2,7 +2,7 @@
 //! while a file dialog is open over it. The window keeps telling Windows it is active, so the
 //! effect stays. Focus itself is unaffected.
 //!
-//! This is the only place with `unsafe`: subclassing a window is a plain Win32 call.
+//! Subclassing a window is a plain Win32 call, hence the `unsafe`.
 #![allow(unsafe_code)]
 
 use tauri::Window;
