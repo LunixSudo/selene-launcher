@@ -36,6 +36,8 @@ export const uk: Messages = {
     lastPlayed: "Грали {time}",
     playTime: "У грі {time}",
     hours: "{hours} год {minutes} хв",
+    wholeHours: "{hours} год",
+    vanilla: "Ванілла",
     minutes: "{minutes} хв",
     totalPlayTime: "Усього в грі {time}, найбільше в «{name}»",
     search: "Пошук збірок",

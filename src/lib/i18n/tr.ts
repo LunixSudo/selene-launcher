@@ -36,6 +36,8 @@ export const tr: Messages = {
     lastPlayed: "{time} oynandı",
     playTime: "{time} oynandı",
     hours: "{hours} sa {minutes} dk",
+    wholeHours: "{hours} sa",
+    vanilla: "Vanilla",
     minutes: "{minutes} dk",
     totalPlayTime: "Toplam {time} oynandı, en çok {name}",
     search: "Profillerde ara",

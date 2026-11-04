@@ -36,6 +36,8 @@ export const pl: Messages = {
     lastPlayed: "Grano {time}",
     playTime: "Czas gry: {time}",
     hours: "{hours} godz. {minutes} min",
+    wholeHours: "{hours} godz.",
+    vanilla: "Vanilla",
     minutes: "{minutes} min",
     totalPlayTime: "Łącznie w grze {time}, najwięcej w „{name}”",
     search: "Szukaj instancji",

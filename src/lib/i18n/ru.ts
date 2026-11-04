@@ -34,6 +34,8 @@ export const ru = {
     lastPlayed: "Запуск {time}",
     playTime: "В игре {time}",
     hours: "{hours} ч {minutes} мин",
+    wholeHours: "{hours} ч",
+    vanilla: "Ванилла",
     minutes: "{minutes} мин",
     totalPlayTime: "Всего в игре {time}, больше всего в «{name}»",
     search: "Поиск сборок",

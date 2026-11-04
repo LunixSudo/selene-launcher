@@ -36,6 +36,8 @@ export const zhCN: Messages = {
     lastPlayed: "{time}玩过",
     playTime: "已游玩 {time}",
     hours: "{hours} 小时 {minutes} 分钟",
+    wholeHours: "{hours} 小时",
+    vanilla: "原版",
     minutes: "{minutes} 分钟",
     totalPlayTime: "共游玩 {time}，玩得最多的是「{name}」",
     search: "搜索实例",

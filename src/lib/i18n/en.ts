@@ -36,6 +36,8 @@ export const en: Messages = {
     lastPlayed: "Played {time}",
     playTime: "{time} played",
     hours: "{hours} h {minutes} min",
+    wholeHours: "{hours} h",
+    vanilla: "Vanilla",
     minutes: "{minutes} min",
     totalPlayTime: "{time} played in all, most of it in {name}",
     search: "Search instances",

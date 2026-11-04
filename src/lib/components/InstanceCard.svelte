@@ -63,7 +63,7 @@
     <h2><a href="/instance/{instance.id}">{instance.name}</a></h2>
     <p class="meta">
       <span class="chip">
-        {instance.loader ? LOADER_NAMES[instance.loader.loader] : t("create.vanilla")}
+        {instance.loader ? LOADER_NAMES[instance.loader.loader] : t("instances.vanilla")}
       </span>
       {instance.version}
     </p>

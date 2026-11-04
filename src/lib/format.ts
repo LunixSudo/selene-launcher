@@ -5,7 +5,10 @@ export function playTime(seconds: number): string {
   if (minutes < 60) {
     return t("instances.minutes", { minutes: Math.max(1, minutes) });
   }
-  return t("instances.hours", { hours: Math.floor(minutes / 60), minutes: minutes % 60 });
+  const hours = Math.floor(minutes / 60);
+  return minutes % 60 === 0
+    ? t("instances.wholeHours", { hours })
+    : t("instances.hours", { hours, minutes: minutes % 60 });
 }
 
 /** "5 minutes ago", "yesterday" and so on, in the current language. */

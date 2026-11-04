@@ -36,6 +36,8 @@ export const ptBR: Messages = {
     lastPlayed: "Jogada {time}",
     playTime: "{time} jogadas",
     hours: "{hours} h {minutes} min",
+    wholeHours: "{hours} h",
+    vanilla: "Vanilla",
     minutes: "{minutes} min",
     totalPlayTime: "{time} jogadas no total, a maior parte em {name}",
     search: "Buscar instâncias",
