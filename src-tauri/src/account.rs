@@ -242,8 +242,7 @@ impl Accounts {
             .get(&id)
             .is_some_and(|session| session.expires_at > SystemTime::now() + EXPIRY_MARGIN);
         if !fresh {
-            let refresh_token = String::from_utf8(credential(&id)?.get_secret()?)
-                .map_err(|_| CommandError::NotSignedIn)?;
+            let refresh_token = saved_refresh_token(&id)?;
             let tokens = auth::refresh(client, &refresh_token).await?;
             // Microsoft rotates refresh tokens, so the new one replaces the old right away.
             store_refresh_token(&id, &tokens)?;
@@ -316,6 +315,18 @@ pub fn forget_all(path: &Path) {
 
 fn credential(id: &str) -> CommandResult<Entry> {
     Ok(Entry::new(KEYRING_SERVICE, id)?)
+}
+
+/// A credential that went missing, for example cleared in Windows Credential Manager, asks
+/// for a new sign-in instead of reading as a failure of the credential store itself.
+fn saved_refresh_token(id: &str) -> CommandResult<String> {
+    let expired = || CommandError::from(selene_core::Error::from(AuthError::SessionExpired));
+    let secret = match credential(id)?.get_secret() {
+        Ok(secret) => secret,
+        Err(keyring::Error::NoEntry) => return Err(expired()),
+        Err(err) => return Err(err.into()),
+    };
+    String::from_utf8(secret).map_err(|_| expired())
 }
 
 fn store_refresh_token(id: &str, tokens: &MicrosoftTokens) -> CommandResult<()> {
