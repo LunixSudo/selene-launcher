@@ -19,26 +19,26 @@ and there is no cracked mode.
 
 ## Why Selene
 
-- **Light on old PCs.** Memory, Java and its flags are picked from your RAM, processor and
+- It runs well on old PCs. Memory, Java and its flags are picked from your RAM, processor and
   mods, the game starts on the discrete graphics card, and the launcher gets out of the way
   while you play. The default style has no blur and no endless animations.
-- **Works when sites are down.** If Mojang, a loader site, Modrinth or CurseForge cannot be
-  reached, files come from their official mirrors and then from public ones, still checked
-  against the official checksums.
-- **Mods and modpacks in a click.** Modrinth and CurseForge in one catalog, dependencies added
-  for you, updates that keep the add-ons you put in yourself.
-- **Private.** No servers of its own, no analytics, no ads.
+- Downloads keep working when a site is down. If Mojang, a loader site, Modrinth or
+  CurseForge cannot be reached, files come from their official mirrors and then from public
+  ones, still checked against the official checksums.
+- Modrinth and CurseForge share one catalog. Dependencies are added for you, and modpack
+  updates keep the add-ons you put in yourself.
+- The launcher has no servers of its own, no analytics and no ads.
 
 ## Features
 
-**Accounts**
+### Accounts
 
 - Microsoft sign-in, with game ownership checked on every login and several accounts at once.
 - A new account picks its player name right in the launcher; the name can be changed later,
   with a check that it is free and Mojang's 30-day limit shown up front.
 - Single player without a connection for an account that has signed in before.
 
-**Game**
+### Game
 
 - Every version from the first alphas to the newest snapshots, with the right Java
   downloaded for each.
@@ -52,7 +52,7 @@ and there is no cracked mode.
   [BMCLAPI](https://bmclapidoc.bangbang93.com/). Java falls back to Eclipse Temurin from
   [Adoptium](https://adoptium.net/) and to [Azul Zulu](https://www.azul.com/downloads/).
 
-**Instances**
+### Instances
 
 - Search, sorting, groups, icons and covers, copies and desktop shortcuts drawn with the
   instance's own icon.
@@ -61,7 +61,7 @@ and there is no cracked mode.
 - Tuned Java arguments, or flags picked from a searchable list.
 - Play time for each instance and in total on the home screen.
 
-**Add-ons and modpacks**
+### Add-ons and modpacks
 
 - Mods, resource packs, shaders and data packs from Modrinth and CurseForge in one tab, with
   several categories at once and required dependencies added for you.
@@ -71,17 +71,17 @@ and there is no cracked mode.
 - Modpacks by game version, in the version you pick, updated later without losing your own
   add-ons. Import and export `.mrpack` and CurseForge `.zip`, or drop them on the window.
 
-**Playing**
+### Playing
 
 - Worlds with renaming and backups, servers with joining in one click, and screenshots.
 - A game console, crash analysis with advice and a button that stops a hung game.
 - A Discord status that can be turned off.
 
-**Skins**
+### Skins
 
 - An animated 3D preview, a library of saved skins and a row of capes to try on.
 
-**Launcher**
+### Launcher
 
 - Light and dark themes, Mica and glass styles, optional live backgrounds, animations and
   click sounds, a pixel font in the style of Minecraft, and style presets of your own.
