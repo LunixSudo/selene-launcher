@@ -175,6 +175,10 @@ All notable changes to this project are documented here. The format follows
 - The solid style turns blur off completely, and the launcher follows the Windows setting that
   turns animations off.
 - The game console stays light with thousands of lines.
+- Instance cards say "Vanilla" instead of "None" for a game without a loader, and play time
+  drops "0 min" from whole hours.
+- The glass and Mica previews in the settings look like a Windows wallpaper instead of a
+  purple and orange gradient.
 - Long mod, version and catalog lists take less work to show, and a dialog opened again no
   longer picks up the previous one's late answer.
 - New instances start the game in fullscreen.
