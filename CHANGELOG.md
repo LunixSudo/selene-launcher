@@ -221,6 +221,13 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- A sign-in that was removed from Windows Credential Manager now asks to sign in again
+  instead of reporting that the credential store failed.
+- Names of worlds, screenshots, mods and instances are checked the same way everywhere and
+  may not end in a dot or space, which Windows drops, so a name like `...` cannot point at the
+  folder that holds them. Only PNG files open from the screenshots tab.
+- A request sent to a catalog's copy carries no credentials at all, not only no CurseForge
+  key.
 - A long bug report, or one written in Cyrillic, still opens on GitHub: the log excerpt and
   then the description shrink to fit, and the user name is hidden in every way paths are
   written.
