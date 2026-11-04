@@ -175,6 +175,8 @@ All notable changes to this project are documented here. The format follows
 - The solid style turns blur off completely, and the launcher follows the Windows setting that
   turns animations off.
 - The game console stays light with thousands of lines.
+- Long mod, version and catalog lists take less work to show, and a dialog opened again no
+  longer picks up the previous one's late answer.
 - New instances start the game in fullscreen.
 - Automatic memory gives more: 3 GB for vanilla up to 10 GB for big packs, at most half of
   the RAM (4 GB on an 8 GB PC) and always 2 GB left for the system.
