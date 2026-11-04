@@ -809,7 +809,10 @@
     overflow: hidden;
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
-    background: linear-gradient(135deg, #5b7cff, #c45bff 60%, #ff8a5b);
+    /* A stand-in for the default Windows 11 wallpaper the window sits on. */
+    background:
+      radial-gradient(circle at 70% 120%, #7fb4ff, transparent 60%),
+      linear-gradient(160deg, #0b3a8c, #1f6fe0);
     transition: border-color 150ms var(--ease);
   }
 
@@ -833,7 +836,7 @@
   }
 
   .mica .preview {
-    background: linear-gradient(135deg, #8b97c9, #a88fc4);
+    background: linear-gradient(160deg, #8fa4c9, #b7c6e0);
   }
 
   .mica .preview span {
