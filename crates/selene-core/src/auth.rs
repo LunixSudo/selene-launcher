@@ -67,14 +67,16 @@ pub enum AuthError {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Tokens never derive `Debug` or `Serialize`, so a log line or an answer to the window
+/// cannot carry them by accident.
+#[derive(Clone)]
 pub struct MicrosoftTokens {
     pub access_token: String,
     pub refresh_token: String,
     pub expires_at: SystemTime,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct MinecraftSession {
     pub access_token: String,
     pub expires_at: SystemTime,

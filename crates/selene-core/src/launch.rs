@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
@@ -39,7 +40,7 @@ pub struct LaunchOptions {
     pub extra_jvm_args: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct LaunchAccount {
     pub name: String,
     pub uuid: String,
@@ -52,6 +53,15 @@ pub struct LaunchCommand {
     pub program: PathBuf,
     pub args: Vec<String>,
     pub working_dir: PathBuf,
+}
+
+impl fmt::Debug for LaunchAccount {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LaunchAccount")
+            .field("name", &self.name)
+            .field("uuid", &self.uuid)
+            .finish_non_exhaustive()
+    }
 }
 
 impl LaunchOptions {
