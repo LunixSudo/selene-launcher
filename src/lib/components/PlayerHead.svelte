@@ -3,12 +3,8 @@
 
   let { skin, name, size = 20 }: { skin: string | null; name: string; size?: number } = $props();
 
-  let failed = $state(false);
-
-  $effect(() => {
-    void skin;
-    failed = false;
-  });
+  let failedSkin = $state<string | null>(null);
+  const failed = $derived(failedSkin !== null && failedSkin === skin);
 </script>
 
 <span class="head" class:letter={!skin || failed} style:--size="{size}px" aria-hidden="true">
@@ -21,7 +17,7 @@
       width={8}
       height={8}
       overlay={[40, 8]}
-      onerror={() => (failed = true)}
+      onerror={() => (failedSkin = skin)}
     />
   {:else}
     {name.slice(0, 1)}

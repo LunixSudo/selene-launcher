@@ -22,7 +22,7 @@
     hardcore: "heart",
   };
 
-  let worlds = $state<World[] | null>(null);
+  let worlds = $state.raw<World[] | null>(null);
   let error = $state<string | null>(null);
   let backingUp = $state<string | null>(null);
   let deleting = $state<World | null>(null);

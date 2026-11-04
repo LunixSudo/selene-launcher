@@ -10,7 +10,7 @@
 
   let { instanceId }: { instanceId: string } = $props();
 
-  let shots = $state<Screenshot[] | null>(null);
+  let shots = $state.raw<Screenshot[] | null>(null);
   let error = $state<string | null>(null);
   let copied = $state<string | null>(null);
   const status = $derived(library.launches[instanceId]?.status);

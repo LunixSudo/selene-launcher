@@ -40,14 +40,22 @@
 
   $effect(() => {
     const [id] = memoryKey.split("|");
+    let stale = false;
     api
       .memoryInfo(id)
       .then((value) => {
-        info = value;
+        if (!stale) {
+          info = value;
+        }
       })
       .catch((err) => {
-        error = describeError(err);
+        if (!stale) {
+          error = describeError(err);
+        }
       });
+    return () => {
+      stale = true;
+    };
   });
 
   function gigabytes(megabytes: number): string {

@@ -31,7 +31,7 @@
     oninstall?: (done: Promise<Instance | null>) => void;
   } = $props();
 
-  let versions = $state<PackVersion[] | null>(null);
+  let versions = $state.raw<PackVersion[] | null>(null);
   let versionId = $state("");
   let instanceId = $state("");
   let showBetas = $state(false);
@@ -59,9 +59,13 @@
     versions = null;
     error = null;
     instanceId = instances[0]?.id ?? "";
+    let stale = false;
     api
       .modpackVersions(source, projectId)
       .then((found) => {
+        if (stale) {
+          return;
+        }
         versions = found;
         // The catalog filter only picks the version of a new install; an update offers the newest.
         const wanted = updating ? "" : gameVersion;
@@ -72,8 +76,13 @@
         versionId = (pool.find((version) => version.release) ?? pool[0])?.id ?? "";
       })
       .catch((err) => {
-        error = describeError(err);
+        if (!stale) {
+          error = describeError(err);
+        }
       });
+    return () => {
+      stale = true;
+    };
   });
 
   function label(version: PackVersion): string {

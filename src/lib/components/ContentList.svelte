@@ -28,8 +28,8 @@
 
   const RESULT_SHOWN_MS = 4000;
 
-  let files = $state<InstalledFile[] | null>(null);
-  let updates = $state<ContentUpdate[] | null>(null);
+  let files = $state.raw<InstalledFile[] | null>(null);
+  let updates = $state.raw<ContentUpdate[] | null>(null);
   let checking = $state(false);
   let updating = $state(false);
   let error = $state<string | null>(null);

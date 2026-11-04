@@ -17,10 +17,10 @@
 
   let { instance, open = $bindable() }: { instance: Instance; open: boolean } = $props();
 
-  let releases = $state<string[]>([]);
+  let releases = $state.raw<string[]>([]);
   let version = $state("");
   let change = $state<VersionChange | null>(null);
-  let loaderBuilds = $state<LoaderRelease[] | null>(null);
+  let loaderBuilds = $state.raw<LoaderRelease[] | null>(null);
   let loaderVersion = $state("");
   let showBetas = $state(false);
   let working = $state(false);

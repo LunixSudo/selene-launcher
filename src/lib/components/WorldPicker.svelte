@@ -5,24 +5,33 @@
 
   let { instanceId, value = $bindable() }: { instanceId: string; value: string | null } = $props();
 
-  let worlds = $state<World[] | null>(null);
+  let worlds = $state.raw<World[] | null>(null);
 
   const options = $derived(
     (worlds ?? []).map((world) => ({ value: world.folder, label: world.name })),
   );
 
   $effect(() => {
+    let stale = false;
     api
       .worlds(instanceId)
       .then((list) => {
+        if (stale) {
+          return;
+        }
         worlds = list;
         if (!list.some((world) => world.folder === value)) {
           value = list[0]?.folder ?? null;
         }
       })
       .catch(() => {
-        worlds = [];
+        if (!stale) {
+          worlds = [];
+        }
       });
+    return () => {
+      stale = true;
+    };
   });
 </script>
 

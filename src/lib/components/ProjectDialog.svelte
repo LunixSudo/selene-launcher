@@ -42,8 +42,8 @@
   type View = "about" | "versions";
 
   let view = $state<View>("about");
-  let page = $state<ProjectPage | null>(null);
-  let versions = $state<ProjectVersion[] | null>(null);
+  let page = $state.raw<ProjectPage | null>(null);
+  let versions = $state.raw<ProjectVersion[] | null>(null);
   let expanded = $state<string | null>(null);
   let changelogs = $state<Record<string, string>>({});
   let busy = $state<string | null>(null);

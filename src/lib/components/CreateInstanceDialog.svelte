@@ -21,14 +21,14 @@
   let { open = $bindable() }: { open: boolean } = $props();
 
   let dialog: HTMLDialogElement;
-  let versions = $state<VersionSummary[] | null>(null);
+  let versions = $state.raw<VersionSummary[] | null>(null);
   let name = $state("");
   let version = $state("");
   let showSnapshots = $state(false);
   let showOld = $state(false);
   let showBetas = $state(false);
   let loader = $state<Loader | null>(null);
-  let loaderReleases = $state<LoaderRelease[] | null>(null);
+  let loaderReleases = $state.raw<LoaderRelease[] | null>(null);
   let loaderVersion = $state("");
   let error = $state<string | null>(null);
   let loaderError = $state<string | null>(null);

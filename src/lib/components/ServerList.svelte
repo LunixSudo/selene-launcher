@@ -10,7 +10,7 @@
 
   let { instanceId }: { instanceId: string } = $props();
 
-  let servers = $state<Server[] | null>(null);
+  let servers = $state.raw<Server[] | null>(null);
   let error = $state<string | null>(null);
   let editing = $state(false);
   let editIndex = $state<number | null>(null);

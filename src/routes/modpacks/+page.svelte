@@ -37,15 +37,15 @@
   let sort = $state<CatalogSort>("downloads");
   let query = $state("");
   let gameVersion = $state("");
-  let releases = $state<string[]>([]);
-  let hits = $state<CatalogHit[]>([]);
+  let releases = $state.raw<string[]>([]);
+  let hits = $state.raw<CatalogHit[]>([]);
   let page = $state(0);
   let hasMore = $state(false);
   let loading = $state(false);
   let error = $state<string | null>(null);
   let installing = $state<Record<string, true>>({});
   let dialogOpen = $state(false);
-  let chosen = $state<{ hit: CatalogHit; instances: Instance[] } | null>(null);
+  let chosen = $state.raw<{ hit: CatalogHit; instances: Instance[] } | null>(null);
   let lastRequest: Request | null = null;
 
   const sortOptions = $derived(
