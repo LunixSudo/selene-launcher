@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use futures_util::StreamExt;
 use futures_util::stream::FuturesUnordered;
-use reqwest::{Client, RequestBuilder, Response, StatusCode, Url};
+use reqwest::{Client, Request, RequestBuilder, Response, StatusCode, Url};
 use serde::de::DeserializeOwned;
 
 use crate::Result;
@@ -101,6 +101,14 @@ const FALLBACKS: &[(&str, &str)] = &[
     ),
     ("https://edge.forgecdn.net/", MCIM),
     ("https://mediafilez.forgecdn.net/", MCIM),
+];
+
+/// Headers that stay with the official API and are taken off its copy.
+const CREDENTIAL_HEADERS: &[&str] = &[
+    "x-api-key",
+    "authorization",
+    "cookie",
+    "proxy-authorization",
 ];
 
 /// A host that failed is skipped for a while, so a blocked one does not cost a timeout for
@@ -203,18 +211,14 @@ pub async fn get(client: &Client, url: &str) -> Result<Response> {
 }
 
 /// Sends an API request, and the same request to the API's copy when the API cannot be
-/// reached. The copy never gets the CurseForge key.
+/// reached. The copy never gets the CurseForge key or any other credential.
 pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> {
     let request = request.build()?;
-    let copy = fallback_of(request.url().as_str())
-        .filter(|_| only() != Some(Only::Official))
-        .and_then(|url| Url::parse(&url).ok())
-        .and_then(|url| {
-            let mut copy = request.try_clone()?;
-            *copy.url_mut() = url;
-            copy.headers_mut().remove("x-api-key");
-            Some(copy)
-        });
+    let copy = if only() == Some(Only::Official) {
+        None
+    } else {
+        copy_of(&request)
+    };
     let Some(copy) = copy else {
         return Ok(client.execute(request).await?);
     };
@@ -230,6 +234,18 @@ pub async fn send(client: &Client, request: RequestBuilder) -> Result<Response> 
         .map(|request| (request.url().to_string(), request))
         .collect();
     Ok(race(requests, |request| client.execute(request)).await?)
+}
+
+/// The same request to the API's copy, without the credentials meant for the API itself.
+fn copy_of(request: &Request) -> Option<Request> {
+    let url = Url::parse(&fallback_of(request.url().as_str())?).ok()?;
+    let mut copy = request.try_clone()?;
+    *copy.url_mut() = url;
+    let headers = copy.headers_mut();
+    for name in CREDENTIAL_HEADERS {
+        headers.remove(*name);
+    }
+    Some(copy)
 }
 
 /// How long a source may keep us waiting for an answer before the next one is asked too.
@@ -369,6 +385,28 @@ mod tests {
             mirrors_of("https://cdn.modrinth.com/a.jar"),
             Vec::<String>::new()
         );
+    }
+
+    #[test]
+    fn api_copies_get_no_credentials() {
+        let client = Client::new();
+        let request = client
+            .get("https://api.curseforge.com/v1/mods/search")
+            .header("x-api-key", "secret")
+            .bearer_auth("token")
+            .header("accept", "application/json")
+            .build()
+            .unwrap();
+
+        let copy = copy_of(&request).unwrap();
+
+        assert_eq!(
+            copy.url().as_str(),
+            "https://mod.mcimirror.top/curseforge/v1/mods/search"
+        );
+        assert!(copy.headers().get("x-api-key").is_none());
+        assert!(copy.headers().get("authorization").is_none());
+        assert_eq!(copy.headers()["accept"], "application/json");
     }
 
     #[test]
