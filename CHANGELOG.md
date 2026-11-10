@@ -222,6 +222,8 @@ All notable changes to this project are documented here. The format follows
 - The privacy policy starts with a short summary and now also covers the settings file, the
   classes archive, bug reports, the Discord status, what the game itself sends and how the
   launcher keeps data safe. The installer takes its text from the policy when it is built.
+- The privacy policy reads more plainly and says that the installer downloads the WebView2
+  runtime from Microsoft when Windows does not have it.
 
 ### Fixed
 

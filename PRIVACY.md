@@ -1,8 +1,8 @@
 # Selene Launcher Privacy Policy
 
-Effective November 3, 2026.
+Effective November 10, 2026.
 
-Selene Launcher is a free, open-source launcher for Minecraft: Java Edition. It has no servers of its own: its developers do not receive or store any data about you.
+Selene Launcher is a free, open-source launcher for Minecraft: Java Edition. It has no servers of its own, so its developers never receive or store any data about you.
 
 In short:
 
@@ -13,9 +13,9 @@ In short:
 
 ## What stays on your computer
 
-- **Sign-in.** You sign in on a Microsoft page. The token used to sign you in again is not kept in a plain file but in the system credential store: Credential Manager on Windows, the Secret Service keyring on Linux. Your player name, UUID and skin are saved in the launcher folder to show your accounts.
-- **Game data.** Instances, worlds, mods, saved skins, screenshots, crash reports, play time and settings live in `%APPDATA%\SeleneLauncher` (on Linux `~/.local/share/SeleneLauncher`), or next to the program in the portable version. For Java 19 and newer, the launcher also keeps a `classes.jsa` file next to each instance, so the game starts faster next time. It holds only the code of the game and its mods.
-- **The launcher log.** `logs\launcher.log` records:
+- You sign in on a Microsoft page. The token that signs you in again is kept in the system credential store (Credential Manager on Windows, the Secret Service keyring on Linux), not in a plain file. Your player name, UUID and skin are saved in the launcher folder so the launcher can list your accounts.
+- Instances, worlds, mods, saved skins, screenshots, crash reports, play time and settings live in `%APPDATA%\SeleneLauncher` (on Linux `~/.local/share/SeleneLauncher`), or next to the program in the portable version. With Java 19 and newer, each instance also gets a `classes.jsa` file that makes the next start faster. It holds only the code of the game and its mods.
+- The launcher writes a log to `logs\launcher.log`. It records:
   - the launcher version and your system;
   - the models of your processor, graphics card, memory sticks and motherboard, never their serial numbers;
   - free disk space;
@@ -24,11 +24,11 @@ In short:
   - game starts, exits and errors;
   - the last lines the game printed before a crash.
 
-  It holds no passwords, tokens or keys, and it is never sent anywhere by itself.
-- **The OptiFine window.** Like any browser, it keeps the site's cookies and cache, in `%LOCALAPPDATA%\io.github.lunixsudo.selene`.
-- **Settings file.** "Save to file" in the settings writes the look and launcher settings to a file you choose. It holds no accounts, tokens or instances.
+  The log holds no passwords, tokens or keys, and the launcher never sends it anywhere by itself.
+- The OptiFine window keeps the site's cookies and cache in `%LOCALAPPDATA%\io.github.lunixsudo.selene`, as any browser would.
+- "Save to file" in the settings writes the look and launcher settings to a file you choose. That file holds no accounts, tokens or instances.
 
-None of this is sent anywhere, except as described below.
+None of this leaves your computer, except as described below.
 
 ## What the launcher connects to
 
@@ -36,29 +36,31 @@ None of this is sent anywhere, except as described below.
 | --- | --- | --- |
 | Microsoft and Xbox Live | Signing in | Sign-in tokens |
 | Mojang and Minecraft Services | Checking you own the game, downloading the game and Java, skins and capes, creating and changing your player name | Your Minecraft token, the skin you choose, the player name you type |
-| Fabric, Quilt, Forge and NeoForge | Mod loaders: the list of builds and the loader itself, which Forge and NeoForge download with their own installer. When a site cannot be reached, the same files come from the official mirrors the project lists, for Forge that is CreeperHost. Libraries of other projects that the loaders use, like ASM, are taken from Maven Central (repo1.maven.org) first | The game version |
-| BMCLAPI (bmclapi2.bangbang93.com, run by bangbang93) | A spare copy of the game, Java and loader files, used only when the official servers and their mirrors cannot be reached. BMCLAPI hands each file out from one of its download nodes, run by volunteers and Chinese university mirrors (CERNET), which also see your IP address. Files are checked against the official checksums whenever those can be had | The address of the requested file |
+| Fabric, Quilt, Forge and NeoForge | Installing mod loaders: the list of builds and the loader files. Forge and NeoForge fetch theirs with their own installer. If a site is down, the same files come from the official mirrors the project lists (for Forge, CreeperHost). Libraries from other projects that the loaders need, such as ASM, come from Maven Central (repo1.maven.org) first | The game version |
+| BMCLAPI (bmclapi2.bangbang93.com, run by bangbang93) | A spare copy of the game, Java and loader files, used only when the official servers and their mirrors cannot be reached. BMCLAPI serves each file from one of its download nodes, run by volunteers and Chinese university mirrors (CERNET), and those nodes see your IP address too. Files are checked against the official checksums whenever the launcher can get them | The address of the requested file |
 | Adoptium (api.adoptium.net, run by the Eclipse Foundation), GitHub and the TUNA mirror (mirrors.tuna.tsinghua.edu.cn, Tsinghua University) | Eclipse Temurin Java, used only when Mojang's Java cannot be downloaded. The file is checked against Adoptium's SHA-256 checksum | The Java version, your system and processor type |
 | Azul (api.azul.com, cdn.azul.com, Azul Systems) | Azul Zulu Java, used only when neither Mojang's Java nor Temurin can be downloaded. The file is checked against Azul's SHA-256 checksum | The Java version, your system and processor type |
-| Modrinth and CurseForge | The catalog, installing and updating mods and modpacks | Search queries, and checksums of installed files to recognise them and find updates |
-| MCIM (mod.mcimirror.top) | A spare copy of the Modrinth and CurseForge catalogs and mod files, used only when those sites cannot be reached. Mod files are checked against the catalog checksums, which come from MCIM too while the catalog itself is down. The launcher's CurseForge key is never sent there | Search queries, checksums of installed files |
-| OptiFine (optifine.net) | The official OptiFine site, opened in a launcher window only when you press "Install OptiFine". Before that, the mods tab of a Forge instance reads its downloads page, at most once every 10 minutes, to see whether there is a build for the game version that is not installed yet. The site and its ads work as in any browser | What any website sees: your IP address and what you click |
-| GitHub | Checking for and downloading launcher updates. Can be turned off in settings | Nothing beyond the request itself |
-| Discord (the app on your computer) | The status in your Discord profile. It can be turned off in settings, and then the launcher does not connect to Discord at all | The instance name, game and loader version and when the game started, or "In the launcher" |
+| Modrinth and CurseForge | The catalog, installing and updating mods and modpacks | Search queries, and checksums of installed files so the launcher can recognise them and find updates |
+| MCIM (mod.mcimirror.top) | A spare copy of the Modrinth and CurseForge catalogs and mod files, used only when those sites cannot be reached. Mod files are checked against the catalog checksums, which also come from MCIM while the catalog is down. The launcher's CurseForge key is never sent there | Search queries, checksums of installed files |
+| OptiFine (optifine.net) | The official OptiFine site, opened in a launcher window only when you press "Install OptiFine". Before that, the mods tab of a Forge instance reads the site's downloads page, at most once every 10 minutes, to check for a build for the game version that is not installed yet. The site and its ads work as in any browser | What any website sees: your IP address and what you click |
+| GitHub | Checking for and downloading launcher updates. You can turn this off in settings | Nothing beyond the request itself |
+| Discord (the app on your computer) | The status in your Discord profile. If you turn it off in settings, the launcher does not connect to Discord at all | The instance name, the game and loader versions and when the game started, or "In the launcher" |
 
-Every request carries the launcher's name and version, as Modrinth asks of all apps. Like any website, these services see your IP address and handle data under their own policies. The launcher sends them nothing beyond what a feature needs.
+Every request carries the launcher's name and version, as Modrinth asks of all apps. Like any website, these services see your IP address and handle data under their own policies. The launcher sends them only what a feature needs.
 
-Project pages in the catalog show icons, descriptions and galleries chosen by the authors of the projects. Their images can be hosted on other sites, which then also see your IP address when the page is opened.
+Project pages in the catalog show icons, descriptions and galleries picked by the project authors. Those images may be hosted on other sites, which then also see your IP address when you open the page.
+
+If Windows does not have the Microsoft Edge WebView2 Runtime, the installer downloads it from Microsoft (go.microsoft.com), because the launcher window cannot run without it. Windows 11 already includes it.
 
 ## Reporting a problem
 
-"Report a problem" in the settings opens a new bug report on GitHub in your browser. The report is filled in with:
+"Report a problem" in the settings opens a new bug report on GitHub in your browser, already filled in with:
 
 - what you wrote;
 - the launcher version, your system and the models of your hardware;
 - if you choose, the end of the launcher log, with your Windows user name hidden.
 
-The whole log, with the user name hidden too, is saved to `%TEMP%\SeleneLauncher\selene-report.log`, so you can attach it. Nothing is sent until you press the button on GitHub yourself. Reports on GitHub are public, so read the text before you send it.
+The whole log, with the user name hidden too, is saved to `%TEMP%\SeleneLauncher\selene-report.log` so you can attach it. Nothing is sent until you press the button on GitHub yourself. Reports on GitHub are public, so read the text before you send it.
 
 ## The game itself
 
@@ -84,6 +86,6 @@ The launcher collects no data about anyone, children included. Age rules for Mic
 
 ## Changes and contact
 
-When this policy changes, the launcher shows the new version on its next start. New versions are published in the project repository: https://github.com/LunixSudo/selene-launcher. Questions can be asked there, under Issues.
+When this policy changes, the launcher shows the new version on its next start. New versions are published in the project repository: https://github.com/LunixSudo/selene-launcher. You can ask questions there, under Issues.
 
 Selene Launcher is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft.
