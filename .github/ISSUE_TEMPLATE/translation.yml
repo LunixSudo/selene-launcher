@@ -1,0 +1,27 @@
+name: Translation
+description: A wrong, awkward or missing text in one of the launcher's languages.
+labels: [translation, needs triage]
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - English
+        - Русский
+        - Українська
+        - Deutsch
+        - Español
+        - Português (Brasil)
+        - Polski
+        - Türkçe
+        - 简体中文
+    validations:
+      required: true
+  - type: textarea
+    id: text
+    attributes:
+      label: What is wrong and how it should read
+      description: The text as the launcher shows it, where you saw it, and your version of it.
+    validations:
+      required: true

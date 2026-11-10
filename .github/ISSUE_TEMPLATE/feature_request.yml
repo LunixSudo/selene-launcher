@@ -1,11 +1,16 @@
 name: Feature request
 description: An idea that would make the launcher better.
-labels: [enhancement]
+labels: [enhancement, needs triage]
 body:
   - type: textarea
     id: idea
     attributes:
       label: What you would like
-      description: What the feature should do and why you need it.
+      description: What the feature should do. English or Russian, whichever is easier.
     validations:
       required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What it would help with
+      description: The situation where you missed it. This helps to pick the best way to do it.
