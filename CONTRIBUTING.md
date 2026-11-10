@@ -10,11 +10,32 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-CI runs the same commands.
+CI runs the same commands on Windows and Linux, and three more checks:
 
-Dependabot opens weekly pull requests for Cargo and npm updates and monthly ones for GitHub
-Actions. Minor and patch updates come grouped; check the changelog of a major one before
-merging it.
+- `cargo deny check` (rules in `deny.toml`): known vulnerabilities, licenses that cannot be
+  combined with the GPL, and crates from anywhere but crates.io. Run it after touching
+  `Cargo.toml`; `cargo install cargo-deny --locked` installs it.
+- [zizmor](https://docs.zizmor.sh/) on the workflows in `.github`.
+- A dependency review on pull requests, which fails when a change brings in a library with
+  a known vulnerability.
+
+The Rust version is pinned in `rust-toolchain.toml` and the Node.js version in
+`.node-version`, so CI and your machine use the same ones; rustup installs the pinned
+toolchain by itself.
+
+Dependabot opens weekly pull requests for Cargo, npm, the Rust toolchain and GitHub Actions,
+a week after a version comes out. Minor and patch updates come grouped; check the changelog
+of a major one before merging it.
+
+## Releases
+
+Pushing a `v*` tag runs the Build workflow without caches and leaves a draft release with
+the installers, `SHA256SUMS.txt`, a list of dependencies (SPDX) and a signed build
+provenance statement. The notes are taken from the version's section of `CHANGELOG.md`, and
+the tag must match the version in `package.json`. The draft is published by hand.
+
+Labels are kept in `.github/labels.json`; the Labels workflow creates and updates them. The
+branch and tag rules are kept in `.github/rulesets/` and imported in the repository settings.
 
 ## Branches
 

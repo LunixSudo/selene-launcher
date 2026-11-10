@@ -5,6 +5,8 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       rust:
         update-types: [minor, patch]
@@ -13,11 +15,25 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       npm:
         update-types: [minor, patch]
+  - package-ecosystem: rust-toolchain
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
   - package-ecosystem: github-actions
     directory: /
     target-branch: dev
     schedule:
-      interval: monthly
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]

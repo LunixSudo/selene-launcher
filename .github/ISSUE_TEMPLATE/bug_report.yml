@@ -1,7 +1,12 @@
 name: Bug report
 description: Something does not work as it should.
-labels: [bug]
+labels: [bug, needs triage]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Write in English or Russian, whichever is easier. "Report a problem" in the launcher
+        settings opens this form with the version, system and log already filled in.
   - type: textarea
     id: what
     attributes:
@@ -31,6 +36,5 @@ body:
     attributes:
       label: Launcher log
       description: >-
-        Optional, but it helps a lot. "Report a problem" in the launcher settings fills this in
-        for you; otherwise attach `logs/launcher.log` from the launcher folder. It holds no
-        passwords or tokens.
+        Optional, but it helps a lot. Attach `logs/launcher.log` from the launcher folder, or
+        the file the launcher showed you. It holds no passwords or tokens.

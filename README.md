@@ -110,6 +110,9 @@ workflow: a Windows installer and a portable `.zip`, and for Linux an AppImage a
 package. The Windows installer is not signed yet, so SmartScreen may warn about it. The Linux
 builds are not tested much yet and do not update themselves.
 
+Every release comes with checksums and a signed statement that the files were built here
+from the tagged commit; [SECURITY.md](SECURITY.md#checking-a-download) shows how to check them.
+
 Data lives in `%APPDATA%\SeleneLauncher` on Windows and `~/.local/share/SeleneLauncher` on
 Linux.
 
@@ -123,8 +126,8 @@ again after an update that changes it.
 
 ## Building
 
-Requirements: Rust (stable), Node.js 22, pnpm 10 and the
-[Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS.
+Requirements: Rust (rustup installs the version pinned in `rust-toolchain.toml`), Node.js 26,
+pnpm 10 and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS.
 
 ```sh
 pnpm install

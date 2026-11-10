@@ -1,0 +1,79 @@
+[
+  { "name": "bug", "color": "d73a4a", "description": "Something does not work as it should" },
+  { "name": "enhancement", "color": "a2eeef", "description": "A new feature or an improvement" },
+  {
+    "name": "translation",
+    "color": "c5def5",
+    "description": "Wrong or missing text in one of the languages"
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "README, changelog, privacy policy or the website help"
+  },
+  {
+    "name": "security",
+    "color": "b60205",
+    "description": "Hardening that is safe to discuss in public"
+  },
+  { "name": "needs triage", "color": "fbca04", "description": "New and not looked at yet" },
+  {
+    "name": "needs info",
+    "color": "d876e3",
+    "description": "Waiting for details from the reporter"
+  },
+  {
+    "name": "crash",
+    "color": "b60205",
+    "description": "The launcher or the game closes or freezes"
+  },
+  { "name": "duplicate", "color": "cfd3d7", "description": "Already reported in another issue" },
+  {
+    "name": "wontfix",
+    "color": "ffffff",
+    "description": "Will not be changed, with the reason in the issue"
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "A small, well-described task for a first contribution"
+  },
+  { "name": "help wanted", "color": "008672", "description": "Contributions are welcome here" },
+  {
+    "name": "area: accounts",
+    "color": "1d76db",
+    "description": "Microsoft sign-in, profiles and skins"
+  },
+  {
+    "name": "area: instances",
+    "color": "1d76db",
+    "description": "Creating, starting and managing instances"
+  },
+  {
+    "name": "area: content",
+    "color": "1d76db",
+    "description": "Mods, modpacks, resource packs and shaders"
+  },
+  {
+    "name": "area: downloads",
+    "color": "1d76db",
+    "description": "Game files, loaders, Java and mirrors"
+  },
+  {
+    "name": "area: interface",
+    "color": "1d76db",
+    "description": "Look, layout, themes and accessibility"
+  },
+  {
+    "name": "area: installer",
+    "color": "1d76db",
+    "description": "Installer, portable version and updates"
+  },
+  { "name": "os: windows", "color": "bfd4f2", "description": "Happens on Windows" },
+  { "name": "os: linux", "color": "bfd4f2", "description": "Happens on Linux" },
+  { "name": "os: macos", "color": "bfd4f2", "description": "Happens on macOS" },
+  { "name": "dependencies", "color": "0366d6", "description": "Updates of libraries and tools" },
+  { "name": "rust", "color": "dea584", "description": "Rust dependencies or toolchain" },
+  { "name": "javascript", "color": "f1e05a", "description": "npm dependencies" },
+  { "name": "github_actions", "color": "000000", "description": "Workflow dependencies" }
+]

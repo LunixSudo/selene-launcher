@@ -5,28 +5,60 @@ on:
   push:
     tags: ["v*"]
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            bundles: nsis
+            artifact: selene-launcher-windows
+          - name: Linux x64
+            os: ubuntu-22.04
+            bundles: appimage,deb
+            artifact: selene-launcher-linux
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Install system libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libssl-dev patchelf
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      # Release builds start clean, so nothing a cache holds can end up in published files.
+      # Caches are used for test builds only, which is why the two warnings are silenced.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
-          cache: pnpm
-      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
-        with:
-          toolchain: stable
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+          node-version-file: .node-version
+          package-manager-cache: ${{ github.ref_type != 'tag' }} # zizmor: ignore[cache-poisoning]
+      - name: Install the Rust toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3 # zizmor: ignore[cache-poisoning]
+        if: github.ref_type != 'tag'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm tauri build --bundles nsis
+      - run: pnpm tauri build --bundles ${{ matrix.bundles }}
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
       - name: Collect the installer and the portable version
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
@@ -35,43 +67,8 @@ jobs:
           Copy-Item target/release/selene-launcher.exe, LICENSE portable/
           New-Item -ItemType File portable/portable.txt | Out-Null
           Compress-Archive -Path portable/* -DestinationPath "dist/SeleneLauncher-Windows-Portable-$version.zip"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: selene-launcher-windows
-          path: dist/
-          if-no-files-found: error
-      - name: Publish the release
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $files = (Get-ChildItem dist/*).FullName
-          gh release create $env:GITHUB_REF_NAME @files --generate-notes
-          if ($LASTEXITCODE -ne 0) { gh release upload $env:GITHUB_REF_NAME @files }
-
-  linux:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install system libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libssl-dev patchelf
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-          cache: pnpm
-      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
-        with:
-          toolchain: stable
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm tauri build --bundles appimage,deb
-        env:
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
       - name: Collect the AppImage and the package
+        if: runner.os == 'Linux'
         run: |
           version=$(node -p "require('./package.json').version")
           mkdir dist
@@ -79,13 +76,89 @@ jobs:
           cp target/release/bundle/deb/*.deb "dist/SeleneLauncher-Linux-$version.deb"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: selene-launcher-linux
+          name: ${{ matrix.artifact }}
           path: dist/
           if-no-files-found: error
-      - name: Publish the release
-        if: startsWith(github.ref, 'refs/tags/v')
+
+  # Lists what the build depends on. It runs apart from the release job, so the only code
+  # that ever holds permission to publish is GitHub's own.
+  sbom:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the version
+        run: |
+          echo "VERSION=$(jq -r .version package.json)" >> "$GITHUB_ENV"
+          mkdir dist
+      - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/SeleneLauncher-${{ env.VERSION }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: selene-launcher-sbom
+          path: dist/
+          if-no-files-found: error
+
+  # Runs for version tags only. The release is left as a draft: publishing it is a decision
+  # for a person, made on the releases page once the files have been looked at.
+  release:
+    if: github.ref_type == 'tag'
+    needs: [build, sbom]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write # create the draft release
+      id-token: write # get the short-lived certificate the statement is signed with
+      attestations: write # store the signed statement
+      artifact-metadata: write # record which files the statement covers
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check that the tag matches the version
+        run: |
+          version=$(jq -r .version package.json)
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match version $version in package.json"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: selene-launcher-*
+          path: dist
+          merge-multiple: true
+      - name: Write checksums
+        working-directory: dist
+        run: sha256sum -- * > SHA256SUMS.txt
+      - name: Sign a statement of where the files were built
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS.txt
+      - name: Take the release notes from the changelog
+        run: |
+          awk -v version="$VERSION" '
+            /^## \[/ { found = index($0, "[" version "]") == 4; next }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+      - name: Create the draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        # Whichever platform finishes first creates the release; the other adds its files.
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* --generate-notes || gh release upload "$GITHUB_REF_NAME" dist/*
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --draft --verify-tag \
+            --title "Selene Launcher $VERSION" \
+            --notes-file notes.md
