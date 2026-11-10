@@ -80,11 +80,37 @@ jobs:
           path: dist/
           if-no-files-found: error
 
+  # Lists what the build depends on. It runs apart from the release job, so the only code
+  # that ever holds permission to publish is GitHub's own.
+  sbom:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the version
+        run: echo "VERSION=$(jq -r .version package.json)" >> "$GITHUB_ENV"
+      - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/SeleneLauncher-${{ env.VERSION }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: selene-launcher-sbom
+          path: dist/
+          if-no-files-found: error
+
   # Runs for version tags only. The release is left as a draft: publishing it is a decision
   # for a person, made on the releases page once the files have been looked at.
   release:
     if: github.ref_type == 'tag'
-    needs: build
+    needs: [build, sbom]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -109,14 +135,6 @@ jobs:
           pattern: selene-launcher-*
           path: dist
           merge-multiple: true
-      - name: List what the build depends on
-        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
-        with:
-          path: .
-          format: spdx-json
-          output-file: dist/SeleneLauncher-${{ env.VERSION }}.spdx.json
-          upload-artifact: false
-          upload-release-assets: false
       - name: Write checksums
         working-directory: dist
         run: sha256sum -- * > SHA256SUMS.txt
