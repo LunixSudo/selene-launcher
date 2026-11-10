@@ -111,6 +111,10 @@
 не подписан, поэтому SmartScreen может предупредить о нём. Сборки для Linux ещё мало
 проверены и не обновляются сами.
 
+К каждому релизу приложены контрольные суммы и подписанное подтверждение, что файлы собраны
+здесь из отмеченного коммита. Как их проверить, написано в
+[SECURITY.md](SECURITY.md#checking-a-download).
+
 Данные лежат в `%APPDATA%\SeleneLauncher` в Windows и в `~/.local/share/SeleneLauncher` в Linux.
 
 ## Конфиденциальность
@@ -123,7 +127,7 @@
 
 ## Сборка из исходников
 
-Нужны Rust (stable), Node.js 22, pnpm 10 и
+Нужны Rust (rustup сам поставит версию из `rust-toolchain.toml`), Node.js 26, pnpm 10 и
 [зависимости Tauri](https://v2.tauri.app/start/prerequisites/) для вашей системы.
 
 ```sh
