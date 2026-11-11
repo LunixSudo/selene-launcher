@@ -156,6 +156,12 @@ pnpm tauri build
   `src-tauri/nsis`.
 - `src`: интерфейс на SvelteKit и Svelte 5.
 
+## Сообщество
+
+- [Discord](https://discord.gg/uaDvBeM8D2): помощь, идеи и общение.
+- [Telegram](https://t.me/selenegames): новости о релизах.
+- [YouTube](https://www.youtube.com/@selene-games): видео о лаунчере.
+
 ## Участие
 
 Сообщения об ошибках и идеи принимаются в
