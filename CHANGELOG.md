@@ -169,8 +169,8 @@ All notable changes to this project are documented here. The format follows
 - The installer puts the program into `%LOCALAPPDATA%\SeleneLauncher`, without a space.
 - The privacy policy mentions that catalog pages load images from the sites their authors
   chose.
-- New logo: a moon-rock cube with a golden crescent and no stars, with a simpler drawing for
-  16–32 px icons. Sources are in `docs/brand`.
+- New logo: a moon-rock cube with a glowing golden crescent and no stars, with simpler
+  drawings for 32–48 px and 16–24 px icons. Sources are in `docs/brand`.
 - The solid style is the default, so the launcher stays light on slower PCs.
 - The solid style turns blur off completely, and the launcher follows the Windows setting that
   turns animations off.

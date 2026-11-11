@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Selene Launcher</title>
+  <defs>
+    <clipPath id="sil">
+      <path
+        d="M490 38.7A44 44 0 0 1 534 38.7L910.89 256.3A44 44 0 0 1 932.89 294.4L932.89 729.6A44 44 0 0 1 910.89 767.7L534 985.3A44 44 0 0 1 490 985.3L113.11 767.7A44 44 0 0 1 91.11 729.6L91.11 294.4A44 44 0 0 1 113.11 256.3Z"
+      />
+    </clipPath>
+    <linearGradient id="gt" gradientUnits="userSpaceOnUse" x1="512" y1="26" x2="512" y2="512">
+      <stop offset="0" stop-color="#cfc3ff" />
+      <stop offset="1" stop-color="#f6f2ff" />
+    </linearGradient>
+    <linearGradient
+      id="gl"
+      gradientUnits="userSpaceOnUse"
+      x1="301.56"
+      y1="147.5"
+      x2="301.56"
+      y2="633.5"
+    >
+      <stop offset="0" stop-color="#a593ff" />
+      <stop offset="1" stop-color="#6a52e6" />
+    </linearGradient>
+    <linearGradient
+      id="gr"
+      gradientUnits="userSpaceOnUse"
+      x1="722.44"
+      y1="390.5"
+      x2="722.44"
+      y2="876.5"
+    >
+      <stop offset="0" stop-color="#5a49cf" />
+      <stop offset="1" stop-color="#33268f" />
+    </linearGradient>
+    <radialGradient id="sheen" gradientUnits="userSpaceOnUse" cx="166.87" cy="361.34" r="461.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.1" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id="ct0">
+      <path
+        d="M419.4 215.54C470.54 186.01 553.46 186.01 604.6 215.54C655.73 245.07 655.73 292.93 604.6 322.46C553.46 351.99 470.54 351.99 419.4 322.46C368.27 292.93 368.27 245.07 419.4 215.54Z"
+      />
+    </clipPath>
+    <linearGradient
+      id="cf0"
+      gradientUnits="userSpaceOnUse"
+      x1="512"
+      y1="215.54"
+      x2="512"
+      y2="348.83"
+    >
+      <stop offset="0" stop-color="#b6a6f5" />
+      <stop offset="1" stop-color="#dcd2ff" />
+    </linearGradient>
+    <linearGradient
+      id="cw0"
+      gradientUnits="userSpaceOnUse"
+      x1="405.08"
+      y1="269"
+      x2="618.92"
+      y2="269"
+    >
+      <stop offset="0" stop-color="#7f69dd" />
+      <stop offset="1" stop-color="#9a87ea" />
+    </linearGradient>
+    <clipPath id="lf"><polygon points="512,512 91.11,269 91.11,755 512,998" /></clipPath>
+    <clipPath id="cm">
+      <path
+        d="M251.27 412.44C170.92 391.76 117.98 449.56 125.48 549.77C132.98 649.99 198.78 763.95 281.82 820.56C364.86 877.16 441.38 860.21 463.65 780.29C465.1 775.08 463.03 767.44 458.52 761.33C454.01 755.23 448.06 752.02 443.76 753.38C392.92 769.38 320.81 722.44 275.38 643.75C229.95 565.07 225.35 479.15 264.63 443.12C267.96 440.07 268.15 433.32 265.12 426.36C262.09 419.4 256.51 413.79 251.27 412.44Z"
+      />
+    </clipPath>
+    <linearGradient
+      id="mw"
+      gradientUnits="userSpaceOnUse"
+      x1="297.35"
+      y1="431.81"
+      x2="297.35"
+      y2="830.33"
+    >
+      <stop offset="0" stop-color="#4b36c0" />
+      <stop offset="1" stop-color="#3a2aa0" />
+    </linearGradient>
+    <linearGradient
+      id="mf"
+      gradientUnits="userSpaceOnUse"
+      x1="297.35"
+      y1="431.81"
+      x2="297.35"
+      y2="830.33"
+    >
+      <stop offset="0" stop-color="#ffe58f" />
+      <stop offset="0.45" stop-color="#ffd65f" />
+      <stop offset="1" stop-color="#ffcd50" />
+    </linearGradient>
+    <linearGradient
+      id="bl"
+      gradientUnits="userSpaceOnUse"
+      x1="512"
+      y1="475.55"
+      x2="480.43"
+      y2="530.23"
+    >
+      <stop offset="0" stop-color="#fbf9ff" />
+      <stop offset="0.5" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#c3b6ff" />
+    </linearGradient>
+    <linearGradient
+      id="br"
+      gradientUnits="userSpaceOnUse"
+      x1="512"
+      y1="475.55"
+      x2="543.57"
+      y2="530.23"
+    >
+      <stop offset="0" stop-color="#f1ecff" />
+      <stop offset="0.5" stop-color="#d9cfff" />
+      <stop offset="1" stop-color="#8b7be6" />
+    </linearGradient>
+    <linearGradient
+      id="bd"
+      gradientUnits="userSpaceOnUse"
+      x1="480.43"
+      y1="530.23"
+      x2="543.57"
+      y2="530.23"
+    >
+      <stop offset="0" stop-color="#bdaeff" />
+      <stop offset="0.5" stop-color="#a493f7" />
+      <stop offset="1" stop-color="#7362dc" />
+    </linearGradient>
+    <linearGradient id="bdv" gradientUnits="userSpaceOnUse" x1="512" y1="512" x2="512" y2="998">
+      <stop offset="0" stop-color="#1b1250" stop-opacity="0" />
+      <stop offset="1" stop-color="#1b1250" stop-opacity="0.42" />
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#sil)">
+    <polygon points="512,512 91.11,269 512,26 932.89,269" fill="url(#gt)" />
+    <polygon points="512,512 91.11,269 91.11,755 512,998" fill="url(#gl)" />
+    <polygon points="512,512 932.89,269 932.89,755 512,998" fill="url(#gr)" />
+    <polygon points="512,512 91.11,269 91.11,755 512,998" fill="url(#sheen)" />
+    <path
+      d="M419.4 224.51C470.54 194.98 553.46 194.98 604.6 224.51C655.73 254.03 655.73 301.9 604.6 331.43C553.46 360.95 470.54 360.95 419.4 331.43C368.27 301.9 368.27 254.03 419.4 224.51Z"
+      fill="#ffffff"
+      opacity=".9"
+    />
+    <path
+      d="M419.4 215.54C470.54 186.01 553.46 186.01 604.6 215.54C655.73 245.07 655.73 292.93 604.6 322.46C553.46 351.99 470.54 351.99 419.4 322.46C368.27 292.93 368.27 245.07 419.4 215.54Z"
+      fill="url(#cw0)"
+    />
+    <path
+      d="M419.4 241.91C470.54 212.38 553.46 212.38 604.6 241.91C655.73 271.43 655.73 319.3 604.6 348.83C553.46 378.35 470.54 378.35 419.4 348.83C368.27 319.3 368.27 271.43 419.4 241.91Z"
+      fill="url(#cf0)"
+      clip-path="url(#ct0)"
+    />
+    <path
+      d="M251.27 412.44C170.92 391.76 117.98 449.56 125.48 549.77C132.98 649.99 198.78 763.95 281.82 820.56C364.86 877.16 441.38 860.21 463.65 780.29C465.1 775.08 463.03 767.44 458.52 761.33C454.01 755.23 448.06 752.02 443.76 753.38C392.92 769.38 320.81 722.44 275.38 643.75C229.95 565.07 225.35 479.15 264.63 443.12C267.96 440.07 268.15 433.32 265.12 426.36C262.09 419.4 256.51 413.79 251.27 412.44Z"
+      fill="#ffffff"
+      opacity="0"
+    />
+    <path
+      d="M251.27 412.44C170.92 391.76 117.98 449.56 125.48 549.77C132.98 649.99 198.78 763.95 281.82 820.56C364.86 877.16 441.38 860.21 463.65 780.29C465.1 775.08 463.03 767.44 458.52 761.33C454.01 755.23 448.06 752.02 443.76 753.38C392.92 769.38 320.81 722.44 275.38 643.75C229.95 565.07 225.35 479.15 264.63 443.12C267.96 440.07 268.15 433.32 265.12 426.36C262.09 419.4 256.51 413.79 251.27 412.44Z"
+      fill="url(#mw)"
+    />
+    <path
+      d="M251.27 412.44C170.92 391.76 117.98 449.56 125.48 549.77C132.98 649.99 198.78 763.95 281.82 820.56C364.86 877.16 441.38 860.21 463.65 780.29C465.1 775.08 463.03 767.44 458.52 761.33C454.01 755.23 448.06 752.02 443.76 753.38C392.92 769.38 320.81 722.44 275.38 643.75C229.95 565.07 225.35 479.15 264.63 443.12C267.96 440.07 268.15 433.32 265.12 426.36C262.09 419.4 256.51 413.79 251.27 412.44Z"
+      fill="url(#mf)"
+      clip-path="url(#cm)"
+    />
+    <polygon
+      points="512,475.55 480.43,530.23 91.11,305.45 91.11,269 122.68,250.78"
+      fill="url(#bl)"
+    />
+    <polygon
+      points="512,475.55 543.57,530.23 932.89,305.45 932.89,269 901.32,250.78"
+      fill="url(#br)"
+    />
+    <polygon
+      points="480.43,530.23 543.57,530.23 543.57,979.77 512,998 480.43,979.77"
+      fill="url(#bd)"
+    />
+    <polygon
+      points="480.43,530.23 543.57,530.23 543.57,979.77 512,998 480.43,979.77"
+      fill="url(#bdv)"
+    />
+    <polygon points="512,475.55 480.43,530.23 543.57,530.23" fill="#ffffff" />
+  </g>
+</svg>
