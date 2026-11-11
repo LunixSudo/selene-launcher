@@ -155,6 +155,12 @@ the installer's copies of the privacy policy in `src-tauri/nsis/privacy`.
   installer in `src-tauri/nsis`.
 - `src`: the interface, written in SvelteKit and Svelte 5.
 
+## Community
+
+- [Discord](https://discord.gg/uaDvBeM8D2): help, ideas and chat.
+- [Telegram](https://t.me/selenegames): release news.
+- [YouTube](https://www.youtube.com/@selene-games): videos about the launcher.
+
 ## Contributing
 
 Bug reports and ideas are welcome under
