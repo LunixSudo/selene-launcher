@@ -699,6 +699,13 @@ export const ptBR: Messages = {
     pinned: "Fixadas",
     report: "Relatar um problema",
   },
+  downloads: {
+    title: "Downloads",
+    empty: "Nada sendo baixado agora",
+    ahead: "Antecipado, {percent}%",
+    cancel: "Cancelar",
+    note: "Cada arquivo baixado é conferido com sua soma de verificação, e um arquivo danificado é baixado de novo.",
+  },
   palette: {
     title: "Busca e comandos",
     placeholder: "Instância, seção ou configuração",

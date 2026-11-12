@@ -105,6 +105,7 @@ pub fn run() {
             commands::set_launch_options,
             commands::launch_instance,
             commands::stop_instance,
+            commands::cancel_launch,
             commands::content::catalog::search_catalog,
             commands::content::catalog::catalog_categories,
             commands::content::installed::installed_projects,

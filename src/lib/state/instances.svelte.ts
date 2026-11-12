@@ -191,7 +191,11 @@ async function runImport(task: () => Promise<ImportResult>): Promise<Instance | 
     delete library.launches[result.instance.id];
     prepare(result.instance.id);
     library.importManual = result.manual;
-    void notify(t("notify.imported"), t("notify.importedBody", { name: result.instance.name }));
+    const { id, name } = result.instance;
+    void notify(t("notify.imported"), t("notify.importedBody", { name }), {
+      label: t("instances.open"),
+      run: () => goto(`/instance/${id}`),
+    });
     return result.instance;
   } catch (error) {
     // Deleting the instance while it imports cancels the import; that is no error.
@@ -253,6 +257,11 @@ export async function play(id: string, server: string | null = null) {
 }
 
 /** Asks the game to save and quit; the button says so until it has. */
+/** Stops a start that is still downloading; the Play button comes back as it was. */
+export async function cancelStart(id: string) {
+  await api.cancelLaunch(id);
+}
+
 export async function stop(id: string) {
   const launch = library.launches[id];
   if (launch?.status === "running") {

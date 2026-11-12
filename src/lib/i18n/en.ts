@@ -689,6 +689,13 @@ export const en: Messages = {
     pinned: "Pinned",
     report: "Report a problem",
   },
+  downloads: {
+    title: "Downloads",
+    empty: "Nothing is downloading right now",
+    ahead: "Ahead of time, {percent}%",
+    cancel: "Cancel",
+    note: "Every downloaded file is checked against its checksum, and a damaged one is downloaded again.",
+  },
   palette: {
     title: "Search and commands",
     placeholder: "Instance, section or setting",

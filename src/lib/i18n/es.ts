@@ -705,6 +705,13 @@ export const es: Messages = {
     pinned: "Fijadas",
     report: "Informar de un problema",
   },
+  downloads: {
+    title: "Descargas",
+    empty: "No se está descargando nada",
+    ahead: "Por adelantado, {percent} %",
+    cancel: "Cancelar",
+    note: "Cada archivo descargado se comprueba con su suma de verificación y, si está dañado, se descarga de nuevo.",
+  },
   palette: {
     title: "Búsqueda y comandos",
     placeholder: "Instancia, sección o ajuste",

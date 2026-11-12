@@ -664,6 +664,13 @@ export const zhCN: Messages = {
     pinned: "已固定",
     report: "报告问题",
   },
+  downloads: {
+    title: "下载",
+    empty: "当前没有正在下载的内容",
+    ahead: "提前下载，{percent}%",
+    cancel: "取消",
+    note: "每个下载的文件都会校验，损坏的文件会重新下载。",
+  },
   palette: {
     title: "搜索和命令",
     placeholder: "实例、分区或设置",

@@ -698,6 +698,13 @@ export const tr: Messages = {
     pinned: "Sabitlenenler",
     report: "Sorun bildir",
   },
+  downloads: {
+    title: "İndirmeler",
+    empty: "Şu anda hiçbir şey indirilmiyor",
+    ahead: "Önceden, %{percent}",
+    cancel: "İptal",
+    note: "İndirilen her dosya sağlama toplamıyla karşılaştırılır, bozuk olan yeniden indirilir.",
+  },
   palette: {
     title: "Arama ve komutlar",
     placeholder: "Kurulum, bölüm veya ayar",

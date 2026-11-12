@@ -693,6 +693,13 @@ export const pl: Messages = {
     pinned: "Przypięte",
     report: "Zgłoś problem",
   },
+  downloads: {
+    title: "Pobieranie",
+    empty: "Teraz nic się nie pobiera",
+    ahead: "Z wyprzedzeniem, {percent}%",
+    cancel: "Anuluj",
+    note: "Każdy pobrany plik sprawdzamy sumą kontrolną, a uszkodzony pobieramy ponownie.",
+  },
   palette: {
     title: "Wyszukiwanie i polecenia",
     placeholder: "Instancja, sekcja lub ustawienie",
