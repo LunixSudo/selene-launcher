@@ -255,8 +255,6 @@ export const en: Messages = {
     fonts: "Font",
     fontNames: {
       rounded: "Soft",
-      modern: "Modern",
-      rubik: "Bold",
       pixel: "Pixel",
       system: "System",
     },

@@ -932,17 +932,7 @@
 
   .font[data-font="rounded"] .sample {
     font-family: "Nunito Variable", sans-serif;
-    font-weight: 850;
-  }
-
-  .font[data-font="modern"] .sample {
-    font-family: "Unbounded Variable", sans-serif;
-    font-weight: 600;
-  }
-
-  .font[data-font="rubik"] .sample {
-    font-family: "Rubik Variable", sans-serif;
-    font-weight: 700;
+    font-weight: 900;
   }
 
   .font[data-font="pixel"] .sample {

@@ -258,8 +258,6 @@ export const pl: Messages = {
     fonts: "Czcionka",
     fontNames: {
       rounded: "Miękka",
-      modern: "Nowoczesna",
-      rubik: "Gruba",
       pixel: "Pikselowa",
       system: "Systemowa",
     },

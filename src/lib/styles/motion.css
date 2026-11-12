@@ -1,9 +1,5 @@
 /* Extra animation, on only with "Smooth animations" in the settings. */
 
-:root {
-  --spring: cubic-bezier(0.22, 1.4, 0.36, 1);
-}
-
 :root[data-motion="on"] main > .page {
   animation: page-in 460ms var(--ease) both;
 }

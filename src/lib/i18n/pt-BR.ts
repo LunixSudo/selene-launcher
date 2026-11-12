@@ -259,8 +259,6 @@ export const ptBR: Messages = {
     fonts: "Fonte",
     fontNames: {
       rounded: "Suave",
-      modern: "Moderna",
-      rubik: "Encorpada",
       pixel: "Pixel",
       system: "Sistema",
     },
