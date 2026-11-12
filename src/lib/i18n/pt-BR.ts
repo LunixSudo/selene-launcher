@@ -16,6 +16,8 @@ export const ptBR: Messages = {
     dismiss: "Ocultar",
   },
   instances: {
+    pin: "Fixar no menu",
+    unpin: "Remover do menu",
     title: "Instâncias",
     create: "Nova instância",
     import: "Importar",
@@ -678,5 +680,23 @@ export const ptBR: Messages = {
     spawn: "Não foi possível iniciar o jogo.",
     network: "Sem conexão com os servidores. Verifique sua internet.",
     core: "Algo deu errado.",
+  },
+  nav: {
+    title: "Seções",
+    open: "Abrir menu",
+    close: "Ocultar menu",
+    pinMenu: "Fixar menu",
+    unpinMenu: "Desafixar menu",
+    instances: "Instâncias",
+    modpacks: "Modpacks",
+    skins: "Skins",
+    pinned: "Fixadas",
+    report: "Relatar um problema",
+  },
+  palette: {
+    title: "Busca e comandos",
+    placeholder: "Instância, seção ou configuração",
+    empty: "Nada encontrado",
+    page: "seção",
   },
 };

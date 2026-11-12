@@ -16,6 +16,8 @@ export const es: Messages = {
     dismiss: "Ocultar",
   },
   instances: {
+    pin: "Fijar en el menú",
+    unpin: "Quitar del menú",
     title: "Instancias",
     create: "Nueva instancia",
     import: "Importar",
@@ -684,5 +686,23 @@ export const es: Messages = {
     spawn: "No se pudo iniciar el juego.",
     network: "No se puede conectar con los servidores. Revisa tu conexión.",
     core: "Algo salió mal.",
+  },
+  nav: {
+    title: "Secciones",
+    open: "Abrir menú",
+    close: "Ocultar menú",
+    pinMenu: "Fijar menú",
+    unpinMenu: "Soltar menú",
+    instances: "Instancias",
+    modpacks: "Modpacks",
+    skins: "Skins",
+    pinned: "Fijadas",
+    report: "Informar de un problema",
+  },
+  palette: {
+    title: "Búsqueda y comandos",
+    placeholder: "Instancia, sección o ajuste",
+    empty: "No se encontró nada",
+    page: "sección",
   },
 };

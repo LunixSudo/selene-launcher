@@ -16,6 +16,8 @@ export const zhCN: Messages = {
     dismiss: "关闭",
   },
   instances: {
+    pin: "固定到菜单",
+    unpin: "从菜单取消固定",
     title: "实例",
     create: "新建实例",
     import: "导入",
@@ -643,5 +645,23 @@ export const zhCN: Messages = {
     spawn: "无法启动游戏。",
     network: "无法连接到服务器。请检查网络连接。",
     core: "出了点问题。",
+  },
+  nav: {
+    title: "分区",
+    open: "打开菜单",
+    close: "隐藏菜单",
+    pinMenu: "固定菜单",
+    unpinMenu: "取消固定菜单",
+    instances: "实例",
+    modpacks: "整合包",
+    skins: "皮肤",
+    pinned: "已固定",
+    report: "报告问题",
+  },
+  palette: {
+    title: "搜索和命令",
+    placeholder: "实例、分区或设置",
+    empty: "未找到任何内容",
+    page: "分区",
   },
 };

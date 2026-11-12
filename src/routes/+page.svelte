@@ -23,7 +23,12 @@
     play,
     stop,
   } from "#lib/state/instances.svelte.ts";
-  import { SORT_ORDERS, type SortOrder, settings } from "#lib/state/settings.svelte.ts";
+  import {
+    SORT_ORDERS,
+    type SortOrder,
+    settings,
+    togglePinned,
+  } from "#lib/state/settings.svelte.ts";
   import { goto } from "$app/navigation";
 
   let creating = $state(false);
@@ -63,6 +68,11 @@
         label: t("instances.openFolder"),
         icon: UI_ICONS.folder,
         action: () => api.openInstanceFolder(instance.id),
+      },
+      {
+        label: settings.pinned.includes(instance.id) ? t("instances.unpin") : t("instances.pin"),
+        icon: UI_ICONS.pin,
+        action: () => togglePinned(instance.id),
       },
       { label: t("instances.edit"), icon: UI_ICONS.edit, action: () => (editing = true) },
       {

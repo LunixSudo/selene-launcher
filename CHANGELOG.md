@@ -151,6 +151,9 @@ All notable changes to this project are documented here. The format follows
 - Total play time on the home screen, with the instance played the most.
 - Saving the launcher's settings to a file and loading them back, for a new PC for example.
   Accounts stay out of the file.
+- A side menu behind the arrow on the left edge: sections, instances pinned from their
+  context menu and reporting a problem. Pinned, it stays open next to the page.
+- Search and commands in the title bar (Ctrl+K): jump to any section or instance.
 
 ### Changed
 

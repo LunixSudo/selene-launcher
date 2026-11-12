@@ -16,6 +16,8 @@ export const tr: Messages = {
     dismiss: "Gizle",
   },
   instances: {
+    pin: "Menüye sabitle",
+    unpin: "Menüden kaldır",
     title: "Profiller",
     create: "Yeni profil",
     import: "İçe aktar",
@@ -677,5 +679,23 @@ export const tr: Messages = {
     spawn: "Oyun başlatılamadı.",
     network: "Sunuculara ulaşılamıyor. Bağlantını kontrol et.",
     core: "Bir şeyler ters gitti.",
+  },
+  nav: {
+    title: "Bölümler",
+    open: "Menüyü aç",
+    close: "Menüyü gizle",
+    pinMenu: "Menüyü sabitle",
+    unpinMenu: "Menüyü serbest bırak",
+    instances: "Kurulumlar",
+    modpacks: "Mod paketleri",
+    skins: "Görünümler",
+    pinned: "Sabitlenenler",
+    report: "Sorun bildir",
+  },
+  palette: {
+    title: "Arama ve komutlar",
+    placeholder: "Kurulum, bölüm veya ayar",
+    empty: "Hiçbir şey bulunamadı",
+    page: "bölüm",
   },
 };
