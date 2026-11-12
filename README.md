@@ -83,6 +83,8 @@ and there is no cracked mode.
 
 ### Launcher
 
+- A three-step guide on the first start: looks or speed (speed is suggested for older
+  graphics), Microsoft sign-in and a first instance, plain or with FPS mods.
 - Light and dark themes, Mica and glass styles, optional live backgrounds, animations and
   click sounds, a pixel font in the style of Minecraft, and style presets of your own.
 - Russian and English, plus machine translations into Ukrainian, German, Spanish, Brazilian

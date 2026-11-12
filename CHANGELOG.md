@@ -37,7 +37,12 @@ All notable changes to this project are documented here. The format follows
   glowing Play button, and a soft click sound like the iOS keyboard. The settings preview each
   background as it really looks, and each instance can use the launcher's background, its own
   animated cover or any of the live ones.
-- On the first start the launcher asks whether to favour speed or looks.
+- A first-start guide in three steps. It asks whether to favour looks or speed and suggests
+  speed for older or built-in graphics, naming the card it found. Then it signs in with
+  Microsoft, which can be skipped. Last it makes the first instance: the plain game on the
+  newest version with the popular ones a click away, "More FPS" with Sodium or Embeddium and
+  similar mods for the chosen loader (loaders without a build for that version are greyed
+  out), a modpack from the catalog or a pack file.
 - Style presets in the settings: "Faster" and "Prettier" are built in, and the current theme,
   colour, font, background and effects can be saved under a name of your own.
 - A setting for the faded edges of scrolling lists, which now also cover project pages,

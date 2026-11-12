@@ -60,10 +60,15 @@ export async function loadInstances() {
   library.loaded = true;
 }
 
-export async function createInstance(name: string, version: string, loader: LoaderVersion | null) {
+export async function createInstance(
+  name: string,
+  version: string,
+  loader: LoaderVersion | null,
+): Promise<Instance> {
   const instance = await api.createInstance(name, version, loader);
   library.instances = [instance, ...library.instances];
   prepare(instance.id);
+  return instance;
 }
 
 /** Background downloads of new instances, which a start has to wait for. */
