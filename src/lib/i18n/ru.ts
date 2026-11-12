@@ -52,6 +52,12 @@ export const ru = {
     shortcut: "Ярлык на рабочий стол",
     duplicate: "Создать копию",
     copyName: "{name} (копия)",
+    fresh: "новая",
+    view: "Вид",
+    views: {
+      grid: "Плиткой",
+      list: "Списком",
+    },
   },
   modpacks: {
     modsLeftBehind:

@@ -54,6 +54,12 @@ export const zhCN: Messages = {
     shortcut: "桌面快捷方式",
     duplicate: "复制",
     copyName: "{name}（副本）",
+    fresh: "新",
+    view: "视图",
+    views: {
+      grid: "卡片",
+      list: "列表",
+    },
   },
   modpacks: {
     modsLeftBehind:

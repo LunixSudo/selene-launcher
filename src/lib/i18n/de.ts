@@ -54,6 +54,12 @@ export const de: Messages = {
     shortcut: "Desktop-Verknüpfung",
     duplicate: "Duplizieren",
     copyName: "{name} (Kopie)",
+    fresh: "neu",
+    view: "Ansicht",
+    views: {
+      grid: "Kacheln",
+      list: "Liste",
+    },
   },
   modpacks: {
     modsLeftBehind:

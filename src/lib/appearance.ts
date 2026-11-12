@@ -16,7 +16,17 @@ export const ICONS: Record<string, string> = {
     "M12 3c3 2 5 6 4 11l-1.5 3h-5L8 14c-1-5 1-9 4-11zM12 8.5v2M8 13l-3 3.5 3.5.5M16 13l3 3.5-3.5.5M10.5 20h3",
 };
 
-export const COVERS: Record<string, string> = {
+/** Pixel scenes drawn for Selene, with the point that stays in view when one is cropped. */
+const SCENES: Record<string, string> = {
+  moonlit: "50% 78%",
+  plains: "30% 60%",
+  nether: "50% 85%",
+  dusk: "30% 60%",
+  island: "50% 55%",
+  snowfall: "50% 70%",
+};
+
+const GRADIENTS: Record<string, string> = {
   aurora: "linear-gradient(135deg, #3ad6c4, #5b7cff 55%, #a35bff)",
   sunset: "linear-gradient(135deg, #ff9a5b, #ff5b8a 55%, #8a5bff)",
   ocean: "linear-gradient(135deg, #22c1ee, #2a6bd8 60%, #1d3f9e)",
@@ -27,15 +37,36 @@ export const COVERS: Record<string, string> = {
   stone: "linear-gradient(135deg, #b8bcc8, #7d8394 55%, #4b505e)",
 };
 
+/** Every cover as a CSS `background` value. */
+export const COVERS: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(SCENES).map(([key, focus]) => [
+      key,
+      `url("/covers/${key}.png") ${focus} / cover no-repeat`,
+    ]),
+  ),
+  ...GRADIENTS,
+};
+
 export const DEFAULT_ICON = "cube";
 
-// Instances without a chosen cover still get a stable one, picked from the id.
-export function coverOf(id: string, cover: string | null): string {
+// Instances without a chosen cover still get a stable scene, picked from the id.
+function coverKey(id: string, cover: string | null): string {
   if (cover && cover in COVERS) {
-    return COVERS[cover];
+    return cover;
   }
-  const names = Object.keys(COVERS);
-  return COVERS[names[hash(id) % names.length]];
+  const scenes = Object.keys(SCENES);
+  return scenes[hash(id) % scenes.length];
+}
+
+export function coverOf(id: string, cover: string | null): string {
+  return COVERS[coverKey(id, cover)];
+}
+
+/** The picture behind a scene cover and its point of interest, or null for a gradient. */
+export function sceneOf(id: string, cover: string | null): { src: string; focus: string } | null {
+  const key = coverKey(id, cover);
+  return key in SCENES ? { src: `/covers/${key}.png`, focus: SCENES[key] } : null;
 }
 
 export function iconOf(icon: string | null): string {

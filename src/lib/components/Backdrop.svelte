@@ -16,7 +16,15 @@
   /** Down and to the left, about 30 degrees below the horizon. */
   const SHOOTING_ANGLE = Math.PI * 0.83;
 
-  let { kind, cover = null }: { kind: Backdrop | "cover"; cover?: string | null } = $props();
+  let {
+    kind,
+    cover = null,
+    scene = null,
+  }: {
+    kind: Backdrop | "cover";
+    cover?: string | null;
+    scene?: { src: string; focus: string } | null;
+  } = $props();
 
   let canvas = $state<HTMLCanvasElement>();
 
@@ -167,6 +175,12 @@
   <div class="backdrop {kind}" aria-hidden="true" transition:fade={{ duration: 400 }}>
     {#if kind === "stars" || isShader(kind)}
       <canvas bind:this={canvas}></canvas>
+    {:else if kind === "cover" && scene}
+      <span
+        class="scene"
+        style:background-image={`url("${scene.src}")`}
+        style:background-position-y={scene.focus.split(" ")[1]}
+      ></span>
     {:else if kind === "cover" && cover}
       <span class="cover" style:background-image={cover}></span>
     {/if}
@@ -204,6 +218,25 @@
     background-size: 220% 220%;
     opacity: 0.55;
     animation: flow 24s ease-in-out infinite alternate;
+  }
+
+  /* The scene drifts slowly along its width, which the window shows only part of. */
+  .scene {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    image-rendering: pixelated;
+    opacity: 0.5;
+    animation: drift 90s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    from {
+      background-position-x: 0%;
+    }
+    to {
+      background-position-x: 100%;
+    }
   }
 
   @keyframes flow {

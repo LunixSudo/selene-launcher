@@ -54,6 +54,12 @@ export const ptBR: Messages = {
     shortcut: "Atalho na área de trabalho",
     duplicate: "Duplicar",
     copyName: "{name} (cópia)",
+    fresh: "nova",
+    view: "Exibição",
+    views: {
+      grid: "Blocos",
+      list: "Lista",
+    },
   },
   modpacks: {
     modsLeftBehind:

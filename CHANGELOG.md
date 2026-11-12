@@ -154,6 +154,9 @@ All notable changes to this project are documented here. The format follows
 - A side menu behind the arrow on the left edge: sections, instances pinned from their
   context menu and reporting a problem. Pinned, it stays open next to the page.
 - Search and commands in the title bar (Ctrl+K): jump to any section or instance.
+- Six pixel-art covers for instances (a moonlit night, plains, the Nether, a dusk, a sky
+  island and snowfall). Instances without a chosen cover get one of them.
+- A list view for the home screen next to the tiles.
 
 ### Changed
 
@@ -161,6 +164,9 @@ All notable changes to this project are documented here. The format follows
 - A new look: a deep violet night theme and a soft lavender day theme, rounder panels and
   pill buttons, springier switches and presses. The Modern and Bold fonts are gone; Rounded,
   Pixel and System remain, and a removed choice falls back to Rounded.
+- New instance tiles: the cover with the icon over its edge, the loader, version and when it
+  was last played in one line. The last played instance gets a wide tile with its cover
+  across it, and the Play button shows the download as a waxing moon.
 - The launcher keeps a small log in `logs/launcher.log` in its data folder: which sources
   answered, which failed and why. It holds no tokens or keys.
 

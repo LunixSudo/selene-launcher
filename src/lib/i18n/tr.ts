@@ -54,6 +54,12 @@ export const tr: Messages = {
     shortcut: "Masaüstü kısayolu",
     duplicate: "Çoğalt",
     copyName: "{name} (kopya)",
+    fresh: "yeni",
+    view: "Görünüm",
+    views: {
+      grid: "Kutucuk",
+      list: "Liste",
+    },
   },
   modpacks: {
     modsLeftBehind:

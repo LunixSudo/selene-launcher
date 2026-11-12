@@ -7,6 +7,7 @@ export type Accent = "violet" | "blue" | "green" | "pink" | "orange";
 export type Font = "rounded" | "pixel" | "system";
 export type AfterLaunch = "keep" | "minimize" | "close";
 export type SortOrder = "lastPlayed" | "name" | "playTime" | "created";
+export type InstanceView = "grid" | "list";
 export type Backdrop = "none" | "stars" | ShaderBackdrop;
 /** An instance's own background: the launcher's, its cover, or any of the animated ones. */
 export type InstanceBackdrop = "app" | "cover" | Exclude<Backdrop, "none">;
@@ -17,6 +18,7 @@ export const STYLES: Style[] = ["glass", "mica", "solid"];
 export const FONTS: Font[] = ["rounded", "pixel", "system"];
 export const AFTER_LAUNCH: AfterLaunch[] = ["keep", "minimize", "close"];
 export const SORT_ORDERS: SortOrder[] = ["lastPlayed", "name", "playTime", "created"];
+export const INSTANCE_VIEWS: InstanceView[] = ["grid", "list"];
 export const BACKDROPS: Backdrop[] = ["none", "stars", ...SHADER_BACKDROPS];
 export const INSTANCE_BACKDROPS: InstanceBackdrop[] = [
   "app",
@@ -43,6 +45,8 @@ interface Settings {
   afterLaunch: AfterLaunch;
   restoreAfterGame: boolean;
   sort: SortOrder;
+  /** Instances as tiles or as a compact list. */
+  instanceView: InstanceView;
   collapsedGroups: string[];
   notifications: boolean;
   checkUpdates: boolean;
@@ -86,6 +90,7 @@ const DEFAULTS: Settings = {
   afterLaunch: "close",
   restoreAfterGame: true,
   sort: "lastPlayed",
+  instanceView: "grid",
   collapsedGroups: [],
   notifications: true,
   checkUpdates: true,
@@ -152,6 +157,7 @@ function checked(value: unknown): Settings {
     afterLaunch: oneOf(saved.afterLaunch, AFTER_LAUNCH, DEFAULTS.afterLaunch),
     restoreAfterGame: oneOf(saved.restoreAfterGame, [true, false], DEFAULTS.restoreAfterGame),
     sort: oneOf(saved.sort, SORT_ORDERS, DEFAULTS.sort),
+    instanceView: oneOf(saved.instanceView, INSTANCE_VIEWS, DEFAULTS.instanceView),
     collapsedGroups: Array.isArray(saved.collapsedGroups)
       ? saved.collapsedGroups.filter((group) => typeof group === "string")
       : DEFAULTS.collapsedGroups,

@@ -54,6 +54,12 @@ export const uk: Messages = {
     shortcut: "Ярлик на робочий стіл",
     duplicate: "Дублювати",
     copyName: "{name} (копія)",
+    fresh: "нова",
+    view: "Вигляд",
+    views: {
+      grid: "Плиткою",
+      list: "Списком",
+    },
   },
   modpacks: {
     modsLeftBehind:
