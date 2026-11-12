@@ -14,6 +14,7 @@
   import NavDrawer from "#lib/components/NavDrawer.svelte";
   import PrivacyDialog from "#lib/components/PrivacyDialog.svelte";
   import TitleBar from "#lib/components/TitleBar.svelte";
+  import Toaster from "#lib/components/Toaster.svelte";
   import WelcomeDialog from "#lib/components/WelcomeDialog.svelte";
   import { trackNavigation } from "#lib/history.ts";
   import { locale } from "#lib/i18n/index.svelte.ts";
@@ -193,6 +194,7 @@
 </div>
 <NavDrawer />
 <CommandPalette />
+<Toaster />
 <DropOverlay />
 <PrivacyDialog bind:settled={privacySettled} />
 <WelcomeDialog open={privacySettled && !settings.setupDone} />

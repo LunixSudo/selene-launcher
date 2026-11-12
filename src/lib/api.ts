@@ -449,6 +449,7 @@ export const api = {
   launchInstance: (id: string, server: string | null = null) =>
     invoke<void>("launch_instance", { id, server }),
   stopInstance: (id: string) => invoke<boolean>("stop_instance", { id }),
+  cancelLaunch: (id: string) => invoke<void>("cancel_launch", { id }),
   worlds: (instanceId: string) => invoke<World[]>("worlds", { instanceId }),
   renameWorld: (instanceId: string, folder: string, name: string) =>
     invoke<void>("rename_world", { instanceId, folder, name }),

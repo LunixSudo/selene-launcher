@@ -4,10 +4,18 @@ import {
   sendNotification,
 } from "@tauri-apps/plugin-notification";
 import { settings } from "#lib/state/settings.svelte.ts";
+import { type Toast, toast } from "#lib/state/toasts.svelte.ts";
 
-/** Shows a Windows notification, but only while the launcher is in the background. */
-export async function notify(title: string, body: string) {
-  if (!settings.notifications || document.hasFocus()) {
+/**
+ * Tells the player something finished: in the corner of the launcher while it is in front,
+ * otherwise as a Windows notification.
+ */
+export async function notify(title: string, body: string, action?: Toast["action"]) {
+  if (document.hasFocus()) {
+    toast({ title, body, action });
+    return;
+  }
+  if (!settings.notifications) {
     return;
   }
   try {

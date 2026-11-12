@@ -711,6 +711,13 @@ export const de: Messages = {
     pinned: "Angeheftet",
     report: "Problem melden",
   },
+  downloads: {
+    title: "Downloads",
+    empty: "Gerade wird nichts heruntergeladen",
+    ahead: "Im Voraus, {percent} %",
+    cancel: "Abbrechen",
+    note: "Jede heruntergeladene Datei wird mit ihrer Prüfsumme verglichen, eine beschädigte wird neu geladen.",
+  },
   palette: {
     title: "Suche und Befehle",
     placeholder: "Instanz, Bereich oder Einstellung",

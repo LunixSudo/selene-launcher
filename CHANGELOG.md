@@ -157,6 +157,11 @@ All notable changes to this project are documented here. The format follows
 - Six pixel-art covers for instances (a moonlit night, plains, the Nether, a dusk, a sky
   island and snowfall). Instances without a chosen cover get one of them.
 - A list view for the home screen next to the tiles.
+- Downloads in the title bar: a moon that waxes with the progress opens a list of what is
+  downloading, and a start that is still downloading can be cancelled there.
+- Short messages in the corner of the launcher while it is in front, such as an imported
+  instance with a button to open it. They go away after five seconds and wait while the
+  pointer is on them. Windows notifications are still used while the launcher is behind.
 
 ### Changed
 
@@ -171,6 +176,7 @@ All notable changes to this project are documented here. The format follows
   larger, the loader and play time sit in pills under it, the folder, share and update
   buttons are round, and the tabs, content kinds and lists of mods, worlds and servers look
   like the rest of the new design. Add-ons without an icon show their first letter.
+- The update notice on an instance page is a banner with an icon and pill buttons.
 - The launcher keeps a small log in `logs/launcher.log` in its data folder: which sources
   answered, which failed and why. It holds no tokens or keys.
 

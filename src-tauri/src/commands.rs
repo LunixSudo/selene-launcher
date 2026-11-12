@@ -473,6 +473,12 @@ pub fn stop_instance(launcher: State<'_, Launcher>, id: String) -> bool {
     launcher.stop_game(&id)
 }
 
+/// Stops a start that is still downloading. The start then fails as cancelled.
+#[tauri::command]
+pub async fn cancel_launch(launcher: State<'_, Launcher>, id: String) -> CommandResult<()> {
+    launcher.cancel_preparing(&id).await
+}
+
 async fn start_game(
     app: &AppHandle,
     launcher: &Launcher,

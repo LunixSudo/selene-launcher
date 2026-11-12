@@ -2,6 +2,7 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import logo from "#lib/assets/logo.png";
   import AccountMenu from "#lib/components/AccountMenu.svelte";
+  import Downloads from "#lib/components/Downloads.svelte";
   import { t } from "#lib/i18n/index.svelte.ts";
   import { ui } from "#lib/state/ui.svelte.ts";
   import { installUpdate, launcherUpdate } from "#lib/state/update.svelte.ts";
@@ -37,6 +38,7 @@
           : t("update.available", { version: launcherUpdate.available.version })}
       </button>
     {/if}
+    <Downloads />
     <AccountMenu />
     <a class="settings" href="/settings" {@attach tooltip(t("settings.title"))}>
       <span class="label">{t("settings.title")}</span>

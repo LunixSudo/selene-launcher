@@ -155,6 +155,9 @@
 
 {#if visible}
   <div class="notice" role="status">
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6.5 11.5 12 6l5.5 5.5" /></svg>
+    </span>
     <div class="text">
       <strong>{found ? t("updates.title") : t("updates.none")}</strong>
       {#if instance.pack && packTarget}
@@ -198,11 +201,16 @@
     </div>
     <div class="actions">
       {#if found}
-        <button type="button" disabled={disabled || working || !chosen} onclick={update}>
+        <button
+          type="button"
+          class="pill-button primary"
+          disabled={disabled || working || !chosen}
+          onclick={update}
+        >
           {working ? t("updates.working") : t("updates.update")}
         </button>
       {/if}
-      <button type="button" class="ghost" onclick={() => (dismissed[instance.id] = true)}>
+      <button type="button" class="pill-button" onclick={() => (dismissed[instance.id] = true)}>
         {found ? t("updates.later") : t("account.dismiss")}
       </button>
     </div>
@@ -213,11 +221,36 @@
   .notice {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 14px 16px;
-    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    gap: 14px;
+    padding: 14px 16px 14px 14px;
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+    backdrop-filter: var(--glass);
+  }
+
+  .mark {
+    display: grid;
+    flex: none;
+    align-self: flex-start;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .text {
@@ -227,38 +260,23 @@
     min-width: 0;
   }
 
+  strong {
+    font-size: 15px;
+    font-weight: 800;
+  }
+
   p {
     margin: 0;
     font-size: 13px;
   }
 
   .error {
-    color: var(--danger);
+    color: var(--danger-text);
   }
 
   .actions {
     display: flex;
     flex: none;
-    gap: 6px;
-  }
-
-  button {
-    height: 30px;
-    padding: 0 12px;
-    border: none;
-    border-radius: 999px;
-    background: var(--accent);
-    color: var(--accent-text);
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  button:disabled {
-    opacity: 0.6;
-  }
-
-  .ghost {
-    background: var(--field);
-    color: var(--text);
+    gap: 8px;
   }
 </style>
