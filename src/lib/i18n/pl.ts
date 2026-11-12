@@ -16,6 +16,8 @@ export const pl: Messages = {
     dismiss: "Ukryj",
   },
   instances: {
+    pin: "Przypnij w menu",
+    unpin: "Odepnij z menu",
     title: "Instancje",
     create: "Nowa instancja",
     import: "Importuj",
@@ -672,5 +674,23 @@ export const pl: Messages = {
     spawn: "Nie udało się uruchomić gry.",
     network: "Brak połączenia z serwerami. Sprawdź internet.",
     core: "Coś poszło nie tak.",
+  },
+  nav: {
+    title: "Sekcje",
+    open: "Otwórz menu",
+    close: "Ukryj menu",
+    pinMenu: "Przypnij menu",
+    unpinMenu: "Odepnij menu",
+    instances: "Instancje",
+    modpacks: "Modpacki",
+    skins: "Skiny",
+    pinned: "Przypięte",
+    report: "Zgłoś problem",
+  },
+  palette: {
+    title: "Wyszukiwanie i polecenia",
+    placeholder: "Instancja, sekcja lub ustawienie",
+    empty: "Nic nie znaleziono",
+    page: "sekcja",
   },
 };

@@ -8,7 +8,9 @@
   import { api } from "#lib/api.ts";
   import { coverOf } from "#lib/appearance.ts";
   import Backdrop from "#lib/components/Backdrop.svelte";
+  import CommandPalette from "#lib/components/CommandPalette.svelte";
   import DropOverlay from "#lib/components/DropOverlay.svelte";
+  import NavDrawer from "#lib/components/NavDrawer.svelte";
   import PrivacyDialog from "#lib/components/PrivacyDialog.svelte";
   import TitleBar from "#lib/components/TitleBar.svelte";
   import WelcomeDialog from "#lib/components/WelcomeDialog.svelte";
@@ -17,6 +19,7 @@
   import { playClick } from "#lib/sound.ts";
   import { discordPresence, library, listenToGames } from "#lib/state/instances.svelte.ts";
   import { applySettings, settings } from "#lib/state/settings.svelte.ts";
+  import { ui } from "#lib/state/ui.svelte.ts";
   import { checkForUpdate } from "#lib/state/update.svelte.ts";
   import { afterNavigate } from "$app/navigation";
   import { page } from "$app/state";
@@ -114,7 +117,10 @@
 
   function onkeydown(event: KeyboardEvent) {
     const ctrl = event.ctrlKey || event.metaKey;
-    if (ctrl && event.code === "KeyF") {
+    if (ctrl && event.code === "KeyK") {
+      event.preventDefault();
+      ui.paletteOpen = !ui.paletteOpen;
+    } else if (ctrl && event.code === "KeyF") {
       // Every page with a list marks its search field; Ctrl+F jumps there.
       const search = document.querySelector<HTMLInputElement>("[data-search]");
       event.preventDefault();
@@ -163,12 +169,14 @@
 />
 
 <Backdrop kind={backdrop} cover={instance ? coverOf(instance.id, instance.cover) : null} />
-<div class="app">
+<div class="app" class:pinned={settings.menuPinned}>
   <TitleBar />
   <main>
     {@render children()}
   </main>
 </div>
+<NavDrawer />
+<CommandPalette />
 <DropOverlay />
 <PrivacyDialog bind:settled={privacySettled} />
 <WelcomeDialog open={privacySettled && !settings.setupDone} />
@@ -185,6 +193,11 @@
   main {
     flex: 1;
     min-height: 0;
-    padding: 0 24px 24px;
+    padding: 4px 32px 24px 40px;
+    transition: padding-left 500ms var(--spring);
+  }
+
+  .pinned main {
+    padding-left: 298px;
   }
 </style>

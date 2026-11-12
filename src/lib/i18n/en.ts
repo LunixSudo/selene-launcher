@@ -16,6 +16,8 @@ export const en: Messages = {
     dismiss: "Dismiss",
   },
   instances: {
+    pin: "Pin to menu",
+    unpin: "Unpin from menu",
     title: "Instances",
     create: "New instance",
     import: "Import",
@@ -668,5 +670,23 @@ export const en: Messages = {
     spawn: "Could not start the game.",
     network: "Can't reach the servers. Check your connection.",
     core: "Something went wrong.",
+  },
+  nav: {
+    title: "Sections",
+    open: "Open menu",
+    close: "Hide menu",
+    pinMenu: "Pin menu",
+    unpinMenu: "Unpin menu",
+    instances: "Instances",
+    modpacks: "Modpacks",
+    skins: "Skins",
+    pinned: "Pinned",
+    report: "Report a problem",
+  },
+  palette: {
+    title: "Search and commands",
+    placeholder: "Instance, section or setting",
+    empty: "Nothing found",
+    page: "section",
   },
 };

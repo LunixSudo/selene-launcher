@@ -3,6 +3,7 @@
   import logo from "#lib/assets/logo.png";
   import AccountMenu from "#lib/components/AccountMenu.svelte";
   import { t } from "#lib/i18n/index.svelte.ts";
+  import { ui } from "#lib/state/ui.svelte.ts";
   import { installUpdate, launcherUpdate } from "#lib/state/update.svelte.ts";
   import { tooltip } from "#lib/tooltip.ts";
 
@@ -11,11 +12,18 @@
 
 <header class="titlebar" data-tauri-drag-region>
   <a class="brand" href="/">
-    <img class="logo" src={logo} alt="" width="22" height="22">
+    <img class="logo" src={logo} alt="" width="24" height="24">
     <span class="wordmark">Selene</span>
   </a>
 
   <div class="controls">
+    <button type="button" class="search" onclick={() => (ui.paletteOpen = true)}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20" />
+      </svg>
+      <span class="search-label">{t("palette.title")}</span>
+      <kbd>Ctrl K</kbd>
+    </button>
     {#if launcherUpdate.available}
       <button
         type="button"
@@ -67,7 +75,7 @@
     align-items: center;
     justify-content: space-between;
     height: var(--titlebar-height);
-    padding-left: 14px;
+    padding-left: 18px;
   }
 
   .brand {
@@ -79,16 +87,64 @@
   }
 
   .logo {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     filter: drop-shadow(0 2px 6px rgb(109 59 222 / 0.45));
   }
 
   .wordmark {
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 16px;
     font-weight: var(--display-weight);
-    letter-spacing: 0.02em;
+  }
+
+  .controls > .search {
+    display: flex;
+    gap: 10px;
+    width: 250px;
+    height: 32px;
+    margin-right: 8px;
+    padding: 0 6px 0 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px var(--border);
+    color: var(--text-muted);
+    font-size: 13.5px;
+    font-weight: 650;
+    backdrop-filter: var(--glass);
+  }
+
+  .controls > .search:hover {
+    background: var(--surface-hover);
+    color: var(--text-2);
+  }
+
+  .search svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+
+  .search-label {
+    flex: 1;
+    text-align: left;
+  }
+
+  kbd {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--field);
+    box-shadow: 0 0 0 1px var(--border);
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 750;
   }
 
   .update {

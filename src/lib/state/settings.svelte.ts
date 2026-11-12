@@ -61,6 +61,10 @@ interface Settings {
   presets: StylePreset[];
   /** Lists fade out at the edges where they scroll on. */
   scrollFade: boolean;
+  /** The side menu stays open next to the page instead of sliding over it. */
+  menuPinned: boolean;
+  /** Instances shown in the side menu, in the order they were pinned. */
+  pinned: string[];
 }
 
 /** Everything that makes up how the launcher looks. */
@@ -94,6 +98,8 @@ const DEFAULTS: Settings = {
   setupDone: false,
   presets: [],
   scrollFade: true,
+  menuPinned: false,
+  pinned: [],
 };
 
 /** The two looks offered on the first start and kept in the settings. Colours stay as set. */
@@ -165,6 +171,10 @@ function checked(value: unknown): Settings {
           .map((preset) => ({ name: preset.name, look: checkLook(preset.look) }))
       : DEFAULTS.presets,
     scrollFade: oneOf(saved.scrollFade, [true, false], DEFAULTS.scrollFade),
+    menuPinned: oneOf(saved.menuPinned, [true, false], DEFAULTS.menuPinned),
+    pinned: Array.isArray(saved.pinned)
+      ? saved.pinned.filter((id) => typeof id === "string")
+      : DEFAULTS.pinned,
   };
 }
 
@@ -210,4 +220,10 @@ export function applySettings() {
       () => {},
     );
   }
+}
+
+export function togglePinned(id: string) {
+  settings.pinned = settings.pinned.includes(id)
+    ? settings.pinned.filter((pinned) => pinned !== id)
+    : [...settings.pinned, id];
 }

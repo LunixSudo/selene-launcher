@@ -16,6 +16,8 @@ export const de: Messages = {
     dismiss: "Ausblenden",
   },
   instances: {
+    pin: "Im Menü anheften",
+    unpin: "Aus dem Menü lösen",
     title: "Instanzen",
     create: "Neue Instanz",
     import: "Importieren",
@@ -690,5 +692,23 @@ export const de: Messages = {
     spawn: "Das Spiel konnte nicht gestartet werden.",
     network: "Die Server sind nicht erreichbar. Prüfe deine Verbindung.",
     core: "Etwas ist schiefgelaufen.",
+  },
+  nav: {
+    title: "Bereiche",
+    open: "Menü öffnen",
+    close: "Menü ausblenden",
+    pinMenu: "Menü anheften",
+    unpinMenu: "Menü lösen",
+    instances: "Instanzen",
+    modpacks: "Modpacks",
+    skins: "Skins",
+    pinned: "Angeheftet",
+    report: "Problem melden",
+  },
+  palette: {
+    title: "Suche und Befehle",
+    placeholder: "Instanz, Bereich oder Einstellung",
+    empty: "Nichts gefunden",
+    page: "Bereich",
   },
 };
