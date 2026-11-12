@@ -254,8 +254,6 @@ export const ru = {
     fonts: "Шрифт",
     fontNames: {
       rounded: "Мягкий",
-      modern: "Современный",
-      rubik: "Плотный",
       pixel: "Пиксельный",
       system: "Системный",
     },

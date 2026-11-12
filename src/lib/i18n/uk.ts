@@ -256,8 +256,6 @@ export const uk: Messages = {
     fonts: "Шрифт",
     fontNames: {
       rounded: "М’який",
-      modern: "Сучасний",
-      rubik: "Щільний",
       pixel: "Піксельний",
       system: "Системний",
     },

@@ -155,6 +155,9 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 
 - Moved the interface to SvelteKit 3, which also clears its security warnings.
+- A new look: a deep violet night theme and a soft lavender day theme, rounder panels and
+  pill buttons, springier switches and presses. The Modern and Bold fonts are gone; Rounded,
+  Pixel and System remain, and a removed choice falls back to Rounded.
 - The launcher keeps a small log in `logs/launcher.log` in its data folder: which sources
   answered, which failed and why. It holds no tokens or keys.
 

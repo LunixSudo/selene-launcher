@@ -263,8 +263,6 @@ export const de: Messages = {
     fonts: "Schrift",
     fontNames: {
       rounded: "Weich",
-      modern: "Modern",
-      rubik: "Kräftig",
       pixel: "Pixel",
       system: "System",
     },

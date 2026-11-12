@@ -258,8 +258,6 @@ export const tr: Messages = {
     fonts: "Yazı tipi",
     fontNames: {
       rounded: "Yumuşak",
-      modern: "Modern",
-      rubik: "Kalın",
       pixel: "Piksel",
       system: "Sistem",
     },

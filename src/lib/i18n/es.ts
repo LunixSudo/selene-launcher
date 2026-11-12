@@ -260,8 +260,6 @@ export const es: Messages = {
     fonts: "Fuente",
     fontNames: {
       rounded: "Suave",
-      modern: "Moderna",
-      rubik: "Gruesa",
       pixel: "Píxel",
       system: "Sistema",
     },

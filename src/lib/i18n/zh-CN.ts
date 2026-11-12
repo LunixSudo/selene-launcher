@@ -247,8 +247,6 @@ export const zhCN: Messages = {
     fonts: "字体",
     fontNames: {
       rounded: "柔和",
-      modern: "现代",
-      rubik: "粗体",
       pixel: "像素",
       system: "系统",
     },
