@@ -10,10 +10,49 @@ export const pl: Messages = {
   account: {
     signIn: "Zaloguj się",
     add: "Dodaj konto",
-    signOut: "Wyloguj się",
     waiting: "Dokończ logowanie w przeglądarce",
     cancel: "Anuluj",
     dismiss: "Ukryj",
+    waitingShort: "Czekamy na przeglądarkę",
+    current: "Grasz na tym koncie",
+    switchTo: "Przełącz",
+    expired: "Logowanie wygasło",
+    signInAgain: "Zaloguj ponownie",
+    skin: "Skin i peleryna",
+    microsoft: "Konto Microsoft w sieci",
+    signOutOf: "Wyloguj {name}",
+    menu: "Konta",
+    retry: "Spróbuj ponownie",
+    otherAccount: "Inne konto",
+    openXbox: "Otwórz xbox.com",
+    howTo: "Jak to zrobić",
+    problemTitle: "Nie udało się zalogować",
+    problems: {
+      network: {
+        title: "Brak połączenia z Microsoft",
+        body: "Sprawdź internet. Jeśli działa, strona Microsoft może być chwilowo niedostępna.",
+      },
+      signInCancelled: {
+        title: "Logowanie anulowane",
+        body: "Logowanie nie zostało dokończone na stronie Microsoft. Nic się nie zepsuło.",
+      },
+      gameNotOwned: {
+        title: "Na koncie nie ma Minecrafta",
+        body: "Java Edition nie jest kupiona na tym koncie. Może gra jest na innym.",
+      },
+      noXboxAccount: {
+        title: "Brak profilu Xbox",
+        body: "Profil jest darmowy i zakłada się go raz na xbox.com.",
+      },
+      childAccount: {
+        title: "Potrzebna zgoda dorosłego",
+        body: "Konto dziecka trzeba najpierw dodać do rodziny Microsoft.",
+      },
+      sessionExpired: {
+        title: "Zapisane logowanie wygasło",
+        body: "Tak bywa po długiej przerwie. Instancje i światy są na miejscu.",
+      },
+    },
   },
   instances: {
     pin: "Przypnij w menu",

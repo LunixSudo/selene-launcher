@@ -10,10 +10,49 @@ export const es: Messages = {
   account: {
     signIn: "Iniciar sesión",
     add: "Añadir cuenta",
-    signOut: "Cerrar sesión",
     waiting: "Termina de iniciar sesión en el navegador",
     cancel: "Cancelar",
     dismiss: "Ocultar",
+    waitingShort: "Esperando al navegador",
+    current: "Juegas con esta cuenta",
+    switchTo: "Cambiar a esta",
+    expired: "Sesión caducada",
+    signInAgain: "Volver a entrar",
+    skin: "Skin y capa",
+    microsoft: "Cuenta Microsoft en la web",
+    signOutOf: "Cerrar la sesión de {name}",
+    menu: "Cuentas",
+    retry: "Reintentar",
+    otherAccount: "Otra cuenta",
+    openXbox: "Abrir xbox.com",
+    howTo: "Cómo hacerlo",
+    problemTitle: "No se pudo iniciar sesión",
+    problems: {
+      network: {
+        title: "Sin conexión con Microsoft",
+        body: "Revisa internet. Si funciona, puede que la web de Microsoft no esté disponible por un rato.",
+      },
+      signInCancelled: {
+        title: "Inicio de sesión cancelado",
+        body: "No se terminó de iniciar sesión en la página de Microsoft. No se ha roto nada.",
+      },
+      gameNotOwned: {
+        title: "Esta cuenta no tiene Minecraft",
+        body: "Java Edition no está comprado en esta cuenta. Quizá el juego esté en otra.",
+      },
+      noXboxAccount: {
+        title: "Sin perfil de Xbox",
+        body: "El perfil es gratis y se crea una sola vez en xbox.com.",
+      },
+      childAccount: {
+        title: "Hace falta el permiso de un adulto",
+        body: "Una cuenta infantil primero se añade a una familia de Microsoft.",
+      },
+      sessionExpired: {
+        title: "La sesión guardada caducó",
+        body: "Pasa si no entras durante mucho tiempo. Tus instancias y mundos siguen ahí.",
+      },
+    },
   },
   instances: {
     pin: "Fijar en el menú",
