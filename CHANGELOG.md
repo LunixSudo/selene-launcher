@@ -167,6 +167,10 @@ All notable changes to this project are documented here. The format follows
 - New instance tiles: the cover with the icon over its edge, the loader, version and when it
   was last played in one line. The last played instance gets a wide tile with its cover
   across it, and the Play button shows the download as a waxing moon.
+- The instance page wears its cover across the top, fading out under the tabs. The name is
+  larger, the loader and play time sit in pills under it, the folder, share and update
+  buttons are round, and the tabs, content kinds and lists of mods, worlds and servers look
+  like the rest of the new design. Add-ons without an icon show their first letter.
 - The launcher keeps a small log in `logs/launcher.log` in its data folder: which sources
   answered, which failed and why. It holds no tokens or keys.
 

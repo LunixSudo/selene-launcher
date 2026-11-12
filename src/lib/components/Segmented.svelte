@@ -21,21 +21,32 @@
     display: flex;
     flex: none;
     gap: 2px;
-    padding: 3px;
-    border: 1px solid var(--border);
+    padding: 4px;
     border-radius: 999px;
     background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px var(--border);
+    backdrop-filter: var(--glass);
   }
 
   label {
     display: grid;
     place-items: center;
-    min-height: 30px;
+    min-height: 32px;
     padding: 0 14px;
     border-radius: 999px;
-    font-size: 13px;
+    color: var(--text-2);
+    font-size: 13.5px;
+    font-weight: 700;
     cursor: pointer;
-    transition: background 150ms var(--ease);
+    transition:
+      background 150ms var(--ease),
+      color 150ms var(--ease);
+  }
+
+  label:hover {
+    color: var(--text);
   }
 
   input {
@@ -46,8 +57,8 @@
 
   label:has(input:checked) {
     background: var(--accent);
+    box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--accent) 80%, transparent);
     color: var(--accent-text);
-    font-weight: 600;
   }
 
   label:has(input:focus-visible) {

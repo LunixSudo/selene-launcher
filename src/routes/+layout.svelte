@@ -5,6 +5,7 @@
   import "#lib/styles/motion.css";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import type { Snippet } from "svelte";
+  import { fade } from "svelte/transition";
   import { api } from "#lib/api.ts";
   import { coverOf, sceneOf } from "#lib/appearance.ts";
   import Backdrop from "#lib/components/Backdrop.svelte";
@@ -173,6 +174,17 @@
   cover={instance ? coverOf(instance.id, instance.cover) : null}
   scene={instance ? sceneOf(instance.id, instance.cover) : null}
 />
+{#if instance && own !== "cover"}
+  {#key instance.id}
+    <!-- The instance's cover across the top of its page, fading out under the tabs. -->
+    <div
+      class="wall"
+      style:background={coverOf(instance.id, instance.cover)}
+      aria-hidden="true"
+      transition:fade={{ duration: 300 }}
+    ></div>
+  {/key}
+{/if}
 <div class="app" class:pinned={settings.menuPinned}>
   <TitleBar />
   <main>
@@ -186,6 +198,24 @@
 <WelcomeDialog open={privacySettled && !settings.setupDone} />
 
 <style>
+  .wall {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 0;
+    height: 340px;
+    image-rendering: pixelated;
+    opacity: 0.62;
+    mask-image: linear-gradient(to bottom, #000 30%, transparent);
+    pointer-events: none;
+  }
+
+  .wall::after {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--background) 30%, transparent);
+    content: "";
+  }
+
   .app {
     position: relative;
     z-index: 1;

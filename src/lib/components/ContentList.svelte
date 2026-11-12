@@ -251,6 +251,26 @@
     }
   }
 
+  /** Calm colours for the first letter of add-ons that bring no icon. */
+  const LETTER_COLORS = [
+    "#3f7d5a",
+    "#4a6fb5",
+    "#6b4fc4",
+    "#a8813c",
+    "#b5503e",
+    "#4f5368",
+    "#b8475e",
+    "#2f8a8a",
+  ];
+
+  function letterColor(name: string): string {
+    let value = 0;
+    for (const char of name) {
+      value = (value * 31 + char.charCodeAt(0)) >>> 0;
+    }
+    return LETTER_COLORS[value % LETTER_COLORS.length];
+  }
+
   function show(file: InstalledFile, view: "about" | "versions") {
     if (file.project) {
       shown = { file, project: file.project };
@@ -352,7 +372,10 @@
         {#if file.iconUrl}
           <img class="row-icon" src={file.iconUrl} alt="" loading="lazy">
         {:else}
-          <span class="row-icon" aria-hidden="true"></span>
+          {@const name = (file.title ?? file.fileName).trim()}
+          <span class="row-icon letter" style:background={letterColor(name)} aria-hidden="true">
+            {name.charAt(0).toUpperCase()}
+          </span>
         {/if}
         <div class="row-info">
           {#if file.project}
@@ -451,7 +474,17 @@
 
 <style>
   .row-item {
-    transition: opacity 150ms var(--ease);
+    transition:
+      opacity 150ms var(--ease),
+      background 150ms var(--ease);
+  }
+
+  .letter {
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
   }
 
   .row-item.disabled {
