@@ -54,6 +54,12 @@ export const es: Messages = {
     shortcut: "Acceso directo en el escritorio",
     duplicate: "Duplicar",
     copyName: "{name} (copia)",
+    fresh: "nueva",
+    view: "Vista",
+    views: {
+      grid: "Mosaico",
+      list: "Lista",
+    },
   },
   modpacks: {
     modsLeftBehind:

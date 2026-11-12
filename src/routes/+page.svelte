@@ -24,11 +24,13 @@
     stop,
   } from "#lib/state/instances.svelte.ts";
   import {
+    type InstanceView,
     SORT_ORDERS,
     type SortOrder,
     settings,
     togglePinned,
   } from "#lib/state/settings.svelte.ts";
+  import { tooltip } from "#lib/tooltip.ts";
   import { goto } from "$app/navigation";
 
   let creating = $state(false);
@@ -114,6 +116,21 @@
     return matches.sort(compare(settings.sort));
   });
 
+  // The last played instance gets a wide tile while the list runs from the last played.
+  const featured = $derived(
+    settings.instanceView === "grid" &&
+      settings.sort === "lastPlayed" &&
+      !query.trim() &&
+      visible[0]?.lastPlayed
+      ? visible[0].id
+      : null,
+  );
+
+  const VIEWS: { value: InstanceView; icon: string }[] = [
+    { value: "grid", icon: "M4.5 4.5h6v6h-6zM13.5 4.5h6v6h-6zM4.5 13.5h6v6h-6zM13.5 13.5h6v6h-6z" },
+    { value: "list", icon: "M4.5 6.5h15M4.5 12h15M4.5 17.5h15" },
+  ];
+
   const played = $derived.by(() => {
     let total = 0;
     let most: Instance | null = null;
@@ -193,18 +210,14 @@
       {/if}
     </div>
     <div class="actions">
-      <a class="create" href="/modpacks">
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M8 2.5l5 2.5v6l-5 2.5-5-2.5V5zM3 5l5 2.5L13 5M8 7.5v6" />
+      <button type="button" class="pill-button" onclick={chooseImport}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 4.5v10M8 10.5l4 4 4-4M5 19.5h14" />
         </svg>
-        {t("modpacks.title")}
-      </a>
-      <button type="button" class="create" onclick={chooseImport}>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v7M5 7l3 3 3-3M3 13h10" /></svg>
         {t("instances.import")}
       </button>
-      <button type="button" class="create" onclick={() => (creating = true)}>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+      <button type="button" class="pill-button primary" onclick={() => (creating = true)}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         {t("instances.create")}
       </button>
     </div>
@@ -233,20 +246,45 @@
     <div class="empty">
       <h2>{t("instances.empty")}</h2>
       <p>{t("instances.emptyHint")}</p>
+      <div class="empty-actions">
+        <a class="pill-button" href="/modpacks">{t("modpacks.title")}</a>
+        <button type="button" class="pill-button primary" onclick={() => (creating = true)}>
+          {t("instances.create")}
+        </button>
+      </div>
     </div>
   {:else}
     <div class="filters">
-      <input
-        type="search"
-        class="search"
-        data-search
-        bind:value={query}
-        placeholder={t("instances.search")}
-        aria-label={t("instances.search")}
-      >
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20" />
+        </svg>
+        <input
+          type="search"
+          data-search
+          bind:value={query}
+          placeholder={t("instances.search")}
+          aria-label={t("instances.search")}
+        >
+        <kbd>Ctrl F</kbd>
+      </label>
       <div class="sort">
         <Select bind:value={settings.sort} options={sortOptions} />
       </div>
+      <fieldset class="views">
+        <legend class="sr-only">{t("instances.view")}</legend>
+        {#each VIEWS as view (view.value)}
+          <button
+            type="button"
+            aria-pressed={settings.instanceView === view.value}
+            aria-label={t(`instances.views.${view.value}`)}
+            {@attach tooltip(t(`instances.views.${view.value}`))}
+            onclick={() => (settings.instanceView = view.value)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={view.icon} /></svg>
+          </button>
+        {/each}
+      </fieldset>
     </div>
 
     <div class="scroll" {@attach scrollFade}>
@@ -268,12 +306,17 @@
           </button>
         {/if}
         {#if !collapsed}
-          <div class="grid" {@attach settle}>
+          <div class="grid" class:list={settings.instanceView === "list"} {@attach settle}>
             {#each instances as instance (instance.id)}
               <InstanceCard
                 {instance}
                 launch={library.launches[instance.id]}
                 onmenu={(x, y) => showMenu(instance, x, y)}
+                variant={settings.instanceView === "list"
+                  ? "row"
+                  : instance.id === featured
+                    ? "wide"
+                    : "card"}
               />
             {/each}
           </div>
@@ -301,7 +344,7 @@
 <style>
   header {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
     padding-top: 8px;
@@ -310,7 +353,28 @@
   .actions {
     display: flex;
     flex: none;
+    gap: 10px;
+  }
+
+  .actions .pill-button {
+    display: flex;
+    align-items: center;
     gap: 8px;
+    height: 42px;
+    padding: 0 20px;
+    font-size: 14.5px;
+  }
+
+  .actions svg,
+  .search svg,
+  .views svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .heading {
@@ -318,10 +382,11 @@
   }
 
   .played {
-    margin: 2px 0 0;
+    margin: 6px 0 0;
     overflow: hidden;
-    color: var(--text-muted);
-    font-size: 13px;
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -359,59 +424,119 @@
     cursor: pointer;
   }
 
-  .create {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 34px;
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
-    font-weight: 600;
-    backdrop-filter: blur(24px);
-    transition: background 150ms var(--ease);
-  }
-
-  .create:hover {
-    background: var(--surface-hover);
-  }
-
-  a.create {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .create svg {
-    width: 14px;
-    height: 14px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
   .filters {
     display: flex;
-    gap: 8px;
-    margin-top: -6px;
+    align-items: center;
+    gap: 10px;
   }
 
   .search {
+    display: flex;
     flex: 1;
-    max-width: 360px;
-    height: 36px;
-    padding: 0 16px;
-    border: 1px solid var(--border);
+    align-items: center;
+    gap: 10px;
+    max-width: 390px;
+    height: 42px;
+    padding: 0 8px 0 16px;
     border-radius: 999px;
     background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px var(--border);
+    color: var(--text-muted);
+  }
+
+  .search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: none;
+    background: transparent;
     color: var(--text);
     font: inherit;
+    font-weight: 650;
+    outline: none;
+  }
+
+  .search input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search:focus-within {
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 2px var(--accent);
+  }
+
+  kbd {
+    flex: none;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--field);
+    box-shadow: inset 0 0 0 1px var(--border);
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 750;
   }
 
   .sort {
-    width: 210px;
+    width: 220px;
+  }
+
+  .sort :global(.field) {
+    height: 42px;
+    padding: 0 14px 0 18px;
+    border: none;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px var(--border);
+    font-weight: 700;
+  }
+
+  .sort :global(.field.open) {
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 2px var(--accent);
+  }
+
+  .views {
+    display: flex;
+    gap: 2px;
+    margin: 0 0 0 auto;
+    padding: 4px;
+    border: none;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px var(--border);
+  }
+
+  .views button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 34px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    transition:
+      background 150ms var(--ease),
+      color 150ms var(--ease);
+  }
+
+  .views button:hover {
+    color: var(--text);
+  }
+
+  .views button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-text);
   }
 
   /* Reaches into the page padding so the lifted cards' shadows are not cut off at its edge. */
@@ -427,13 +552,13 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 10px 0 10px;
+    margin: 10px 0 12px;
     padding: 0;
     border: none;
     background: none;
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 600;
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 750;
   }
 
   .group:first-child {
@@ -441,10 +566,10 @@
   }
 
   .group span {
-    padding: 0 7px;
+    padding: 1px 9px;
     border-radius: 999px;
     background: var(--field);
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .group svg {
@@ -464,8 +589,14 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 16px;
+    container-type: inline-size;
+  }
+
+  .grid.list {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .grid + .group {
@@ -492,5 +623,19 @@
   .empty p {
     margin: 0;
     color: var(--text-muted);
+  }
+
+  .empty-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  a.pill-button {
+    display: grid;
+    place-items: center;
+    color: inherit;
+    text-decoration: none;
   }
 </style>

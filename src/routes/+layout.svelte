@@ -6,7 +6,7 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import type { Snippet } from "svelte";
   import { api } from "#lib/api.ts";
-  import { coverOf } from "#lib/appearance.ts";
+  import { coverOf, sceneOf } from "#lib/appearance.ts";
   import Backdrop from "#lib/components/Backdrop.svelte";
   import CommandPalette from "#lib/components/CommandPalette.svelte";
   import DropOverlay from "#lib/components/DropOverlay.svelte";
@@ -168,7 +168,11 @@
   {onunhandledrejection}
 />
 
-<Backdrop kind={backdrop} cover={instance ? coverOf(instance.id, instance.cover) : null} />
+<Backdrop
+  kind={backdrop}
+  cover={instance ? coverOf(instance.id, instance.cover) : null}
+  scene={instance ? sceneOf(instance.id, instance.cover) : null}
+/>
 <div class="app" class:pinned={settings.menuPinned}>
   <TitleBar />
   <main>

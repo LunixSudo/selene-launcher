@@ -54,6 +54,12 @@ export const pl: Messages = {
     shortcut: "Skrót na pulpicie",
     duplicate: "Duplikuj",
     copyName: "{name} (kopia)",
+    fresh: "nowa",
+    view: "Widok",
+    views: {
+      grid: "Kafelki",
+      list: "Lista",
+    },
   },
   modpacks: {
     modsLeftBehind:

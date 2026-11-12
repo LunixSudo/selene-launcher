@@ -128,6 +128,7 @@
     height: 104px;
     padding: 14px;
     border-radius: var(--radius-md);
+    image-rendering: pixelated;
   }
 
   .tile {
@@ -151,9 +152,11 @@
     overflow: hidden;
     color: #ffffff;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 800;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 6px rgb(0 0 0 / 0.3);
+    text-shadow:
+      0 1px 2px rgb(0 0 0 / 0.45),
+      0 2px 12px rgb(0 0 0 / 0.4);
     white-space: nowrap;
   }
 
@@ -173,7 +176,7 @@
   .icons,
   .covers {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap: 6px;
   }
 
