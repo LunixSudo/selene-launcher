@@ -8,10 +8,49 @@ export const ru = {
   account: {
     signIn: "Войти",
     add: "Добавить аккаунт",
-    signOut: "Выйти",
     waiting: "Завершите вход в браузере",
     cancel: "Отмена",
     dismiss: "Скрыть",
+    waitingShort: "Ждём браузер",
+    current: "Играете с этого аккаунта",
+    switchTo: "Переключиться",
+    expired: "Вход истёк",
+    signInAgain: "Войти снова",
+    skin: "Скин и плащ",
+    microsoft: "Аккаунт Microsoft на сайте",
+    signOutOf: "Выйти из {name}",
+    menu: "Аккаунты",
+    retry: "Повторить",
+    otherAccount: "Другой аккаунт",
+    openXbox: "Открыть xbox.com",
+    howTo: "Как это сделать",
+    problemTitle: "Не удалось войти",
+    problems: {
+      network: {
+        title: "Нет связи с Microsoft",
+        body: "Проверьте интернет. Если он есть, сайт Microsoft может быть временно недоступен.",
+      },
+      signInCancelled: {
+        title: "Вход отменён",
+        body: "Вход не закончен на странице Microsoft. Ничего не сломалось.",
+      },
+      gameNotOwned: {
+        title: "На аккаунте нет Minecraft",
+        body: "Java Edition не куплена на этот аккаунт. Возможно, игра на другом.",
+      },
+      noXboxAccount: {
+        title: "Нет профиля Xbox",
+        body: "Профиль бесплатный, его создают один раз на xbox.com.",
+      },
+      childAccount: {
+        title: "Нужно разрешение взрослого",
+        body: "Детский аккаунт сначала добавляют в семью Microsoft.",
+      },
+      sessionExpired: {
+        title: "Сохранённый вход истёк",
+        body: "Так бывает, если долго не заходить. Сборки и миры на месте.",
+      },
+    },
   },
   instances: {
     pin: "Закрепить в меню",

@@ -8,7 +8,12 @@ export const session = $state({
   error: null as CommandError | null,
   /** Asks for a player name: for a new account that has none, or to change the active one. */
   naming: null as "create" | "change" | null,
+  /** Accounts whose saved sign-in Microsoft no longer takes; they go through the browser again. */
+  expired: [] as string[],
 });
+
+/** Set while the user stops a sign-in from the launcher, which needs no message. */
+let cancelling = false;
 
 export function activeAccount(): Account | undefined {
   return session.accounts.find((account) => account.id === session.active);
@@ -20,31 +25,50 @@ export async function loadAccounts() {
   session.active = list.active;
 }
 
-export async function signIn() {
+/** Signs in through the browser. Resolves to whether an account is ready to play. */
+export async function signIn(): Promise<boolean> {
   session.signingIn = true;
   session.error = null;
+  cancelling = false;
   try {
     await api.signIn();
     await loadAccounts();
+    session.expired = session.expired.filter((id) => id !== session.active);
     // Instances added before signing in could not download their game yet.
     void prepareAll();
+    return true;
   } catch (error) {
     if (isCommandError(error) && error.kind === "needsPlayerName") {
       session.naming = "create";
-    } else if (!isCommandError(error) || error.kind !== "signInCancelled") {
+    } else if (!(cancelling && isCommandError(error) && error.kind === "signInCancelled")) {
       session.error = isCommandError(error) ? error : { kind: "core", message: String(error) };
     }
+    return false;
   } finally {
     session.signingIn = false;
   }
 }
 
+/** Opens the sign-in when a start needs it, remembering an account whose sign-in ran out. */
+export function signInToPlay(reason: CommandError): Promise<boolean> {
+  if (
+    reason.kind === "sessionExpired" &&
+    session.active &&
+    !session.expired.includes(session.active)
+  ) {
+    session.expired.push(session.active);
+  }
+  return signIn();
+}
+
 export async function cancelSignIn() {
+  cancelling = true;
   await api.cancelSignIn();
 }
 
 export async function signOut(id: string) {
   await api.signOut(id);
+  session.expired = session.expired.filter((entry) => entry !== id);
   await loadAccounts();
 }
 

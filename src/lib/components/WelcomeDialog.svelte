@@ -12,6 +12,7 @@
   import MoonPhase from "#lib/components/MoonPhase.svelte";
   import PlayerHead from "#lib/components/PlayerHead.svelte";
   import Select from "#lib/components/Select.svelte";
+  import SignInProblem from "#lib/components/SignInProblem.svelte";
   import { openModal } from "#lib/dialog.ts";
   import { detectGpu } from "#lib/gpu.ts";
   import {
@@ -369,10 +370,19 @@
         </button>
       </div>
       {#if session.error}
-        <p class="error" role="alert">{t(`errors.${session.error.kind}`)}</p>
+        <div class="problem">
+          <SignInProblem error={session.error} actions={false} />
+        </div>
       {/if}
       <div class="foot">
-        <button type="button" class="link" onclick={() => (step = "pack")}>
+        <button
+          type="button"
+          class="link"
+          onclick={() => {
+            session.error = null;
+            step = "pack";
+          }}
+        >
           {t("welcome.skip")}
         </button>
         <span class="note">{t("welcome.skipHint")}</span>
@@ -1028,6 +1038,17 @@
 
   .hello :global(.head) {
     border-radius: 18px;
+  }
+
+  .problem {
+    max-width: 520px;
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px var(--border);
   }
 
   .error {
