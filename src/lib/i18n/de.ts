@@ -10,10 +10,49 @@ export const de: Messages = {
   account: {
     signIn: "Anmelden",
     add: "Konto hinzufügen",
-    signOut: "Abmelden",
     waiting: "Schließe die Anmeldung im Browser ab",
     cancel: "Abbrechen",
     dismiss: "Ausblenden",
+    waitingShort: "Warte auf den Browser",
+    current: "Du spielst mit diesem Konto",
+    switchTo: "Wechseln",
+    expired: "Anmeldung abgelaufen",
+    signInAgain: "Erneut anmelden",
+    skin: "Skin und Umhang",
+    microsoft: "Microsoft-Konto im Web",
+    signOutOf: "Von {name} abmelden",
+    menu: "Konten",
+    retry: "Erneut versuchen",
+    otherAccount: "Anderes Konto",
+    openXbox: "xbox.com öffnen",
+    howTo: "So geht's",
+    problemTitle: "Anmeldung fehlgeschlagen",
+    problems: {
+      network: {
+        title: "Keine Verbindung zu Microsoft",
+        body: "Prüfe deine Internetverbindung. Wenn sie steht, ist die Microsoft-Seite vielleicht kurz nicht erreichbar.",
+      },
+      signInCancelled: {
+        title: "Anmeldung abgebrochen",
+        body: "Die Anmeldung wurde auf der Microsoft-Seite nicht abgeschlossen. Es ist nichts kaputt.",
+      },
+      gameNotOwned: {
+        title: "Kein Minecraft auf diesem Konto",
+        body: "Java Edition wurde mit diesem Konto nicht gekauft. Vielleicht liegt das Spiel auf einem anderen.",
+      },
+      noXboxAccount: {
+        title: "Kein Xbox-Profil",
+        body: "Das Profil ist kostenlos und wird einmal auf xbox.com angelegt.",
+      },
+      childAccount: {
+        title: "Erlaubnis der Eltern nötig",
+        body: "Ein Kinderkonto muss zuerst zu einer Microsoft-Familie hinzugefügt werden.",
+      },
+      sessionExpired: {
+        title: "Die gespeicherte Anmeldung ist abgelaufen",
+        body: "Das passiert nach einer längeren Pause. Instanzen und Welten sind noch da.",
+      },
+    },
   },
   instances: {
     pin: "Im Menü anheften",

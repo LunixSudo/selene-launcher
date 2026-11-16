@@ -10,10 +10,49 @@ export const uk: Messages = {
   account: {
     signIn: "Увійти",
     add: "Додати акаунт",
-    signOut: "Вийти",
     waiting: "Завершіть вхід у браузері",
     cancel: "Скасувати",
     dismiss: "Закрити",
+    waitingShort: "Чекаємо браузер",
+    current: "Ви граєте з цього акаунта",
+    switchTo: "Перемкнутися",
+    expired: "Вхід закінчився",
+    signInAgain: "Увійти знову",
+    skin: "Скін і плащ",
+    microsoft: "Акаунт Microsoft на сайті",
+    signOutOf: "Вийти з {name}",
+    menu: "Акаунти",
+    retry: "Повторити",
+    otherAccount: "Інший акаунт",
+    openXbox: "Відкрити xbox.com",
+    howTo: "Як це зробити",
+    problemTitle: "Не вдалося увійти",
+    problems: {
+      network: {
+        title: "Немає зв'язку з Microsoft",
+        body: "Перевірте інтернет. Якщо він є, сайт Microsoft може бути тимчасово недоступний.",
+      },
+      signInCancelled: {
+        title: "Вхід скасовано",
+        body: "Вхід не завершено на сторінці Microsoft. Нічого не зламалося.",
+      },
+      gameNotOwned: {
+        title: "На акаунті немає Minecraft",
+        body: "Java Edition не куплена на цей акаунт. Можливо, гра на іншому.",
+      },
+      noXboxAccount: {
+        title: "Немає профілю Xbox",
+        body: "Профіль безкоштовний, його створюють один раз на xbox.com.",
+      },
+      childAccount: {
+        title: "Потрібен дозвіл дорослого",
+        body: "Дитячий акаунт спершу додають до родини Microsoft.",
+      },
+      sessionExpired: {
+        title: "Збережений вхід закінчився",
+        body: "Так буває, якщо довго не заходити. Збірки й світи на місці.",
+      },
+    },
   },
   instances: {
     pin: "Закріпити в меню",

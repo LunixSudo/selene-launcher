@@ -10,10 +10,49 @@ export const ptBR: Messages = {
   account: {
     signIn: "Entrar",
     add: "Adicionar conta",
-    signOut: "Sair",
     waiting: "Termine de entrar no navegador",
     cancel: "Cancelar",
     dismiss: "Ocultar",
+    waitingShort: "Aguardando o navegador",
+    current: "Você joga com esta conta",
+    switchTo: "Mudar para esta",
+    expired: "Login expirado",
+    signInAgain: "Entrar de novo",
+    skin: "Skin e capa",
+    microsoft: "Conta Microsoft no site",
+    signOutOf: "Sair de {name}",
+    menu: "Contas",
+    retry: "Tentar de novo",
+    otherAccount: "Outra conta",
+    openXbox: "Abrir xbox.com",
+    howTo: "Como fazer",
+    problemTitle: "Não foi possível entrar",
+    problems: {
+      network: {
+        title: "Sem conexão com a Microsoft",
+        body: "Verifique a internet. Se ela estiver ok, o site da Microsoft pode estar fora do ar por um tempo.",
+      },
+      signInCancelled: {
+        title: "Login cancelado",
+        body: "O login não foi concluído na página da Microsoft. Nada quebrou.",
+      },
+      gameNotOwned: {
+        title: "Esta conta não tem Minecraft",
+        body: "O Java Edition não foi comprado nesta conta. Talvez o jogo esteja em outra.",
+      },
+      noXboxAccount: {
+        title: "Sem perfil do Xbox",
+        body: "O perfil é gratuito e é criado uma vez em xbox.com.",
+      },
+      childAccount: {
+        title: "É preciso a permissão de um adulto",
+        body: "Uma conta infantil primeiro precisa entrar em uma família Microsoft.",
+      },
+      sessionExpired: {
+        title: "O login salvo expirou",
+        body: "Isso acontece depois de muito tempo sem entrar. Suas instâncias e mundos continuam aqui.",
+      },
+    },
   },
   instances: {
     pin: "Fixar no menu",

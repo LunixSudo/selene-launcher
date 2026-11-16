@@ -21,6 +21,7 @@ import { t } from "#lib/i18n/index.svelte.ts";
 import { LOADER_NAMES } from "#lib/loaders.ts";
 import { notify } from "#lib/notify.ts";
 import { goto } from "$app/navigation";
+import { signInToPlay } from "./accounts.svelte";
 import { settings } from "./settings.svelte";
 
 export type LaunchState =
@@ -95,6 +96,8 @@ export function prepare(id: string) {
 
 /** Instances the player pressed Play on, as opposed to downloads of their own. */
 const starting = new Set<string>();
+/** Errors a start fixes by signing in. */
+const SIGN_IN_KINDS = new Set<CommandError["kind"]>(["notSignedIn", "sessionExpired"]);
 
 /** Instances whose interrupted modpack install or update is being finished. */
 const finishing = new Set<string>();
@@ -230,7 +233,12 @@ export async function deleteInstance(id: string) {
 }
 
 /** Starts the game, joining `server` right away when given. */
-export async function play(id: string, server: string | null = null) {
+export function play(id: string, server: string | null = null): Promise<void> {
+  return start(id, server, true);
+}
+
+/** Without an account that can play, the sign-in opens and the game starts after it, once. */
+async function start(id: string, server: string | null, maySignIn: boolean) {
   // The start takes over a background download and finishes it at full speed.
   preparing.delete(id);
   if (library.launches[id]?.status === "preparing" && !library.tasks[id]) {
@@ -245,19 +253,26 @@ export async function play(id: string, server: string | null = null) {
   library.launches[id] = { status: "preparing", stage: null, percent: 0 };
   delete library.crashes[id];
   starting.add(id);
+  let needsSignIn: CommandError | null = null;
   try {
     await api.launchInstance(id, server);
   } catch (error) {
     if (isCommandError(error) && error.kind === "cancelled") {
       delete library.launches[id];
-      return;
+    } else if (maySignIn && isCommandError(error) && SIGN_IN_KINDS.has(error.kind)) {
+      delete library.launches[id];
+      needsSignIn = error;
+    } else {
+      library.launches[id] = {
+        status: "failed",
+        error: isCommandError(error) ? error : UNKNOWN_ERROR,
+      };
     }
-    library.launches[id] = {
-      status: "failed",
-      error: isCommandError(error) ? error : UNKNOWN_ERROR,
-    };
   } finally {
     starting.delete(id);
+  }
+  if (needsSignIn && (await signInToPlay(needsSignIn))) {
+    await start(id, server, false);
   }
 }
 

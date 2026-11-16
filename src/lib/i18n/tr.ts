@@ -10,10 +10,49 @@ export const tr: Messages = {
   account: {
     signIn: "Giriş yap",
     add: "Hesap ekle",
-    signOut: "Çıkış yap",
     waiting: "Girişi tarayıcıda tamamla",
     cancel: "İptal",
     dismiss: "Gizle",
+    waitingShort: "Tarayıcı bekleniyor",
+    current: "Bu hesapla oynuyorsun",
+    switchTo: "Buna geç",
+    expired: "Girişin süresi doldu",
+    signInAgain: "Yeniden giriş yap",
+    skin: "Skin ve pelerin",
+    microsoft: "Web'de Microsoft hesabı",
+    signOutOf: "{name} hesabından çık",
+    menu: "Hesaplar",
+    retry: "Tekrar dene",
+    otherAccount: "Başka hesap",
+    openXbox: "xbox.com'u aç",
+    howTo: "Nasıl yapılır",
+    problemTitle: "Giriş yapılamadı",
+    problems: {
+      network: {
+        title: "Microsoft'a bağlanılamıyor",
+        body: "İnternetini kontrol et. Çalışıyorsa Microsoft sitesi bir süreliğine kapalı olabilir.",
+      },
+      signInCancelled: {
+        title: "Giriş iptal edildi",
+        body: "Giriş Microsoft sayfasında tamamlanmadı. Hiçbir şey bozulmadı.",
+      },
+      gameNotOwned: {
+        title: "Bu hesapta Minecraft yok",
+        body: "Java Edition bu hesapla satın alınmamış. Oyun başka bir hesapta olabilir.",
+      },
+      noXboxAccount: {
+        title: "Xbox profili yok",
+        body: "Profil ücretsizdir ve xbox.com'da bir kez oluşturulur.",
+      },
+      childAccount: {
+        title: "Bir yetişkinin izni gerekli",
+        body: "Çocuk hesabı önce bir Microsoft ailesine eklenmeli.",
+      },
+      sessionExpired: {
+        title: "Kayıtlı girişin süresi doldu",
+        body: "Uzun süre girilmeyince olur. Profillerin ve dünyaların yerinde.",
+      },
+    },
   },
   instances: {
     pin: "Menüye sabitle",

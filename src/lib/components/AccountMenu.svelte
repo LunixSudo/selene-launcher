@@ -1,6 +1,9 @@
 <script lang="ts">
+  import { openUrl } from "@tauri-apps/plugin-opener";
+  import MoonPhase from "#lib/components/MoonPhase.svelte";
   import PlayerHead from "#lib/components/PlayerHead.svelte";
   import PlayerNameDialog from "#lib/components/PlayerNameDialog.svelte";
+  import SignInProblem from "#lib/components/SignInProblem.svelte";
   import { t } from "#lib/i18n/index.svelte.ts";
   import {
     activeAccount,
@@ -16,6 +19,7 @@
   let root: HTMLDivElement;
 
   const active = $derived(activeAccount());
+  const expired = $derived(Boolean(active && session.expired.includes(active.id)));
 
   $effect(() => {
     void loadAccounts();
@@ -35,83 +39,148 @@
   });
 
   function toggle() {
-    if (session.accounts.length === 0 && !session.signingIn) {
+    // With nothing else to pick, the button does what it says.
+    const lone = session.accounts.length === 0 || (expired && session.accounts.length === 1);
+    if (lone && !session.signingIn && !open) {
       void signIn();
     } else {
       open = !open;
     }
   }
+
+  function onkeydown(event: KeyboardEvent) {
+    if (open && event.key === "Escape") {
+      open = false;
+    }
+  }
+
+  async function choose(id: string) {
+    await switchAccount(id);
+    open = false;
+  }
+
+  function act(action: () => unknown) {
+    open = false;
+    void action();
+  }
 </script>
 
+<svelte:window {onkeydown} />
+
+{#snippet icon(path: string)}
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d={path} /></svg>
+{/snippet}
+
 <div class="account" bind:this={root}>
-  <button type="button" class="pill" class:signing-in={session.signingIn} onclick={toggle}>
-    {#if active}
-      <PlayerHead skin={active.skin} name={active.name} />
-      <span>{active.name}</span>
-    {:else if session.signingIn}
-      <span class="spinner" aria-hidden="true"></span>
-      <span>{t("account.waiting")}</span>
+  <button
+    type="button"
+    class="pill"
+    class:expired={expired && !session.signingIn}
+    aria-haspopup="menu"
+    aria-expanded={open}
+    onclick={toggle}
+  >
+    {#if session.signingIn}
+      <span class="moon"><MoonPhase percent={50} /></span>
+      <span>{t("account.waitingShort")}</span>
+    {:else if active}
+      <PlayerHead skin={active.skin} name={active.name} size={24} />
+      <span>{expired ? t("account.signInAgain") : active.name}</span>
     {:else}
+      <span class="plus">{@render icon("M12 6v12M6 12h12")}</span>
       <span>{t("account.signIn")}</span>
     {/if}
   </button>
 
   {#if open}
-    <div class="menu" role="menu">
+    <div class="menu" role="menu" aria-label={t("account.menu")}>
       {#each session.accounts as account (account.id)}
-        <div class="row">
+        {@const current = account.id === session.active}
+        {@const lapsed = session.expired.includes(account.id)}
+        <div class="who">
           <button
             type="button"
             role="menuitemradio"
-            aria-checked={account.id === session.active}
-            class="item"
-            onclick={() => switchAccount(account.id)}
+            aria-checked={current}
+            class="pick"
+            onclick={() => choose(account.id)}
           >
-            <PlayerHead skin={account.skin} name={account.name} />
-            <span class="name">{account.name}</span>
-            {#if account.id === session.active}
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>
+            <PlayerHead skin={account.skin} name={account.name} size={36} />
+            <span class="names">
+              <span class="name">{account.name}</span>
+              <span class="sub" class:bad={lapsed}>
+                {lapsed
+                  ? t("account.expired")
+                  : current
+                    ? t("account.current")
+                    : t("account.switchTo")}
+              </span>
+            </span>
+            {#if current && !lapsed}
+              <span class="check">{@render icon("M6 12.5l4 4 8-9")}</span>
             {/if}
           </button>
-          <button type="button" class="sign-out" onclick={() => signOut(account.id)}>
-            {t("account.signOut")}
-          </button>
+          {#if lapsed && !session.signingIn}
+            <button type="button" class="pill-button again" onclick={() => act(signIn)}>
+              {t("account.signInAgain")}
+            </button>
+          {/if}
         </div>
       {/each}
 
+      {#if session.signingIn}
+        <div class="waiting">
+          <span class="moon"><MoonPhase percent={50} /></span>
+          <span>{t("account.waiting")}</span>
+          <button type="button" class="cancel" onclick={cancelSignIn}>{t("account.cancel")}</button>
+        </div>
+      {/if}
+
+      <hr>
+      <button
+        type="button"
+        role="menuitem"
+        class="item"
+        disabled={session.signingIn}
+        onclick={() => act(signIn)}
+      >
+        {@render icon("M12 5v14M5 12h14")}
+        {t("account.add")}
+      </button>
       {#if active}
-        <a class="item action" role="menuitem" href="/skins" onclick={() => (open = false)}>
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M5.5 2.5L2 4.5l1.5 3 1.5-.7v6.7h6V6.8l1.5.7 1.5-3-3.5-2a2.5 2.5 0 01-5 0z" />
-          </svg>
-          {t("skins.title")}
-        </a>
         <button
           type="button"
           role="menuitem"
-          class="item action"
-          onclick={() => {
-            open = false;
-            session.naming = "change";
-          }}
+          class="item"
+          onclick={() => act(() => (session.naming = "change"))}
         >
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M10.5 2.5l3 3-8 8H2.5v-3z" />
-          </svg>
+          {@render icon("M15.5 4.5l4 4L9 19H5v-4z")}
           {t("playerName.changeTitle")}
         </button>
+        <a class="item" role="menuitem" href="/skins" onclick={() => (open = false)}>
+          {@render icon("M9 3.5 4 6l2 4 2-1v11h8V9l2 1 2-4-5-2.5a3 3 0 0 1-6 0z")}
+          {t("account.skin")}
+        </a>
       {/if}
-
-      {#if session.signingIn}
-        <div class="waiting">
-          <span class="spinner" aria-hidden="true"></span>
-          <span>{t("account.waiting")}</span>
-          <button type="button" class="link" onclick={cancelSignIn}>{t("account.cancel")}</button>
-        </div>
-      {:else}
-        <button type="button" role="menuitem" class="item action" onclick={signIn}>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
-          {t("account.add")}
+      <button
+        type="button"
+        role="menuitem"
+        class="item"
+        onclick={() => act(() => openUrl("https://account.microsoft.com/"))}
+      >
+        {@render icon("M14 5h5v5M19 5l-8 8M17 13.5V19H5V7h5.5")}
+        {t("account.microsoft")}
+      </button>
+      {#if active}
+        <hr>
+        <button
+          type="button"
+          role="menuitem"
+          class="item danger"
+          onclick={() => act(() => signOut(active.id))}
+        >
+          {@render icon("M14 4.5h4.5v15H14M10 8l-4 4 4 4M6 12h9")}
+          {t("account.signOutOf", { name: active.name })}
         </button>
       {/if}
     </div>
@@ -120,15 +189,8 @@
   <PlayerNameDialog />
 
   {#if session.error && !open}
-    <div class="error" role="alert">
-      <p>{t(`errors.${session.error.kind}`)}</p>
-      <button
-        type="button"
-        aria-label={t("account.dismiss")}
-        onclick={() => (session.error = null)}
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
-      </button>
+    <div class="problem">
+      <SignInProblem error={session.error} ondismiss={() => (session.error = null)} />
     </div>
   {/if}
 </div>
@@ -141,208 +203,243 @@
     margin-right: 8px;
   }
 
-  .pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 28px;
-    padding: 0 12px 0 4px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
-    font-size: 12px;
-    font-weight: 600;
-    transition: background 150ms var(--ease);
-  }
-
-  .pill:hover {
-    background: var(--surface-hover);
-  }
-
-  .pill:not(:has(:global(.head))) {
-    padding-left: 12px;
-  }
-
-  .pill.signing-in {
-    padding-left: 8px;
-  }
-
-  .menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: 10;
-    display: grid;
-    gap: 2px;
-    min-width: 240px;
-    padding: 6px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--surface-solid);
-    box-shadow: 0 16px 40px rgb(0 0 0 / 0.18);
-    animation: drop 160ms var(--ease);
-  }
-
-  .row {
-    display: flex;
-    align-items: center;
-  }
-
-  .item {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    gap: 8px;
-    height: 34px;
-    padding: 0 8px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    text-align: left;
-  }
-
-  .item:hover {
-    background: var(--field);
-  }
-
-  .name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .item svg {
-    width: 14px;
-    height: 14px;
+  svg {
+    width: 18px;
+    height: 18px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.6;
+    stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
 
-  [aria-checked="true"] svg {
-    color: var(--accent);
-  }
-
-  .action {
-    color: var(--text-muted);
-    text-decoration: none;
-  }
-
-  .action:hover {
-    color: var(--text);
-  }
-
-  .sign-out,
-  .link {
-    padding: 4px 8px;
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 14px 0 4px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 1px var(--border);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 800;
+    transition:
+      background 150ms var(--ease),
+      box-shadow 150ms var(--ease);
+  }
+
+  .pill:hover,
+  .pill[aria-expanded="true"] {
+    background: var(--surface-hover);
+  }
+
+  .pill :global(.head) {
+    border-radius: 8px;
+  }
+
+  .pill.expired {
+    box-shadow:
+      inset 0 0 0 1.5px var(--danger-text),
+      0 0 14px -4px color-mix(in srgb, var(--danger-text) 60%, transparent);
+  }
+
+  .plus {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .plus svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2.4;
+  }
+
+  .moon {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    color: var(--gold);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  .menu,
+  .problem {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 31;
+    width: 340px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-strong);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      0 0 0 1px var(--border),
+      0 30px 60px -20px rgb(0 0 0 / 0.6);
+    backdrop-filter: var(--glass);
+    animation: drop 320ms var(--spring);
+  }
+
+  .menu {
+    display: grid;
+    gap: 2px;
+    padding: 8px;
+  }
+
+  .problem {
+    width: 380px;
+    padding: 16px 14px 16px 16px;
+  }
+
+  @keyframes drop {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.98);
+    }
+  }
+
+  .who {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pick {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 8px;
+    border: none;
+    border-radius: 14px;
     background: transparent;
+    color: var(--text);
+    text-align: left;
+  }
+
+  .pick:hover {
+    background: var(--field);
+  }
+
+  .pick :global(.head) {
+    border-radius: 10px;
+  }
+
+  .names {
+    display: grid;
+    flex: 1;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .name {
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sub {
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 12.5px;
+    font-weight: 650;
   }
 
-  .sign-out:hover {
-    color: var(--danger);
+  .sub.bad {
+    color: var(--danger-text);
   }
 
-  .link {
-    margin-left: auto;
-    color: var(--accent);
+  .check {
+    display: flex;
+    color: var(--accent-fg);
+  }
+
+  .check svg {
+    stroke-width: 2.2;
+  }
+
+  .again {
+    margin-right: 6px;
   }
 
   .waiting {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 34px;
-    padding: 0 8px;
-    color: var(--text-muted);
-    font-size: 12px;
+    padding: 6px 8px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 700;
   }
 
-  .spinner {
-    width: 12px;
-    height: 12px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 700ms linear infinite;
-  }
-
-  .error {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: 10;
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    width: 300px;
-    padding: 10px 8px 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--surface-solid);
-    box-shadow: 0 16px 40px rgb(0 0 0 / 0.18);
-    animation: drop 160ms var(--ease);
-  }
-
-  .error p {
-    flex: 1;
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.45;
-  }
-
-  .error p::before {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin-right: 6px;
-    border-radius: 50%;
-    background: var(--danger);
-    content: "";
-  }
-
-  .error button {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 22px;
-    height: 22px;
-    padding: 0;
+  .cancel {
+    margin-left: auto;
+    padding: 4px 8px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
-    color: var(--text-muted);
+    color: var(--accent-fg);
+    font-size: 13px;
+    font-weight: 800;
   }
 
-  .error button:hover {
+  hr {
+    width: calc(100% - 16px);
+    height: 1px;
+    margin: 6px auto;
+    border: none;
+    background: var(--border);
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 750;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  .item svg {
+    color: var(--text-2);
+  }
+
+  .item:hover:enabled,
+  a.item:hover {
     background: var(--field);
   }
 
-  .error svg {
-    width: 12px;
-    height: 12px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
+  .item:disabled {
+    opacity: 0.5;
   }
 
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes drop {
-    from {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
+  .item.danger,
+  .item.danger svg {
+    color: var(--danger-text);
   }
 </style>

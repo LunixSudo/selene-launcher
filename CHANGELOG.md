@@ -182,6 +182,13 @@ All notable changes to this project are documented here. The format follows
   buttons are round, and the tabs, content kinds and lists of mods, worlds and servers look
   like the rest of the new design. Add-ons without an icon show their first letter.
 - The update notice on an instance page is a banner with an icon and pill buttons.
+- The account menu shows each account with its head and state, and has changing the name,
+  the skin page, the Microsoft account site and signing out in one place. The account button
+  shows whether you are signed in, waiting for the browser or need to sign in again.
+- Sign-in problems explain what happened and what to do next, with a button to try again and
+  a link to xbox.com, minecraft.net or Microsoft family settings where that helps.
+- Pressing Play without an account, or with a sign-in that ran out, opens the sign-in and
+  starts the game once it is done.
 - The launcher keeps a small log in `logs/launcher.log` in its data folder: which sources
   answered, which failed and why. It holds no tokens or keys.
 

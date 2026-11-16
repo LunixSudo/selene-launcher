@@ -10,10 +10,49 @@ export const en: Messages = {
   account: {
     signIn: "Sign in",
     add: "Add account",
-    signOut: "Sign out",
     waiting: "Finish signing in in your browser",
     cancel: "Cancel",
     dismiss: "Dismiss",
+    waitingShort: "Waiting for the browser",
+    current: "You play on this account",
+    switchTo: "Switch to it",
+    expired: "Sign-in expired",
+    signInAgain: "Sign in again",
+    skin: "Skin and cape",
+    microsoft: "Microsoft account online",
+    signOutOf: "Sign out of {name}",
+    menu: "Accounts",
+    retry: "Try again",
+    otherAccount: "Another account",
+    openXbox: "Open xbox.com",
+    howTo: "How to do it",
+    problemTitle: "Couldn't sign in",
+    problems: {
+      network: {
+        title: "No connection to Microsoft",
+        body: "Check your internet. If it works, the Microsoft site may be down for a while.",
+      },
+      signInCancelled: {
+        title: "Sign-in cancelled",
+        body: "The sign-in wasn't finished on the Microsoft page. Nothing is broken.",
+      },
+      gameNotOwned: {
+        title: "No Minecraft on this account",
+        body: "Java Edition isn't bought on this account. Maybe the game is on another one.",
+      },
+      noXboxAccount: {
+        title: "No Xbox profile",
+        body: "The profile is free and is made once on xbox.com.",
+      },
+      childAccount: {
+        title: "A parent's permission is needed",
+        body: "A child account first has to be added to a Microsoft family.",
+      },
+      sessionExpired: {
+        title: "The saved sign-in expired",
+        body: "This happens after a long break. Your instances and worlds are all there.",
+      },
+    },
   },
   instances: {
     pin: "Pin to menu",
