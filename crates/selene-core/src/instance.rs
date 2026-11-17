@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
@@ -20,9 +20,9 @@ pub struct Instance {
     pub version: String,
     #[serde(default)]
     pub loader: Option<LoaderVersion>,
-    pub created_at: DateTime<Utc>,
+    pub created_at: Timestamp,
     #[serde(default)]
-    pub last_played: Option<DateTime<Utc>>,
+    pub last_played: Option<Timestamp>,
     #[serde(default)]
     pub max_memory_mb: Option<u32>,
     /// Name of one of the launcher's built-in icons; `None` shows the default.
@@ -147,7 +147,7 @@ impl Instances {
             name: name.trim().to_owned(),
             version: version.to_owned(),
             loader,
-            created_at: Utc::now(),
+            created_at: Timestamp::now(),
             last_played: None,
             max_memory_mb: None,
             icon: None,
@@ -180,7 +180,7 @@ impl Instances {
         })?;
         instance.id = self.free_id(name).await?;
         name.trim().clone_into(&mut instance.name);
-        instance.created_at = Utc::now();
+        instance.created_at = Timestamp::now();
         instance.last_played = None;
         instance.play_seconds = 0;
 
@@ -321,10 +321,12 @@ mod tests {
         assert!(instances.game_dir(&first.id).is_dir());
 
         let mut played = first.clone();
-        played.last_played = Some(Utc::now());
+        played.last_played = Some("2026-11-16T12:34:56.123456789Z".parse().unwrap());
         instances.save(&played).await.unwrap();
         let listed = instances.list().await.unwrap();
         assert_eq!(listed, [played, second.clone()]);
+        let stored = serde_json::to_value(&listed[0]).unwrap();
+        assert_eq!(stored["lastPlayed"], "2026-11-16T12:34:56.123456789Z");
 
         instances.delete(&second.id).await.unwrap();
         assert_eq!(instances.list().await.unwrap().len(), 1);

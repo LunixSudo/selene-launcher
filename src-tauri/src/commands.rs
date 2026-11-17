@@ -21,7 +21,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use selene_core::crash::{self, CrashReport};
 use selene_core::download::{self, Progress};
 use selene_core::game::{self, Installed, Stage};
@@ -69,7 +69,7 @@ const CRASH_LOG_LINES: usize = 40;
 pub struct VersionSummary {
     id: String,
     kind: VersionKind,
-    release_time: DateTime<Utc>,
+    release_time: Timestamp,
 }
 
 /// Amounts in megabytes.
@@ -640,7 +640,7 @@ async fn run_game(
         .get(&instance.id)
         .await
         .unwrap_or(instance);
-    latest.last_played = Some(Utc::now());
+    latest.last_played = Some(Timestamp::now());
     launcher.instances.save(&latest).await?;
     let instance = latest;
     launcher.clear_log(&instance.id);

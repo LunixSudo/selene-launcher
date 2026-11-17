@@ -6,11 +6,11 @@ use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use chrono::{DateTime, Utc};
 use fastnbt::Value;
 use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use zip::write::SimpleFileOptions;
 
@@ -27,7 +27,7 @@ pub struct World {
     /// Folder name inside `saves`, which is what Quick Play expects.
     pub folder: String,
     pub name: String,
-    pub last_played: Option<DateTime<Utc>>,
+    pub last_played: Option<Timestamp>,
     pub game_mode: Option<GameMode>,
     pub icon: Option<PathBuf>,
 }
@@ -74,7 +74,7 @@ pub struct Server {
 pub struct Screenshot {
     pub path: PathBuf,
     pub name: String,
-    pub taken_at: Option<DateTime<Utc>>,
+    pub taken_at: Option<Timestamp>,
 }
 
 pub fn saves_dir(game_dir: &Path) -> PathBuf {
@@ -122,7 +122,9 @@ fn read_world(dir: &Path) -> Option<World> {
             .filter(|name| !name.is_empty())
             .unwrap_or_else(|| folder.clone()),
         folder,
-        last_played: data.last_played.and_then(DateTime::from_timestamp_millis),
+        last_played: data
+            .last_played
+            .and_then(|millis| Timestamp::from_millisecond(millis).ok()),
         game_mode,
         icon: icon.is_file().then_some(icon),
     })
@@ -135,7 +137,7 @@ pub fn back_up_world(game_dir: &Path, folder: &str) -> Result<PathBuf> {
     fs::create_dir_all(&backups).map_err(|err| Error::io(&backups, err))?;
     let out = backups.join(format!(
         "{folder}-{}.zip",
-        Utc::now().format("%Y-%m-%d_%H-%M-%S")
+        Timestamp::now().strftime("%Y-%m-%d_%H-%M-%S")
     ));
 
     let file = File::create(&out).map_err(|err| Error::io(&out, err))?;
@@ -360,7 +362,7 @@ pub fn screenshots(game_dir: &Path) -> Result<Vec<Screenshot>> {
             taken_at: fs::metadata(&path)
                 .and_then(|meta| meta.modified())
                 .ok()
-                .map(DateTime::<Utc>::from),
+                .and_then(|modified| Timestamp::try_from(modified).ok()),
             path,
         })
         .collect();

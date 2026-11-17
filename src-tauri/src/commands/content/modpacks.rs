@@ -2,7 +2,7 @@
 //! installed like a pack file dropped on the window. An instance made this way remembers its
 //! pack, so it can move to another version of it later.
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use selene_core::download::{self, Download};
 use selene_core::instance::{PackOrigin, PackSource};
 use selene_core::modrinth;
@@ -24,7 +24,7 @@ pub struct PackVersion {
     name: String,
     game_versions: Vec<String>,
     loaders: Vec<String>,
-    published: Option<DateTime<Utc>>,
+    published: Option<Timestamp>,
     release: bool,
 }
 

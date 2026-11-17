@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use reqwest::Client;
 use serde::Deserialize;
 
@@ -28,7 +28,7 @@ pub struct VersionInfo {
     pub arguments: Option<Arguments>,
     /// Space-separated game arguments used by versions before 1.13.
     pub minecraft_arguments: Option<String>,
-    pub release_time: Option<DateTime<Utc>>,
+    pub release_time: Option<Timestamp>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
