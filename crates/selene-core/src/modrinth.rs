@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::hash::BuildHasher;
 use std::sync::{Mutex, PoisonError};
 
-use chrono::{DateTime, Utc};
 use futures_util::{StreamExt, TryStreamExt, stream};
+use jiff::Timestamp;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -148,7 +148,7 @@ pub struct Version {
     #[serde(default)]
     pub changelog: Option<String>,
     #[serde(default)]
-    pub date_published: Option<DateTime<Utc>>,
+    pub date_published: Option<Timestamp>,
     pub files: Vec<VersionFile>,
     #[serde(default)]
     pub dependencies: Vec<Dependency>,

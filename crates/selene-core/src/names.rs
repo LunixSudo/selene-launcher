@@ -1,7 +1,7 @@
 //! Player names: picking one for a new account and changing it later, through the same
 //! Minecraft Services calls the official launcher and minecraft.net use.
 
-use chrono::{DateTime, Duration, Utc};
+use jiff::{SignedDuration, Timestamp};
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -11,7 +11,7 @@ use crate::auth::{AuthError, MINECRAFT_PROFILE_URL, Profile, parse_response, sen
 
 const ENTITLEMENTS_URL: &str = "https://api.minecraftservices.com/entitlements/mcstore";
 /// Mojang allows one change every 30 days.
-const NAME_CHANGE_COOLDOWN_DAYS: i64 = 30;
+const NAME_CHANGE_COOLDOWN: SignedDuration = SignedDuration::from_hours(30 * 24);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -103,13 +103,13 @@ async fn name_response(response: reqwest::Response) -> Result<Profile> {
 pub struct NameChange {
     pub allowed: bool,
     /// When the next change becomes possible, if it is not now.
-    pub next_change: Option<DateTime<Utc>>,
+    pub next_change: Option<Timestamp>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct NameChangeInfo {
-    changed_at: Option<DateTime<Utc>>,
+    changed_at: Option<Timestamp>,
     name_change_allowed: bool,
 }
 
@@ -122,7 +122,7 @@ pub async fn name_change(client: &Client, token: &str) -> Result<NameChange> {
         next_change: info
             .changed_at
             .filter(|_| !info.name_change_allowed)
-            .map(|changed| changed + Duration::days(NAME_CHANGE_COOLDOWN_DAYS)),
+            .and_then(|changed| changed.checked_add(NAME_CHANGE_COOLDOWN).ok()),
     })
 }
 

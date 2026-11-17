@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -28,8 +28,8 @@ pub struct VersionEntry {
     #[serde(rename = "type")]
     pub kind: VersionKind,
     pub url: String,
-    pub time: DateTime<Utc>,
-    pub release_time: DateTime<Utc>,
+    pub time: Timestamp,
+    pub release_time: Timestamp,
     pub sha1: String,
     #[serde(default)]
     pub compliance_level: u8,

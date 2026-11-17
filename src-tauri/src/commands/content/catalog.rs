@@ -1,3 +1,4 @@
+use jiff::tz::Offset;
 use selene_core::curseforge;
 use selene_core::modrinth::{self, SearchQuery, Target};
 use selene_core::mods::{self, CatalogSort, ContentKind};
@@ -154,7 +155,9 @@ pub async fn project_versions(
                         id: version.id,
                         name: version.name,
                         version_number: version.version_number,
-                        published: version.date_published.map(|date| date.to_rfc3339()),
+                        published: version
+                            .date_published
+                            .map(|date| date.display_with_offset(Offset::UTC).to_string()),
                         changelog: version.changelog,
                     })
                     .collect(),

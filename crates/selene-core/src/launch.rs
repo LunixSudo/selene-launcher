@@ -3,7 +3,7 @@ use std::fmt;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use chrono::{TimeZone, Utc};
+use jiff::{civil::date, tz::TimeZone};
 
 use crate::rules::{self, Environment, Features};
 use crate::version::{Argument, ArgumentValue, VersionInfo};
@@ -398,16 +398,14 @@ pub fn set_option(game_dir: &Path, key: &str, value: &str) -> Result<()> {
 
 /// Versions before snapshot 16w32a (1.11) spell the region in capitals: `ru_RU`.
 fn language_for(version: &VersionInfo, language: &str) -> String {
-    match (
-        version.release_time,
-        Utc.with_ymd_and_hms(2016, 8, 10, 0, 0, 0).single(),
-    ) {
-        (Some(released), Some(since)) if released < since => match language.split_once('_') {
-            Some((code, region)) => format!("{code}_{}", region.to_ascii_uppercase()),
-            None => language.to_owned(),
-        },
-        _ => language.to_owned(),
+    if version
+        .release_time
+        .is_some_and(|released| released.to_zoned(TimeZone::UTC).date() < date(2016, 8, 10))
+        && let Some((code, region)) = language.split_once('_')
+    {
+        return format!("{code}_{}", region.to_ascii_uppercase());
     }
+    language.to_owned()
 }
 
 const OTHER_COLLECTORS: &[&str] = &[
@@ -544,9 +542,9 @@ mod tests {
     #[test]
     fn spells_old_regions_in_capitals() {
         let mut version: VersionInfo = serde_json::from_str(MODERN).unwrap();
-        version.release_time = Utc.with_ymd_and_hms(2015, 12, 9, 0, 0, 0).single();
+        version.release_time = Some("2015-12-09T00:00:00Z".parse().unwrap());
         assert_eq!(language_for(&version, "ru_ru"), "ru_RU");
-        version.release_time = Utc.with_ymd_and_hms(2016, 11, 14, 0, 0, 0).single();
+        version.release_time = Some("2016-08-10T03:00:00+03:00".parse().unwrap());
         assert_eq!(language_for(&version, "ru_ru"), "ru_ru");
     }
 
